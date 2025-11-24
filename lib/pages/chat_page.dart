@@ -65,7 +65,7 @@ class _ChatBubble extends StatelessWidget {
   Widget build(BuildContext context) {
     final background = isUser
         ? Theme.of(context).colorScheme.primaryContainer
-        : Theme.of(context).colorScheme.surfaceVariant;
+        : Theme.of(context).colorScheme.surfaceContainerHighest;
     final alignment = isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start;
 
     return Column(

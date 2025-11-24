@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 
@@ -19,6 +21,8 @@ class _RelaxPageState extends State<RelaxPage> {
 
   bool _isLoadingAmbient = false;
   bool _isLoadingGuided = false;
+  double _ambientVolume = 0.8;
+  double _guidedVolume = 0.8;
 
   final List<RelaxTrack> _ambientTracks = const [
     RelaxTrack(
@@ -87,6 +91,13 @@ class _RelaxPageState extends State<RelaxPage> {
     _ambientPlayer.dispose();
     _guidedPlayer.dispose();
     super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _ambientPlayer.setVolume(_ambientVolume);
+    _guidedPlayer.setVolume(_guidedVolume);
   }
 
   Future<void> _toggleAmbient(RelaxTrack track) async {
@@ -167,43 +178,51 @@ class _RelaxPageState extends State<RelaxPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Relax & Meditations')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
+      body: Stack(
         children: [
-          const Text(
-            'Layer a calming ambient bed with a short guided focus session. '
-            'You can play ambient and guided audio together.',
+          ListView(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 220),
+            children: [
+              const Text(
+                'Layer a calming ambient bed with a short guided focus session. '
+                'You can play ambient and guided audio together.',
+              ),
+              const SizedBox(height: 16),
+              StreamBuilder<PlayerState>(
+                stream: _ambientPlayer.playerStateStream,
+                builder: (context, snapshot) {
+                  final ambientState = snapshot.data;
+                  return _buildSection(
+                    title: 'Ambient soundscapes',
+                    description: 'Soft textures to play while you study or rest.',
+                    tracks: _ambientTracks,
+                    playerState: ambientState,
+                    isAmbient: true,
+                  );
+                },
+              ),
+              const SizedBox(height: 12),
+              StreamBuilder<PlayerState>(
+                stream: _guidedPlayer.playerStateStream,
+                builder: (context, snapshot) {
+                  final guidedState = snapshot.data;
+                  return _buildSection(
+                    title: 'Guided focus series',
+                    description: 'Short sessions to centre yourself before a busy day.',
+                    tracks: _guidedTracks,
+                    playerState: guidedState,
+                    isAmbient: false,
+                  );
+                },
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
-          StreamBuilder<PlayerState>(
-            stream: _ambientPlayer.playerStateStream,
-            builder: (context, snapshot) {
-              final ambientState = snapshot.data;
-              return _buildSection(
-                title: 'Ambient soundscapes',
-                description: 'Soft textures to play while you study or rest.',
-                tracks: _ambientTracks,
-                playerState: ambientState,
-                isAmbient: true,
-              );
-            },
+          Positioned(
+            left: 16,
+            right: 16,
+            bottom: 16,
+            child: _buildFloatingPlayer(),
           ),
-          const SizedBox(height: 12),
-          StreamBuilder<PlayerState>(
-            stream: _guidedPlayer.playerStateStream,
-            builder: (context, snapshot) {
-              final guidedState = snapshot.data;
-              return _buildSection(
-                title: 'Guided focus series',
-                description: 'Short sessions to centre yourself before a busy day.',
-                tracks: _guidedTracks,
-                playerState: guidedState,
-                isAmbient: false,
-              );
-            },
-          ),
-          const SizedBox(height: 16),
-          _buildNowPlayingRow(),
         ],
       ),
     );
@@ -280,52 +299,207 @@ class _RelaxPageState extends State<RelaxPage> {
     );
   }
 
-  Widget _buildNowPlayingRow() {
-    final ambientPlaying = _ambientPlayer.playing && _currentAmbientTrack != null;
-    final guidedPlaying = _guidedPlayer.playing && _currentGuidedTrack != null;
+  Future<void> _seekGuided(double offsetSeconds) async {
+    final newPosition = _clampPosition(
+      _guidedPlayer.position,
+      _guidedPlayer.duration,
+      offsetSeconds,
+    );
+    await _guidedPlayer.seek(newPosition);
+  }
 
-    if (!ambientPlaying && !guidedPlaying) {
+  Duration _clampPosition(
+    Duration current,
+    Duration? duration,
+    double offsetSeconds,
+  ) {
+    final targetMilliseconds =
+        (current.inMilliseconds + (offsetSeconds * 1000)).round();
+    final lowerBounded = math.max(0, targetMilliseconds);
+    final upperBound = duration?.inMilliseconds;
+
+    if (upperBound != null) {
+      final clamped = math.min(lowerBounded, upperBound);
+      return Duration(milliseconds: clamped);
+    }
+
+    return Duration(milliseconds: lowerBounded);
+  }
+
+  Widget _buildFloatingPlayer() {
+    final showAmbient = _currentAmbientTrack != null;
+    final showGuided = _currentGuidedTrack != null;
+
+    if (!showAmbient && !showGuided) {
       return const SizedBox.shrink();
     }
 
     return Card(
-      color: Theme.of(context).colorScheme.primaryContainer,
+      color: Theme.of(context).colorScheme.surfaceVariant,
+      elevation: 6,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.all(12),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (ambientPlaying)
-              Row(
-                children: [
-                  const Icon(Icons.graphic_eq),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Ambient: ${_currentAmbientTrack!.title}',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ),
-                ],
+            Text(
+              'Floating player',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            if (showAmbient)
+              StreamBuilder<PlayerState>(
+                stream: _ambientPlayer.playerStateStream,
+                builder: (context, snapshot) {
+                  final state = snapshot.data;
+                  final isPlaying = state?.playing ?? false;
+                  return _buildAmbientPlayerControls(
+                    title: _currentAmbientTrack!.title,
+                    isPlaying: isPlaying,
+                    onPlayPause: () => _toggleAmbient(_currentAmbientTrack!),
+                    volume: _ambientVolume,
+                    onVolumeChanged: (value) {
+                      setState(() => _ambientVolume = value);
+                      _ambientPlayer.setVolume(value);
+                    },
+                  );
+                },
               ),
-            if (guidedPlaying) ...[
-              if (ambientPlaying) const SizedBox(height: 4),
-              Row(
-                children: [
-                  const Icon(Icons.record_voice_over),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Guided: ${_currentGuidedTrack!.title}',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ),
-                ],
+            if (showGuided) ...[
+              if (showAmbient) const SizedBox(height: 12),
+              StreamBuilder<PlayerState>(
+                stream: _guidedPlayer.playerStateStream,
+                builder: (context, snapshot) {
+                  final state = snapshot.data;
+                  final isPlaying = state?.playing ?? false;
+                  return _buildGuidedPlayerControls(
+                    title: _currentGuidedTrack!.title,
+                    isPlaying: isPlaying,
+                    onPlayPause: () => _toggleGuided(_currentGuidedTrack!),
+                    onForward: () => _seekGuided(0.5),
+                    onBackward: () => _seekGuided(-0.5),
+                    volume: _guidedVolume,
+                    onVolumeChanged: (value) {
+                      setState(() => _guidedVolume = value);
+                      _guidedPlayer.setVolume(value);
+                    },
+                  );
+                },
               ),
             ],
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildAmbientPlayerControls({
+    required String title,
+    required bool isPlaying,
+    required VoidCallback onPlayPause,
+    required double volume,
+    required ValueChanged<double> onVolumeChanged,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(Icons.graphic_eq, size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: Theme.of(context).textTheme.bodyMedium),
+                  Text('Ambient',
+                      style: Theme.of(context).textTheme.bodySmall),
+                ],
+              ),
+            ),
+            IconButton(
+              icon: Icon(isPlaying ? Icons.pause : Icons.play_arrow),
+              onPressed: onPlayPause,
+            ),
+          ],
+        ),
+        Row(
+          children: [
+            const Icon(Icons.volume_up, size: 18),
+            Expanded(
+              child: Slider(
+                value: volume,
+                min: 0,
+                max: 1,
+                divisions: 10,
+                label: volume.toStringAsFixed(1),
+                onChanged: onVolumeChanged,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGuidedPlayerControls({
+    required String title,
+    required bool isPlaying,
+    required VoidCallback onPlayPause,
+    required VoidCallback onForward,
+    required VoidCallback onBackward,
+    required double volume,
+    required ValueChanged<double> onVolumeChanged,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(Icons.record_voice_over, size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: Theme.of(context).textTheme.bodyMedium),
+                  Text('Guided', style: Theme.of(context).textTheme.bodySmall),
+                ],
+              ),
+            ),
+            IconButton(
+              tooltip: 'Back 0.5s',
+              onPressed: onBackward,
+              icon: const Icon(Icons.replay_5),
+            ),
+            IconButton(
+              icon: Icon(isPlaying ? Icons.pause : Icons.play_arrow),
+              onPressed: onPlayPause,
+            ),
+            IconButton(
+              tooltip: 'Forward 0.5s',
+              onPressed: onForward,
+              icon: const Icon(Icons.forward_5),
+            ),
+          ],
+        ),
+        Row(
+          children: [
+            const Icon(Icons.volume_up, size: 18),
+            Expanded(
+              child: Slider(
+                value: volume,
+                min: 0,
+                max: 1,
+                divisions: 10,
+                label: volume.toStringAsFixed(1),
+                onChanged: onVolumeChanged,
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

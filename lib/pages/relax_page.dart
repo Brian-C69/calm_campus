@@ -11,8 +11,9 @@ class RelaxPage extends StatefulWidget {
 }
 
 class _RelaxPageState extends State<RelaxPage> {
-  final AudioPlayer _ambientPlayer = AudioPlayer();
-  final AudioPlayer _guidedPlayer = AudioPlayer();
+
+  final AudioPlayer _player = AudioPlayer();
+
   final List<RelaxTrack> _ambientTracks = const [
     RelaxTrack(
       title: 'Calm River',
@@ -124,49 +125,30 @@ class _RelaxPageState extends State<RelaxPage> {
     ),
   ];
 
-  RelaxTrack? _currentAmbientTrack;
-  RelaxTrack? _currentGuidedTrack;
-  bool _isLoadingAmbient = false;
-  bool _isLoadingGuided = false;
+  RelaxTrack? _currentTrack;
+  bool _isLoadingTrack = false;
 
   @override
   void dispose() {
-    _ambientPlayer.dispose();
-    _guidedPlayer.dispose();
+    _player.dispose();
     super.dispose();
   }
 
-  Future<void> _toggleTrack({required RelaxTrack track, required AudioPlayer player}) async {
-    final bool isAmbient = track.category == 'Ambient';
-    final bool isCurrent =
-        (isAmbient ? _currentAmbientTrack?.assetPath : _currentGuidedTrack?.assetPath) ==
-            track.assetPath;
-
-    setState(() {
-      if (isAmbient) {
-        _isLoadingAmbient = true;
-      } else {
-        _isLoadingGuided = true;
-      }
-    });
+  Future<void> _toggleTrack(RelaxTrack track) async {
+    final bool isCurrent = _currentTrack?.assetPath == track.assetPath;
+    setState(() => _isLoadingTrack = true);
 
     try {
       if (!isCurrent) {
-        await player.stop();
-        await player.setAudioSource(AudioSource.asset(track.assetPath));
-        await player.play();
-        setState(() {
-          if (isAmbient) {
-            _currentAmbientTrack = track;
-          } else {
-            _currentGuidedTrack = track;
-          }
-        });
+        await _player.stop();
+        await _player.setAudioSource(AudioSource.asset(track.assetPath));
+        await _player.play();
+        setState(() => _currentTrack = track);
       } else {
-        if (player.playing) {
-          await player.pause();
+        if (_player.playing) {
+          await _player.pause();
         } else {
-          await player.play();
+          await _player.play();
         }
       }
     } catch (error) {
@@ -177,13 +159,7 @@ class _RelaxPageState extends State<RelaxPage> {
       }
     } finally {
       if (mounted) {
-        setState(() {
-          if (isAmbient) {
-            _isLoadingAmbient = false;
-          } else {
-            _isLoadingGuided = false;
-          }
-        });
+        setState(() => _isLoadingTrack = false);
       }
     }
   }
@@ -191,64 +167,36 @@ class _RelaxPageState extends State<RelaxPage> {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<PlayerState>(
-      stream: _ambientPlayer.playerStateStream,
-      builder: (context, ambientSnapshot) {
-        final ambientState = ambientSnapshot.data;
-        return StreamBuilder<PlayerState>(
-          stream: _guidedPlayer.playerStateStream,
-          builder: (context, guidedSnapshot) {
-            final guidedState = guidedSnapshot.data;
-            return Scaffold(
-              appBar: AppBar(title: const Text('Relax & Meditations')),
-              body: ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  const Text(
-                    'Bring down the noise with a calming ambient bed or follow a short guided focus session.',
-                  ),
-                  const SizedBox(height: 16),
-                  _buildSection(
-                    title: 'Ambient soundscapes',
-                    description: 'Soft textures to play while you study or rest.',
-                    tracks: _ambientTracks,
-                    player: _ambientPlayer,
-                    playerState: ambientState,
-                    currentTrack: _currentAmbientTrack,
-                    isLoading: _isLoadingAmbient,
-                  ),
-                  const SizedBox(height: 12),
-                  _buildSection(
-                    title: 'Guided focus series',
-                    description: 'Short sessions to centre yourself before a busy day.',
-                    tracks: _guidedTracks,
-                    player: _guidedPlayer,
-                    playerState: guidedState,
-                    currentTrack: _currentGuidedTrack,
-                    isLoading: _isLoadingGuided,
-                  ),
-                  const SizedBox(height: 16),
-                  if (_currentAmbientTrack != null)
-                    _buildNowPlaying(
-                      playerState: ambientState,
-                      track: _currentAmbientTrack!,
-                      onToggle: () => _toggleTrack(
-                        track: _currentAmbientTrack!,
-                        player: _ambientPlayer,
-                      ),
-                    ),
-                  if (_currentGuidedTrack != null)
-                    _buildNowPlaying(
-                      playerState: guidedState,
-                      track: _currentGuidedTrack!,
-                      onToggle: () => _toggleTrack(
-                        track: _currentGuidedTrack!,
-                        player: _guidedPlayer,
-                      ),
-                    ),
-                ],
+      stream: _player.playerStateStream,
+      builder: (context, snapshot) {
+        final playerState = snapshot.data;
+        return Scaffold(
+          appBar: AppBar(title: const Text('Relax & Meditations')),
+          body: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              const Text(
+                'Bring down the noise with a calming ambient bed or follow a short guided focus session.',
               ),
-            );
-          },
+              const SizedBox(height: 16),
+              _buildSection(
+                title: 'Ambient soundscapes',
+                description: 'Soft textures to play while you study or rest.',
+                tracks: _ambientTracks,
+                playerState: playerState,
+              ),
+              const SizedBox(height: 12),
+              _buildSection(
+                title: 'Guided focus series',
+                description: 'Short sessions to centre yourself before a busy day.',
+                tracks: _guidedTracks,
+                playerState: playerState,
+              ),
+              const SizedBox(height: 16),
+              if (_currentTrack != null)
+                _buildNowPlaying(playerState: playerState, track: _currentTrack!),
+            ],
+          ),
         );
       },
     );
@@ -258,10 +206,7 @@ class _RelaxPageState extends State<RelaxPage> {
     required String title,
     required String description,
     required List<RelaxTrack> tracks,
-    required AudioPlayer player,
     required PlayerState? playerState,
-    required RelaxTrack? currentTrack,
-    required bool isLoading,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -283,13 +228,8 @@ class _RelaxPageState extends State<RelaxPage> {
               ),
               title: Text(track.title),
               subtitle: Text(track.category),
-              trailing: _buildTrailingControl(
-                track: track,
-                playerState: playerState,
-                currentTrack: currentTrack,
-                isLoading: isLoading,
-              ),
-              onTap: () => _toggleTrack(track: track, player: player),
+              trailing: _buildTrailingControl(track, playerState),
+              onTap: () => _toggleTrack(track),
             ),
           ),
         ),
@@ -297,19 +237,14 @@ class _RelaxPageState extends State<RelaxPage> {
     );
   }
 
-  Widget _buildTrailingControl({
-    required RelaxTrack track,
-    required PlayerState? playerState,
-    required RelaxTrack? currentTrack,
-    required bool isLoading,
-  }) {
-    final bool isCurrent = currentTrack?.assetPath == track.assetPath;
+  Widget _buildTrailingControl(RelaxTrack track, PlayerState? playerState) {
+    final bool isCurrent = _currentTrack?.assetPath == track.assetPath;
     final bool isPlayingCurrent = isCurrent && (playerState?.playing ?? false);
     final bool isBuffering = isCurrent &&
         ((playerState?.processingState == ProcessingState.loading) ||
             (playerState?.processingState == ProcessingState.buffering));
 
-    if ((isLoading && isCurrent) || isBuffering) {
+    if ((_isLoadingTrack && isCurrent) || isBuffering) {
       return const SizedBox(
         height: 24,
         width: 24,
@@ -319,18 +254,11 @@ class _RelaxPageState extends State<RelaxPage> {
 
     return IconButton(
       icon: Icon(isPlayingCurrent ? Icons.pause : Icons.play_arrow),
-      onPressed: () => _toggleTrack(
-        track: track,
-        player: track.category == 'Ambient' ? _ambientPlayer : _guidedPlayer,
-      ),
+      onPressed: () => _toggleTrack(track),
     );
   }
 
-  Widget _buildNowPlaying({
-    required PlayerState? playerState,
-    required RelaxTrack track,
-    required VoidCallback onToggle,
-  }) {
+  Widget _buildNowPlaying({required PlayerState? playerState, required RelaxTrack track}) {
     final bool isPlaying = playerState?.playing ?? false;
     final bool isCompleted = playerState?.processingState == ProcessingState.completed;
 
@@ -369,7 +297,7 @@ class _RelaxPageState extends State<RelaxPage> {
             IconButton(
               icon: Icon(isPlaying ? Icons.pause : Icons.play_arrow),
               color: Theme.of(context).colorScheme.onPrimaryContainer,
-              onPressed: onToggle,
+              onPressed: () => _toggleTrack(track),
             ),
           ],
         ),

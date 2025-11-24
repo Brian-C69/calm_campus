@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/mood_entry.dart';
 import '../services/db_service.dart';
+import '../services/login_nudge_service.dart';
 
 class MoodOption {
   const MoodOption({
@@ -89,6 +90,22 @@ class _MoodPageState extends State<MoodPage> {
     });
     _noteController.clear();
     _showMessage('Thanks, ${_nameController.text.trim()}! Your check-in is saved.');
+
+    await _handleLoginNudge();
+  }
+
+  Future<void> _handleLoginNudge() async {
+    if (!mounted) return;
+
+    final LoginNudgeAction action = await LoginNudgeService.instance.maybePrompt(
+      context,
+      LoginNudgeTrigger.moodHistorySave,
+    );
+
+    if (!mounted) return;
+    if (action == LoginNudgeAction.loginSelected) {
+      _showMessage('Login is only required for sharing or cloud sync. You can stay as a guest for now.');
+    }
   }
 
   String _buildNoteWithName() {

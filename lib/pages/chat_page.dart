@@ -1,7 +1,46 @@
 import 'package:flutter/material.dart';
 
-class ChatPage extends StatelessWidget {
+import '../services/login_nudge_service.dart';
+
+class ChatPage extends StatefulWidget {
   const ChatPage({super.key});
+
+  @override
+  State<ChatPage> createState() => _ChatPageState();
+}
+
+class _ChatPageState extends State<ChatPage> {
+  String _tone = 'Gentle';
+  double _temperature = 0.4;
+
+  Future<void> _openCustomization() async {
+    final LoginNudgeAction action = await LoginNudgeService.instance.maybePrompt(
+      context,
+      LoginNudgeTrigger.aiCustomization,
+    );
+
+    if (!mounted) return;
+    if (action == LoginNudgeAction.loginSelected) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Login is optional unless you enable campus integrations or sync.'),
+        ),
+      );
+    }
+
+    // Allow customization even as guest.
+    if (!mounted) return;
+    await showModalBottomSheet(
+      context: context,
+      showDragHandle: true,
+      builder: (_) => _CustomizationSheet(
+        tone: _tone,
+        temperature: _temperature,
+        onToneChanged: (value) => setState(() => _tone = value),
+        onTemperatureChanged: (value) => setState(() => _temperature = value),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -15,9 +54,27 @@ class ChatPage extends StatelessWidget {
     ];
 
     return Scaffold(
-      appBar: AppBar(title: const Text('AI Buddy')),
+      appBar: AppBar(
+        title: const Text('AI Buddy'),
+        actions: [
+          IconButton(
+            tooltip: 'Customise AI companion',
+            onPressed: _openCustomization,
+            icon: const Icon(Icons.tune),
+          ),
+        ],
+      ),
       body: Column(
         children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            child: Text(
+              'Logged in is only needed for DSA sharing or cloud sync. You can keep chatting as a guest.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ),
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.all(16),
@@ -49,6 +106,85 @@ class ChatPage extends StatelessWidget {
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CustomizationSheet extends StatelessWidget {
+  const _CustomizationSheet({
+    required this.tone,
+    required this.temperature,
+    required this.onToneChanged,
+    required this.onTemperatureChanged,
+  });
+
+  final String tone;
+  final double temperature;
+  final ValueChanged<String> onToneChanged;
+  final ValueChanged<double> onTemperatureChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final List<String> tones = ['Gentle', 'Direct', 'Practical'];
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'Customise your AI companion',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Choose the voice and creativity level you like. This stays in guest mode unless you opt in to sync.',
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            children: tones
+                .map(
+                  (value) => ChoiceChip(
+                    label: Text(value),
+                    selected: tone == value,
+                    onSelected: (_) => onToneChanged(value),
+                  ),
+                )
+                .toList(),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              const Icon(Icons.lightbulb_outline),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Creativity level'),
+                    Slider(
+                      min: 0.1,
+                      max: 1,
+                      divisions: 9,
+                      value: temperature,
+                      label: temperature.toStringAsFixed(1),
+                      onChanged: onTemperatureChanged,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          FilledButton.icon(
+            onPressed: () => Navigator.pop(context),
+            icon: const Icon(Icons.check),
+            label: const Text('Save preferences (guest-friendly)'),
+          ),
+          const SizedBox(height: 12),
         ],
       ),
     );

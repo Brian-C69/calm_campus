@@ -6,6 +6,7 @@ import 'pages/dsa_summary_page.dart';
 import 'pages/help_now_page.dart';
 import 'pages/history_page.dart';
 import 'pages/home_page.dart';
+import 'pages/journal_page.dart';
 import 'pages/mood_page.dart';
 import 'pages/relax_page.dart';
 import 'pages/tasks_page.dart';
@@ -31,6 +32,7 @@ class MyApp extends StatelessWidget {
         '/home': (_) => const MainNavigation(),
         '/mood': (_) => const MoodPage(),
         '/history': (_) => const HistoryPage(),
+        '/journal': (_) => const JournalPage(),
         '/timetable': (_) => const TimetablePage(),
         '/tasks': (_) => const TasksPage(),
         '/chat': (_) => const ChatPage(),

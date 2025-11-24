@@ -60,7 +60,26 @@ class _RelaxPageState extends State<RelaxPage> {
       assetPath: 'assets/audio/guided/focus_day2.mp3',
       category: 'Guided',
     ),
-    // ...rest of your guided tracks
+    RelaxTrack(
+      title: 'Focus Day 3',
+      assetPath: 'assets/audio/guided/focus_day3.mp3',
+      category: 'Guided',
+    ),
+    RelaxTrack(
+      title: 'Focus Day 4',
+      assetPath: 'assets/audio/guided/focus_day4.mp3',
+      category: 'Guided',
+    ),
+    RelaxTrack(
+      title: 'Focus Day 5',
+      assetPath: 'assets/audio/guided/focus_day5.mp3',
+      category: 'Guided',
+    ),
+    RelaxTrack(
+      title: 'Focus Day 6',
+      assetPath: 'assets/audio/guided/focus_day6.mp3',
+      category: 'Guided',
+    ),
   ];
 
   @override

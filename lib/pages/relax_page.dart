@@ -351,6 +351,81 @@ class _RelaxPageState extends State<RelaxPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Floating player',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 8),
+              if (showAmbient)
+                StreamBuilder<PlayerState>(
+                  stream: _ambientPlayer.playerStateStream,
+                  builder: (context, snapshot) {
+                    final state = snapshot.data;
+                    final isPlaying = state?.playing ?? false;
+                    return AmbientPlayerControls(
+                      title: _currentAmbientTrack!.title,
+                      isPlaying: isPlaying,
+                      onPlayPause: () => _toggleAmbient(_currentAmbientTrack!),
+                      volume: _ambientVolume,
+                      onVolumeChanged: (value) {
+                        setState(() => _ambientVolume = value);
+                        _ambientPlayer.setVolume(value);
+                      },
+                    );
+                  },
+                ),
+              if (showGuided) ...[
+                if (showAmbient) const SizedBox(height: 12),
+                StreamBuilder<PlayerState>(
+                  stream: _guidedPlayer.playerStateStream,
+                  builder: (context, snapshot) {
+                    final state = snapshot.data;
+                    final isPlaying = state?.playing ?? false;
+                    return GuidedPlayerControls(
+                      title: _currentGuidedTrack!.title,
+                      isPlaying: isPlaying,
+                      onPlayPause: () => _toggleGuided(_currentGuidedTrack!),
+                      onForward: () => _seekGuided(0.5),
+                      onBackward: () => _seekGuided(-0.5),
+                      volume: _guidedVolume,
+                      onVolumeChanged: (value) {
+                        setState(() => _guidedVolume = value);
+                        _guidedPlayer.setVolume(value);
+                      },
+                    );
+                  },
+                ),
+              ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class AmbientPlayerControls extends StatelessWidget {
+  const AmbientPlayerControls({
+    super.key,
+    required this.title,
+    required this.isPlaying,
+    required this.onPlayPause,
+    required this.volume,
+    required this.onVolumeChanged,
+  });
+
+  final String title;
+  final bool isPlaying;
+  final VoidCallback onPlayPause;
+  final double volume;
+  final ValueChanged<double> onVolumeChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
           children: [
             Text(
               'Floating player',

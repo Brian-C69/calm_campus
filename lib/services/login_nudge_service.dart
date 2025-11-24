@@ -40,13 +40,12 @@ class LoginNudgeService {
 
     await prefs.setBool(key, true);
 
-    final result = await showModalBottomSheet<LoginNudgeAction>(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) => _LoginPrompt(trigger: trigger),
-    );
-
-    return result ?? LoginNudgeAction.continueAsGuest;
+    return showModalBottomSheet<LoginNudgeAction>(
+          context: context,
+          isScrollControlled: true,
+          builder: (context) => _LoginPrompt(trigger: trigger),
+        ) ??
+        LoginNudgeAction.continueAsGuest;
   }
 }
 

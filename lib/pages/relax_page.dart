@@ -299,6 +299,15 @@ class _RelaxPageState extends State<RelaxPage> {
     );
   }
 
+  Future<void> _seekAmbient(double offsetSeconds) async {
+    final newPosition = _clampPosition(
+      _ambientPlayer.position,
+      _ambientPlayer.duration,
+      offsetSeconds,
+    );
+    await _ambientPlayer.seek(newPosition);
+  }
+
   Future<void> _seekGuided(double offsetSeconds) async {
     final newPosition = _clampPosition(
       _guidedPlayer.position,
@@ -354,15 +363,19 @@ class _RelaxPageState extends State<RelaxPage> {
                 builder: (context, snapshot) {
                   final state = snapshot.data;
                   final isPlaying = state?.playing ?? false;
-                  return _buildAmbientPlayerControls(
+                  return _buildPlayerControls(
                     title: _currentAmbientTrack!.title,
+                    icon: Icons.graphic_eq,
                     isPlaying: isPlaying,
                     onPlayPause: () => _toggleAmbient(_currentAmbientTrack!),
+                    onForward: () => _seekAmbient(0.5),
+                    onBackward: () => _seekAmbient(-0.5),
                     volume: _ambientVolume,
                     onVolumeChanged: (value) {
                       setState(() => _ambientVolume = value);
                       _ambientPlayer.setVolume(value);
                     },
+                    label: 'Ambient',
                   );
                 },
               ),
@@ -373,8 +386,9 @@ class _RelaxPageState extends State<RelaxPage> {
                 builder: (context, snapshot) {
                   final state = snapshot.data;
                   final isPlaying = state?.playing ?? false;
-                  return _buildGuidedPlayerControls(
+                  return _buildPlayerControls(
                     title: _currentGuidedTrack!.title,
+                    icon: Icons.record_voice_over,
                     isPlaying: isPlaying,
                     onPlayPause: () => _toggleGuided(_currentGuidedTrack!),
                     onForward: () => _seekGuided(0.5),
@@ -384,43 +398,24 @@ class _RelaxPageState extends State<RelaxPage> {
                       setState(() => _guidedVolume = value);
                       _guidedPlayer.setVolume(value);
                     },
+                    label: 'Guided',
                   );
                 },
               ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAmbientPlayerControls({
-    required String title,
-    required bool isPlaying,
-    required VoidCallback onPlayPause,
-    required double volume,
-    required ValueChanged<double> onVolumeChanged,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            const Icon(Icons.graphic_eq, size: 20),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: Theme.of(context).textTheme.bodyMedium),
-                  Text('Ambient',
-                      style: Theme.of(context).textTheme.bodySmall),
-                ],
-              ),
+            ),
+            IconButton(
+              tooltip: 'Back 0.5s',
+              onPressed: onBackward,
+              icon: const Icon(Icons.replay_5),
             ),
             IconButton(
               icon: Icon(isPlaying ? Icons.pause : Icons.play_arrow),
               onPressed: onPlayPause,
+            ),
+            IconButton(
+              tooltip: 'Forward 0.5s',
+              onPressed: onForward,
+              icon: const Icon(Icons.forward_5),
             ),
           ],
         ),
@@ -443,28 +438,30 @@ class _RelaxPageState extends State<RelaxPage> {
     );
   }
 
-  Widget _buildGuidedPlayerControls({
+  Widget _buildPlayerControls({
     required String title,
+    required IconData icon,
     required bool isPlaying,
     required VoidCallback onPlayPause,
     required VoidCallback onForward,
     required VoidCallback onBackward,
     required double volume,
     required ValueChanged<double> onVolumeChanged,
+    required String label,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            const Icon(Icons.record_voice_over, size: 20),
+            Icon(icon, size: 20),
             const SizedBox(width: 8),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(title, style: Theme.of(context).textTheme.bodyMedium),
-                  Text('Guided', style: Theme.of(context).textTheme.bodySmall),
+                  Text(label, style: Theme.of(context).textTheme.bodySmall),
                 ],
               ),
             ),

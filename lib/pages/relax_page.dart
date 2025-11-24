@@ -299,6 +299,15 @@ class _RelaxPageState extends State<RelaxPage> {
     );
   }
 
+  Future<void> _seekAmbient(double offsetSeconds) async {
+    final newPosition = _clampPosition(
+      _ambientPlayer.position,
+      _ambientPlayer.duration,
+      offsetSeconds,
+    );
+    await _ambientPlayer.seek(newPosition);
+  }
+
   Future<void> _seekGuided(double offsetSeconds) async {
     final newPosition = _clampPosition(
       _guidedPlayer.position,
@@ -418,20 +427,70 @@ class AmbientPlayerControls extends StatelessWidget {
       children: [
         Row(
           children: [
-            const Icon(Icons.graphic_eq, size: 20),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: Theme.of(context).textTheme.bodyMedium),
-                  Text('Ambient', style: Theme.of(context).textTheme.bodySmall),
-              ],
+            Text(
+              'Floating player',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            if (showAmbient)
+              StreamBuilder<PlayerState>(
+                stream: _ambientPlayer.playerStateStream,
+                builder: (context, snapshot) {
+                  final state = snapshot.data;
+                  final isPlaying = state?.playing ?? false;
+                  return _buildPlayerControls(
+                    title: _currentAmbientTrack!.title,
+                    icon: Icons.graphic_eq,
+                    isPlaying: isPlaying,
+                    onPlayPause: () => _toggleAmbient(_currentAmbientTrack!),
+                    onForward: () => _seekAmbient(0.5),
+                    onBackward: () => _seekAmbient(-0.5),
+                    volume: _ambientVolume,
+                    onVolumeChanged: (value) {
+                      setState(() => _ambientVolume = value);
+                      _ambientPlayer.setVolume(value);
+                    },
+                    label: 'Ambient',
+                  );
+                },
               ),
+            if (showGuided) ...[
+              if (showAmbient) const SizedBox(height: 12),
+              StreamBuilder<PlayerState>(
+                stream: _guidedPlayer.playerStateStream,
+                builder: (context, snapshot) {
+                  final state = snapshot.data;
+                  final isPlaying = state?.playing ?? false;
+                  return _buildPlayerControls(
+                    title: _currentGuidedTrack!.title,
+                    icon: Icons.record_voice_over,
+                    isPlaying: isPlaying,
+                    onPlayPause: () => _toggleGuided(_currentGuidedTrack!),
+                    onForward: () => _seekGuided(0.5),
+                    onBackward: () => _seekGuided(-0.5),
+                    volume: _guidedVolume,
+                    onVolumeChanged: (value) {
+                      setState(() => _guidedVolume = value);
+                      _guidedPlayer.setVolume(value);
+                    },
+                    label: 'Guided',
+                  );
+                },
+              ),
+            ),
+            IconButton(
+              tooltip: 'Back 0.5s',
+              onPressed: onBackward,
+              icon: const Icon(Icons.replay_5),
             ),
             IconButton(
               icon: Icon(isPlaying ? Icons.pause : Icons.play_arrow),
               onPressed: onPlayPause,
+            ),
+            IconButton(
+              tooltip: 'Forward 0.5s',
+              onPressed: onForward,
+              icon: const Icon(Icons.forward_5),
             ),
           ],
         ),
@@ -453,43 +512,31 @@ class AmbientPlayerControls extends StatelessWidget {
       ],
     );
   }
-}
 
-class GuidedPlayerControls extends StatelessWidget {
-  const GuidedPlayerControls({
-    super.key,
-    required this.title,
-    required this.isPlaying,
-    required this.onPlayPause,
-    required this.onForward,
-    required this.onBackward,
-    required this.volume,
-    required this.onVolumeChanged,
-  });
-
-  final String title;
-  final bool isPlaying;
-  final VoidCallback onPlayPause;
-  final VoidCallback onForward;
-  final VoidCallback onBackward;
-  final double volume;
-  final ValueChanged<double> onVolumeChanged;
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildPlayerControls({
+    required String title,
+    required IconData icon,
+    required bool isPlaying,
+    required VoidCallback onPlayPause,
+    required VoidCallback onForward,
+    required VoidCallback onBackward,
+    required double volume,
+    required ValueChanged<double> onVolumeChanged,
+    required String label,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            const Icon(Icons.record_voice_over, size: 20),
+            Icon(icon, size: 20),
             const SizedBox(width: 8),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(title, style: Theme.of(context).textTheme.bodyMedium),
-                  Text('Guided', style: Theme.of(context).textTheme.bodySmall),
+                  Text(label, style: Theme.of(context).textTheme.bodySmall),
                 ],
               ),
             ),

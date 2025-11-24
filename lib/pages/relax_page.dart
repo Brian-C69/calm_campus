@@ -402,10 +402,39 @@ class _RelaxPageState extends State<RelaxPage> {
                   );
                 },
               ),
-            ],
+            ),
+            IconButton(
+              tooltip: 'Back 0.5s',
+              onPressed: onBackward,
+              icon: const Icon(Icons.replay_5),
+            ),
+            IconButton(
+              icon: Icon(isPlaying ? Icons.pause : Icons.play_arrow),
+              onPressed: onPlayPause,
+            ),
+            IconButton(
+              tooltip: 'Forward 0.5s',
+              onPressed: onForward,
+              icon: const Icon(Icons.forward_5),
+            ),
           ],
         ),
-      ),
+        Row(
+          children: [
+            const Icon(Icons.volume_up, size: 18),
+            Expanded(
+              child: Slider(
+                value: volume,
+                min: 0,
+                max: 1,
+                divisions: 10,
+                label: volume.toStringAsFixed(1),
+                onChanged: onVolumeChanged,
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 

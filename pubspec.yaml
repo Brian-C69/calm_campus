@@ -25,5 +25,5 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - lib/audio/ambient/
-    - lib/audio/guided/
+    - assets/audio/ambient/
+    - assets/audio/guided/

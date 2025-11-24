@@ -11,7 +11,9 @@ class RelaxPage extends StatefulWidget {
 }
 
 class _RelaxPageState extends State<RelaxPage> {
+
   final AudioPlayer _player = AudioPlayer();
+
   final List<RelaxTrack> _ambientTracks = const [
     RelaxTrack(
       title: 'Calm River',

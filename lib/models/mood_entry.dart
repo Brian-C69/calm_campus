@@ -2,7 +2,20 @@ import 'package:equatable/equatable.dart';
 
 enum MoodThemeTag { stress, foodBody, social, academics, rest, motivation, other }
 
-enum MoodLevel { great, okay, low, flat, overwhelmed }
+enum MoodLevel {
+  happy,
+  excited,
+  grateful,
+  relaxed,
+  content,
+  tired,
+  unsure,
+  bored,
+  anxious,
+  angry,
+  stressed,
+  sad,
+}
 
 class MoodEntry extends Equatable {
   const MoodEntry({

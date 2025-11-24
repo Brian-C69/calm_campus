@@ -70,7 +70,6 @@ class _RelaxPageState extends State<RelaxPage> {
     super.dispose();
   }
 
-  // Toggle ambient only
   Future<void> _toggleAmbient(RelaxTrack track) async {
     final isCurrent = _currentAmbientTrack?.assetPath == track.assetPath;
     setState(() => _isLoadingAmbient = true);
@@ -79,7 +78,7 @@ class _RelaxPageState extends State<RelaxPage> {
       if (!isCurrent) {
         await _ambientPlayer.stop();
         await _ambientPlayer.setAudioSource(AudioSource.asset(track.assetPath));
-        await _ambientPlayer.setLoopMode(LoopMode.all); // loop ambience
+        await _ambientPlayer.setLoopMode(LoopMode.all);
         await _ambientPlayer.play();
         setState(() => _currentAmbientTrack = track);
       } else {
@@ -108,7 +107,6 @@ class _RelaxPageState extends State<RelaxPage> {
     }
   }
 
-  // Toggle guided only
   Future<void> _toggleGuided(RelaxTrack track) async {
     final isCurrent = _currentGuidedTrack?.assetPath == track.assetPath;
     setState(() => _isLoadingGuided = true);
@@ -155,11 +153,9 @@ class _RelaxPageState extends State<RelaxPage> {
         children: [
           const Text(
             'Layer a calming ambient bed with a short guided focus session. '
-                'You can play ambient and guided audio together.',
+            'You can play ambient and guided audio together.',
           ),
           const SizedBox(height: 16),
-
-          // Ambient section
           StreamBuilder<PlayerState>(
             stream: _ambientPlayer.playerStateStream,
             builder: (context, snapshot) {
@@ -173,25 +169,20 @@ class _RelaxPageState extends State<RelaxPage> {
               );
             },
           ),
-
           const SizedBox(height: 12),
-
-          // Guided section
           StreamBuilder<PlayerState>(
             stream: _guidedPlayer.playerStateStream,
             builder: (context, snapshot) {
               final guidedState = snapshot.data;
               return _buildSection(
                 title: 'Guided focus series',
-                description:
-                'Short sessions to centre yourself before a busy day.',
+                description: 'Short sessions to centre yourself before a busy day.',
                 tracks: _guidedTracks,
                 playerState: guidedState,
                 isAmbient: false,
               );
             },
           ),
-
           const SizedBox(height: 16),
           _buildNowPlayingRow(),
         ],
@@ -214,16 +205,15 @@ class _RelaxPageState extends State<RelaxPage> {
         Text(description, style: Theme.of(context).textTheme.bodySmall),
         const SizedBox(height: 8),
         ...tracks.map(
-              (track) => Card(
+          (track) => Card(
             elevation: 0,
             child: ListTile(
               leading: CircleAvatar(
                 backgroundColor:
-                Theme.of(context).colorScheme.secondaryContainer,
+                    Theme.of(context).colorScheme.secondaryContainer,
                 child: Icon(
                   isAmbient ? Icons.spa_outlined : Icons.self_improvement,
-                  color:
-                  Theme.of(context).colorScheme.onSecondaryContainer,
+                  color: Theme.of(context).colorScheme.onSecondaryContainer,
                 ),
               ),
               title: Text(track.title),
@@ -234,7 +224,7 @@ class _RelaxPageState extends State<RelaxPage> {
                 isAmbient: isAmbient,
               ),
               onTap: () =>
-              isAmbient ? _toggleAmbient(track) : _toggleGuided(track),
+                  isAmbient ? _toggleAmbient(track) : _toggleGuided(track),
             ),
           ),
         ),
@@ -247,16 +237,14 @@ class _RelaxPageState extends State<RelaxPage> {
     required PlayerState? playerState,
     required bool isAmbient,
   }) {
-    final currentTrack =
-    isAmbient ? _currentAmbientTrack : _currentGuidedTrack;
+    final currentTrack = isAmbient ? _currentAmbientTrack : _currentGuidedTrack;
     final isCurrent = currentTrack?.assetPath == track.assetPath;
     final isPlayingCurrent = isCurrent && (playerState?.playing ?? false);
     final isBuffering = isCurrent &&
         ((playerState?.processingState == ProcessingState.loading) ||
             (playerState?.processingState == ProcessingState.buffering));
 
-    final isLoading =
-    isAmbient ? _isLoadingAmbient : _isLoadingGuided;
+    final isLoading = isAmbient ? _isLoadingAmbient : _isLoadingGuided;
 
     if ((isLoading && isCurrent) || isBuffering) {
       return const SizedBox(
@@ -269,7 +257,7 @@ class _RelaxPageState extends State<RelaxPage> {
     return IconButton(
       icon: Icon(isPlayingCurrent ? Icons.pause : Icons.play_arrow),
       onPressed: () =>
-      isAmbient ? _toggleAmbient(track) : _toggleGuided(track),
+          isAmbient ? _toggleAmbient(track) : _toggleGuided(track),
     );
   }
 
@@ -277,45 +265,48 @@ class _RelaxPageState extends State<RelaxPage> {
     final ambientPlaying = _ambientPlayer.playing && _currentAmbientTrack != null;
     final guidedPlaying = _guidedPlayer.playing && _currentGuidedTrack != null;
 
-    if (!ambientPlaying && !guidedPlaying) return const SizedBox.shrink();
+    if (!ambientPlaying && !guidedPlaying) {
+      return const SizedBox.shrink();
+    }
 
     return Card(
       color: Theme.of(context).colorScheme.primaryContainer,
       child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-              if (ambientPlaying)
-          Row(
-      children: [
-      const Icon(Icons.graphic_eq),
-      const SizedBox(width: 8),
-      Expanded(
-        child: Text(
-          'Ambient: ${_currentAmbientTrack!.title}',
-          style: Theme.of(context).textTheme.bodyMedium,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (ambientPlaying)
+              Row(
+                children: [
+                  const Icon(Icons.graphic_eq),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Ambient: ${_currentAmbientTrack!.title}',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ),
+                ],
+              ),
+            if (guidedPlaying) ...[
+              if (ambientPlaying) const SizedBox(height: 4),
+              Row(
+                children: [
+                  const Icon(Icons.record_voice_over),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Guided: ${_currentGuidedTrack!.title}',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ],
         ),
       ),
-      ],
-    ),
-    if (guidedPlaying) ...[
-    if (ambientPlaying) const SizedBox(height: 4),
-    Row(
-    children: [
-    const Icon(Icons.record_voice_over),
-    const SizedBox(width: 8),
-    Expanded(
-    child: Text(
-    'Guided: ${_currentGuidedTrack!.title}',
-    style: Theme.of(context).textTheme.bodyMedium,
-    ),
-    ),
-    ],
-    ),
-    ],
-    ),
-    ),
     );
   }
 }

@@ -28,7 +28,7 @@ class MyApp extends StatelessWidget {
         colorSchemeSeed: Colors.teal,
         useMaterial3: true,
       ),
-      initialRoute: '/auth',
+      initialRoute: '/home',
       routes: {
         '/auth': (_) => const AuthPage(),
         '/home': (_) => const MainNavigation(),
@@ -56,7 +56,6 @@ class MainNavigation extends StatefulWidget {
 
 class _MainNavigationState extends State<MainNavigation> {
   int _currentIndex = 0;
-  bool _hasPromptedForLogin = false;
 
   final List<Widget> _pages = const [
     HomePage(),
@@ -75,11 +74,6 @@ class _MainNavigationState extends State<MainNavigation> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || _hasPromptedForLogin) return;
-      _hasPromptedForLogin = true;
-      Navigator.of(context).pushNamed('/auth');
-    });
   }
 
   @override

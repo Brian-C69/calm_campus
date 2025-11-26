@@ -315,6 +315,7 @@ You can change `[ ]` to `[x]` as you complete items.
 - [ ] Test audio playback (single + dual audio session)
 - [ ] Test AI chat (normal + crisis keywords)
 - [ ] Fix layout issues (different screen sizes)
+- [x] Fix timetable add-class refresh error
 - [x] Hide login button on Home after successful sign-in
 - [ ] Prepare screenshots for slides
 - [ ] Prepare demo script:

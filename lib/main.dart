@@ -43,7 +43,6 @@ class MyApp extends StatelessWidget {
         '/dsa-summary': (_) => const DsaSummaryPage(),
         '/challenges': (_) => const CommonChallengesPage(),
       },
-      home: const MainNavigation(),
     );
   }
 }
@@ -57,6 +56,7 @@ class MainNavigation extends StatefulWidget {
 
 class _MainNavigationState extends State<MainNavigation> {
   int _currentIndex = 0;
+  bool _hasPromptedForLogin = false;
 
   final List<Widget> _pages = const [
     HomePage(),
@@ -69,6 +69,16 @@ class _MainNavigationState extends State<MainNavigation> {
     if (index == _currentIndex) return;
     setState(() {
       _currentIndex = index;
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _hasPromptedForLogin) return;
+      _hasPromptedForLogin = true;
+      Navigator.of(context).pushNamed('/auth');
     });
   }
 

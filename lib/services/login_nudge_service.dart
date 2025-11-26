@@ -49,6 +49,10 @@ class LoginNudgeService {
     await prefs.setBool(key, true);
 
     // FIX: await the Future, then null-coalesce the nullable result
+    if (!context.mounted) {
+      return LoginNudgeAction.notNeeded;
+    }
+
     final action = await showModalBottomSheet<LoginNudgeAction>(
       context: context,
       isScrollControlled: true,

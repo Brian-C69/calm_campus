@@ -46,6 +46,8 @@ class _AuthPageState extends State<AuthPage> {
     }
     await UserProfileService.instance.setLoggedIn(true);
 
+    if (!mounted) return;
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(

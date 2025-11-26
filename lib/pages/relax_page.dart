@@ -445,14 +445,6 @@ class _RelaxPageState extends State<RelaxPage> {
     );
   }
 
-  Future<void> _seekAmbient(double offsetSeconds) async {
-    final newPosition = _clampPosition(
-      _ambientPlayer.position,
-      _ambientPlayer.duration,
-      offsetSeconds,
-    );
-    await _ambientPlayer.seek(newPosition);
-  }
 
   Future<void> _seekGuided(double offsetSeconds) async {
     final newPosition = _clampPosition(
@@ -490,7 +482,7 @@ class _RelaxPageState extends State<RelaxPage> {
     }
 
     return Card(
-      color: Theme.of(context).colorScheme.surfaceVariant,
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
       elevation: 6,
       child: Padding(
         padding: const EdgeInsets.all(12),

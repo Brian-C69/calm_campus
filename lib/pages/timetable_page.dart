@@ -103,22 +103,22 @@ class _TimetablePageState extends State<TimetablePage> {
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      builder: (ctx) {
+      builder: (sheetContext) {
         return Padding(
           padding: EdgeInsets.only(
-            bottom: MediaQuery.of(ctx).viewInsets.bottom,
+            bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
             left: 16,
             right: 16,
             top: 8,
           ),
           child: StatefulBuilder(
-            builder: (context, setSheetState) {
+            builder: (innerContext, setSheetState) {
               Future<void> selectTime(bool isStart) async {
                 final TimeOfDay initialTime = isStart
                     ? (startTime ?? const TimeOfDay(hour: 8, minute: 0))
                     : (endTime ?? const TimeOfDay(hour: 10, minute: 0));
                 final TimeOfDay? picked = await showTimePicker(
-                  context: context,
+                  context: innerContext,
                   initialTime: initialTime,
                 );
                 if (picked != null) {
@@ -251,6 +251,7 @@ class _TimetablePageState extends State<TimetablePage> {
                               if (!mounted) return;
                               Navigator.of(context).pop();
                               await _loadClasses();
+                              if (!mounted) return;
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(content: Text('Class added to your timetable.')),
                               );

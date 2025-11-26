@@ -28,6 +28,13 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('CalmCampus'),
+        actions: [
+          TextButton.icon(
+            onPressed: () => Navigator.pushNamed(context, '/auth'),
+            icon: const Icon(Icons.login),
+            label: const Text('Log in'),
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),

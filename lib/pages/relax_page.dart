@@ -50,39 +50,133 @@ class _RelaxPageState extends State<RelaxPage> {
       assetPath: 'assets/audio/ambient/Flowing_Stream.mp3',
       category: 'Ambient',
     ),
-    // ...rest of your ambient tracks, update paths similarly
+    RelaxTrack(
+      title: 'Flying Above Clouds',
+      assetPath: 'assets/audio/ambient/Flying_above_clouds.mp3',
+      category: 'Ambient',
+    ),
+    RelaxTrack(
+      title: 'Into the Horizon',
+      assetPath: 'assets/audio/ambient/Into_the_horizon.mp3',
+      category: 'Ambient',
+    ),
+    RelaxTrack(
+      title: 'Jasper Lake',
+      assetPath: 'assets/audio/ambient/Jasper_Lake.mp3',
+      category: 'Ambient',
+    ),
+    RelaxTrack(
+      title: 'Moving Cloudbreak',
+      assetPath: 'assets/audio/ambient/Moving_cloudbreak.mp3',
+      category: 'Ambient',
+    ),
+    RelaxTrack(
+      title: 'Olympic',
+      assetPath: 'assets/audio/ambient/Olympic.mp3',
+      category: 'Ambient',
+    ),
+    RelaxTrack(
+      title: 'Open Ocean',
+      assetPath: 'assets/audio/ambient/Open_Ocean.mp3',
+      category: 'Ambient',
+    ),
+    RelaxTrack(
+      title: 'Pouring Rain',
+      assetPath: 'assets/audio/ambient/Pouring_Rain.mp3',
+      category: 'Ambient',
+    ),
+    RelaxTrack(
+      title: 'Silent Earth',
+      assetPath: 'assets/audio/ambient/Silent_Earth.mp3',
+      category: 'Ambient',
+    ),
+    RelaxTrack(
+      title: 'Suspended Droplets',
+      assetPath: 'assets/audio/ambient/Suspended_Droplets.mp3',
+      category: 'Ambient',
+    ),
+    RelaxTrack(
+      title: 'Passing Clouds',
+      assetPath: 'assets/audio/ambient/passing_clouds.mp3',
+      category: 'Ambient',
+    ),
   ];
 
   final List<RelaxTrack> _guidedTracks = const [
     RelaxTrack(
       title: 'Focus Day 1',
       assetPath: 'assets/audio/guided/focus_day1.mp3',
-      category: 'Guided',
+      category: 'Focus',
     ),
     RelaxTrack(
       title: 'Focus Day 2',
       assetPath: 'assets/audio/guided/focus_day2.mp3',
-      category: 'Guided',
+      category: 'Focus',
     ),
     RelaxTrack(
       title: 'Focus Day 3',
       assetPath: 'assets/audio/guided/focus_day3.mp3',
-      category: 'Guided',
+      category: 'Focus',
     ),
     RelaxTrack(
       title: 'Focus Day 4',
       assetPath: 'assets/audio/guided/focus_day4.mp3',
-      category: 'Guided',
+      category: 'Focus',
     ),
     RelaxTrack(
       title: 'Focus Day 5',
       assetPath: 'assets/audio/guided/focus_day5.mp3',
-      category: 'Guided',
+      category: 'Focus',
     ),
     RelaxTrack(
       title: 'Focus Day 6',
       assetPath: 'assets/audio/guided/focus_day6.mp3',
-      category: 'Guided',
+      category: 'Focus',
+    ),
+    RelaxTrack(
+      title: 'Focus Day 7',
+      assetPath: 'assets/audio/guided/focus_day7.mp3',
+      category: 'Focus',
+    ),
+    RelaxTrack(
+      title: 'Relax at Night',
+      assetPath: 'assets/audio/guided/Relax_at_Night.mp3',
+      category: 'Sleep',
+    ),
+    RelaxTrack(
+      title: 'Sleep Day 1',
+      assetPath: 'assets/audio/guided/sleep_day1.mp3',
+      category: 'Sleep',
+    ),
+    RelaxTrack(
+      title: 'Sleep Day 2',
+      assetPath: 'assets/audio/guided/sleep_day2.mp3',
+      category: 'Sleep',
+    ),
+    RelaxTrack(
+      title: 'Sleep Day 3',
+      assetPath: 'assets/audio/guided/sleep_day3.mp3',
+      category: 'Sleep',
+    ),
+    RelaxTrack(
+      title: 'Sleep Day 4',
+      assetPath: 'assets/audio/guided/sleep_day4.mp3',
+      category: 'Sleep',
+    ),
+    RelaxTrack(
+      title: 'Sleep Day 5',
+      assetPath: 'assets/audio/guided/sleep_day5.mp3',
+      category: 'Sleep',
+    ),
+    RelaxTrack(
+      title: 'Sleep Day 6',
+      assetPath: 'assets/audio/guided/sleep_day6.mp3',
+      category: 'Sleep',
+    ),
+    RelaxTrack(
+      title: 'Sleep Day 7',
+      assetPath: 'assets/audio/guided/sleep_day7.mp3',
+      category: 'Sleep',
     ),
   ];
 
@@ -217,11 +311,13 @@ class _RelaxPageState extends State<RelaxPage> {
                 builder: (context, snapshot) {
                   final guidedState = snapshot.data;
                   return _buildSection(
-                    title: 'Guided focus series',
-                    description: 'Short sessions to centre yourself before a busy day.',
+                    title: 'Guided series',
+                    description:
+                        'Pick a Focus or Sleep session to match how you want to feel.',
                     tracks: _guidedTracks,
                     playerState: guidedState,
                     isAmbient: false,
+                    groupByCategory: true,
                   );
                 },
               ),
@@ -244,7 +340,14 @@ class _RelaxPageState extends State<RelaxPage> {
     required List<RelaxTrack> tracks,
     required PlayerState? playerState,
     required bool isAmbient,
+    bool groupByCategory = false,
   }) {
+    final groupedTracks = groupByCategory
+        ? _groupTracksByCategory(tracks)
+        : {
+            '': tracks,
+          };
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -252,32 +355,65 @@ class _RelaxPageState extends State<RelaxPage> {
         const SizedBox(height: 4),
         Text(description, style: Theme.of(context).textTheme.bodySmall),
         const SizedBox(height: 8),
-        ...tracks.map(
-          (track) => Card(
-            elevation: 0,
-            child: ListTile(
-              leading: CircleAvatar(
-                backgroundColor:
-                    Theme.of(context).colorScheme.secondaryContainer,
-                child: Icon(
-                  isAmbient ? Icons.spa_outlined : Icons.self_improvement,
-                  color: Theme.of(context).colorScheme.onSecondaryContainer,
+        ...groupedTracks.entries.map((entry) {
+          final categoryLabel = entry.key;
+          final categoryTracks = entry.value;
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (groupByCategory)
+                Padding(
+                  padding: const EdgeInsets.only(left: 4, bottom: 4),
+                  child: Text(
+                    categoryLabel,
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                ),
+              ...categoryTracks.map(
+                (track) => Card(
+                  elevation: 0,
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor:
+                          Theme.of(context).colorScheme.secondaryContainer,
+                      child: Icon(
+                        isAmbient ? Icons.spa_outlined : Icons.self_improvement,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSecondaryContainer,
+                      ),
+                    ),
+                    title: Text(track.title),
+                    subtitle: Text(track.category),
+                    trailing: _buildTrailingControl(
+                      track: track,
+                      playerState: playerState,
+                      isAmbient: isAmbient,
+                    ),
+                    onTap: () => isAmbient
+                        ? _toggleAmbient(track)
+                        : _toggleGuided(track),
+                  ),
                 ),
               ),
-              title: Text(track.title),
-              subtitle: Text(isAmbient ? 'Ambient' : 'Guided'),
-              trailing: _buildTrailingControl(
-                track: track,
-                playerState: playerState,
-                isAmbient: isAmbient,
-              ),
-              onTap: () =>
-                  isAmbient ? _toggleAmbient(track) : _toggleGuided(track),
-            ),
-          ),
-        ),
+            ],
+          );
+        }),
       ],
     );
+  }
+
+  Map<String, List<RelaxTrack>> _groupTracksByCategory(
+    List<RelaxTrack> tracks,
+  ) {
+    final grouped = <String, List<RelaxTrack>>{};
+
+    for (final track in tracks) {
+      grouped.putIfAbsent(track.category, () => []).add(track);
+    }
+
+    return grouped;
   }
 
   Widget _buildTrailingControl({

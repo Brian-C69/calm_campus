@@ -59,12 +59,13 @@ class _MoodPageState extends State<MoodPage> {
   }
 
   Future<void> _loadUserName() async {
-    final String? storedName = await UserProfileService.instance.getNickname();
+    final bool isLoggedIn = await UserProfileService.instance.isLoggedIn();
+    final String? storedName =
+        isLoggedIn ? await UserProfileService.instance.getNickname() : null;
     if (!mounted) return;
     setState(() {
-      _userName = (storedName?.trim().isNotEmpty ?? false)
-          ? storedName!.trim()
-          : 'Friend';
+      final bool hasName = storedName?.trim().isNotEmpty ?? false;
+      _userName = (isLoggedIn && hasName) ? storedName!.trim() : 'Friend';
     });
   }
 

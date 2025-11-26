@@ -12,8 +12,19 @@ class UserProfileService {
   final String _courseKey = 'course';
   final String _yearKey = 'year_of_study';
   final String _firstRunKey = 'is_first_run';
+  final String _loggedInKey = 'is_logged_in';
   final String _themeKey = 'app_theme';
   final String _reminderTimeKey = 'daily_reminder_time';
+
+  Future<bool> isLoggedIn() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_loggedInKey) ?? false;
+  }
+
+  Future<void> setLoggedIn(bool loggedIn) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_loggedInKey, loggedIn);
+  }
 
   Future<String?> getNickname() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();

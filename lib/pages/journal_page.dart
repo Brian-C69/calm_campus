@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../services/login_nudge_service.dart';
+import '../services/user_profile_service.dart';
 
 class JournalPage extends StatefulWidget {
   const JournalPage({super.key});
@@ -40,6 +41,9 @@ class _JournalPageState extends State<JournalPage> {
   }
 
   Future<void> _handleLoginPrompt() async {
+    final bool isLoggedIn = await UserProfileService.instance.isLoggedIn();
+    if (isLoggedIn) return;
+
     final LoginNudgeAction action = await LoginNudgeService.instance.maybePrompt(
       context,
       LoginNudgeTrigger.journalSave,

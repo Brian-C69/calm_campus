@@ -14,7 +14,7 @@ class DbService {
   static final DbService instance = DbService._();
 
   static const String _databaseName = 'calm_campus.db';
-  static const int _databaseVersion = 3;
+  static const int _databaseVersion = 4;
 
   static const String _moodsTable = 'moods';
   static const String _classesTable = 'classes';
@@ -47,6 +47,12 @@ class DbService {
 
       if (oldVersion < 3) {
         await _createJournalTable(db);
+      }
+
+      if (oldVersion < 4) {
+        await db.execute(
+          'ALTER TABLE $_tasksTable ADD COLUMN createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP',
+        );
       }
     });
 
@@ -89,7 +95,8 @@ class DbService {
         subject TEXT NOT NULL,
         dueDate TEXT NOT NULL,
         status TEXT NOT NULL,
-        priority TEXT NOT NULL
+        priority TEXT NOT NULL,
+        createdAt TEXT NOT NULL
       )
     ''');
   }
@@ -247,6 +254,16 @@ class DbService {
       where: 'dueDate >= ? AND dueDate < ?',
       whereArgs: [startOfDay.toIso8601String(), endOfDay.toIso8601String()],
       orderBy: 'dueDate ASC',
+    );
+
+    return maps.map(Task.fromMap).toList();
+  }
+
+  Future<List<Task>> getAllTasks() async {
+    final Database db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      _tasksTable,
+      orderBy: 'createdAt ASC',
     );
 
     return maps.map(Task.fromMap).toList();

@@ -3,6 +3,7 @@ import 'dart:collection';
 import 'package:flutter/material.dart';
 
 import '../models/task.dart';
+import '../services/db_service.dart';
 
 class TasksPage extends StatefulWidget {
   const TasksPage({super.key});
@@ -15,32 +16,17 @@ enum _TaskFilter { all, today, week, completed }
 enum _TaskSort { custom, newestFirst, oldestFirst, urgency }
 
 class _TasksPageState extends State<TasksPage> {
-  final List<Task> _tasks = [
-    Task(
-      title: 'Read chapter 5',
-      subject: 'Psychology',
-      dueDate: DateTime.now().add(const Duration(days: 1)),
-      priority: TaskPriority.medium,
-      createdAt: DateTime.now().subtract(const Duration(hours: 6)),
-    ),
-    Task(
-      title: 'Revise lecture notes',
-      subject: 'Algorithms',
-      dueDate: DateTime.now().add(const Duration(days: 3)),
-      priority: TaskPriority.high,
-      createdAt: DateTime.now().subtract(const Duration(hours: 3)),
-    ),
-    Task(
-      title: 'Submit design sketch',
-      subject: 'Design Lab',
-      dueDate: DateTime.now().add(const Duration(days: 7)),
-      priority: TaskPriority.low,
-      createdAt: DateTime.now().subtract(const Duration(days: 1, hours: 2)),
-    ),
-  ];
+  final List<Task> _tasks = [];
+  bool _isLoading = true;
 
   _TaskFilter _selectedFilter = _TaskFilter.all;
   _TaskSort _selectedSort = _TaskSort.custom;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTasks();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -77,41 +63,43 @@ class _TasksPageState extends State<TasksPage> {
             ),
             const SizedBox(height: 12),
             Expanded(
-              child: filteredTasks.isEmpty
-                  ? _EmptyState(onAdd: _openTaskComposer)
-                  : _selectedSort == _TaskSort.custom
-                      ? ReorderableListView.builder(
-                          buildDefaultDragHandles: false,
-                          itemCount: filteredTasks.length,
-                          onReorder: (oldIndex, newIndex) =>
-                              _reorderTasks(filteredTasks, oldIndex, newIndex),
-                          itemBuilder: (context, index) {
-                            final task = filteredTasks[index];
-                            return ReorderableDelayedDragStartListener(
-                              key: ValueKey(task),
-                              index: index,
-                              child: Padding(
-                                padding: const EdgeInsets.only(bottom: 12),
-                                child: _TaskCard(
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : filteredTasks.isEmpty
+                      ? _EmptyState(onAdd: _openTaskComposer)
+                      : _selectedSort == _TaskSort.custom
+                          ? ReorderableListView.builder(
+                              buildDefaultDragHandles: false,
+                              itemCount: filteredTasks.length,
+                              onReorder: (oldIndex, newIndex) =>
+                                  _reorderTasks(filteredTasks, oldIndex, newIndex),
+                              itemBuilder: (context, index) {
+                                final task = filteredTasks[index];
+                                return ReorderableDelayedDragStartListener(
+                                  key: ValueKey(task),
+                                  index: index,
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(bottom: 12),
+                                    child: _TaskCard(
+                                      task: task,
+                                      onToggle: () => _toggleTask(task),
+                                      showDragHandle: true,
+                                    ),
+                                  ),
+                                );
+                              },
+                            )
+                          : ListView.separated(
+                              itemCount: filteredTasks.length,
+                              separatorBuilder: (_, __) => const SizedBox(height: 12),
+                              itemBuilder: (context, index) {
+                                final task = filteredTasks[index];
+                                return _TaskCard(
                                   task: task,
                                   onToggle: () => _toggleTask(task),
-                                  showDragHandle: true,
-                                ),
-                              ),
-                            );
-                          },
-                        )
-                      : ListView.separated(
-                          itemCount: filteredTasks.length,
-                          separatorBuilder: (_, __) => const SizedBox(height: 12),
-                          itemBuilder: (context, index) {
-                            final task = filteredTasks[index];
-                            return _TaskCard(
-                              task: task,
-                              onToggle: () => _toggleTask(task),
-                            );
-                          },
-                        ),
+                                );
+                              },
+                            ),
             ),
           ],
         ),
@@ -124,10 +112,29 @@ class _TasksPageState extends State<TasksPage> {
     );
   }
 
-  void _toggleTask(Task task) {
+  Future<void> _loadTasks() async {
+    final tasks = await DbService.instance.getAllTasks();
+    if (!mounted) return;
+
+    setState(() {
+      _tasks
+        ..clear()
+        ..addAll(tasks);
+      _isLoading = false;
+    });
+  }
+
+  Future<void> _toggleTask(Task task) async {
     final toggled = task.copyWith(
       status: task.status == TaskStatus.pending ? TaskStatus.done : TaskStatus.pending,
     );
+
+    if (task.id != null) {
+      await DbService.instance.updateTaskStatus(task.id!, toggled.status);
+    }
+
+    if (!mounted) return;
+
     setState(() {
       final index = _tasks.indexOf(task);
       if (index != -1) {
@@ -136,7 +143,16 @@ class _TasksPageState extends State<TasksPage> {
     });
   }
 
-  void _clearCompleted() {
+  Future<void> _clearCompleted() async {
+    final completed = _tasks.where((task) => task.status == TaskStatus.done).toList();
+
+    await Future.wait([
+      for (final task in completed)
+        if (task.id != null) DbService.instance.deleteTask(task.id!) else Future.value(0)
+    ]);
+
+    if (!mounted) return;
+
     setState(() {
       _tasks.removeWhere((task) => task.status == TaskStatus.done);
     });
@@ -229,11 +245,19 @@ class _TasksPageState extends State<TasksPage> {
     );
   }
 
-  void _addTask(Task task) {
+  Future<void> _addTask(Task task) async {
+    setState(() => _isLoading = true);
+    final id = await DbService.instance.insertTask(task);
+    final created = task.copyWith(id: id);
+
+    if (!mounted) return;
+
     setState(() {
-      _tasks.add(task);
+      _tasks.add(created);
       _selectedFilter = _TaskFilter.all;
+      _isLoading = false;
     });
+
     Navigator.of(context).pop();
   }
 }
@@ -544,6 +568,13 @@ class _TaskComposerState extends State<_TaskComposer> {
   TaskPriority _priority = TaskPriority.medium;
 
   @override
+  void initState() {
+    super.initState();
+    _titleController.addListener(_onTextChanged);
+    _subjectController.addListener(_onTextChanged);
+  }
+
+  @override
   void dispose() {
     _titleController.dispose();
     _subjectController.dispose();
@@ -603,10 +634,7 @@ class _TaskComposerState extends State<_TaskComposer> {
             ),
             const SizedBox(width: 8),
             FilledButton.icon(
-              onPressed: _titleController.text.isNotEmpty &&
-                      _subjectController.text.isNotEmpty
-                  ? _submit
-                  : null,
+              onPressed: _isValid ? _submit : null,
               icon: const Icon(Icons.check),
               label: const Text('Save'),
             ),
@@ -645,4 +673,11 @@ class _TaskComposerState extends State<_TaskComposer> {
   String _formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year}';
   }
+
+  void _onTextChanged() {
+    setState(() {});
+  }
+
+  bool get _isValid =>
+      _titleController.text.trim().isNotEmpty && _subjectController.text.trim().isNotEmpty;
 }

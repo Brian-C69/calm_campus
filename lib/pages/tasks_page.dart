@@ -1,49 +1,517 @@
 import 'package:flutter/material.dart';
 
-class TasksPage extends StatelessWidget {
+import '../models/task.dart';
+
+class TasksPage extends StatefulWidget {
   const TasksPage({super.key});
 
   @override
+  State<TasksPage> createState() => _TasksPageState();
+}
+
+enum _TaskFilter { all, today, week, completed }
+
+class _TasksPageState extends State<TasksPage> {
+  final List<Task> _tasks = [
+    Task(
+      title: 'Read chapter 5',
+      subject: 'Psychology',
+      dueDate: DateTime.now().add(const Duration(days: 1)),
+      priority: TaskPriority.medium,
+    ),
+    Task(
+      title: 'Revise lecture notes',
+      subject: 'Algorithms',
+      dueDate: DateTime.now().add(const Duration(days: 3)),
+      priority: TaskPriority.high,
+    ),
+    Task(
+      title: 'Submit design sketch',
+      subject: 'Design Lab',
+      dueDate: DateTime.now().add(const Duration(days: 7)),
+      priority: TaskPriority.low,
+    ),
+  ];
+
+  _TaskFilter _selectedFilter = _TaskFilter.all;
+
+  @override
   Widget build(BuildContext context) {
-    final tasks = [
-      _TaskCardData('Read chapter 5', 'Psychology', 'Due tomorrow'),
-      _TaskCardData('Revise lecture notes', 'Algorithms', 'Due Friday'),
-      _TaskCardData('Submit design sketch', 'Design Lab', 'Due next week'),
-    ];
+    final List<Task> filteredTasks = _filteredTasks();
+    final pendingCount = _tasks.where((task) => task.status == TaskStatus.pending).length;
+    final completedCount = _tasks.length - pendingCount;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Tasks')),
-      body: ListView.separated(
+      appBar: AppBar(
+        title: const Text('Tasks'),
+        actions: [
+          IconButton(
+            tooltip: 'Clear completed tasks',
+            onPressed: completedCount > 0 ? _clearCompleted : null,
+            icon: const Icon(Icons.clear_all),
+          ),
+        ],
+      ),
+      body: Padding(
         padding: const EdgeInsets.all(16),
-        itemCount: tasks.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 12),
-        itemBuilder: (context, index) {
-          final item = tasks[index];
-          return Card(
-            elevation: 0,
-            child: ListTile(
-              leading: const Icon(Icons.check_circle_outline),
-              title: Text(item.title),
-              subtitle: Text('${item.subject}\n${item.meta}'),
-              isThreeLine: true,
-              trailing: const Icon(Icons.chevron_right),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _TaskSummary(pendingCount: pendingCount, completedCount: completedCount),
+            const SizedBox(height: 12),
+            _FilterRow(
+              selected: _selectedFilter,
+              onSelected: (filter) => setState(() => _selectedFilter = filter),
             ),
-          );
-        },
+            const SizedBox(height: 12),
+            Expanded(
+              child: filteredTasks.isEmpty
+                  ? _EmptyState(onAdd: _openTaskComposer)
+                  : ListView.separated(
+                      itemCount: filteredTasks.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 12),
+                      itemBuilder: (context, index) {
+                        final task = filteredTasks[index];
+                        return _TaskCard(
+                          task: task,
+                          onToggle: () => _toggleTask(task),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {},
+        onPressed: _openTaskComposer,
         icon: const Icon(Icons.add_task),
         label: const Text('New task'),
       ),
     );
   }
+
+  void _toggleTask(Task task) {
+    final toggled = task.copyWith(
+      status: task.status == TaskStatus.pending ? TaskStatus.done : TaskStatus.pending,
+    );
+    setState(() {
+      final index = _tasks.indexOf(task);
+      if (index != -1) {
+        _tasks[index] = toggled;
+      }
+    });
+  }
+
+  void _clearCompleted() {
+    setState(() {
+      _tasks.removeWhere((task) => task.status == TaskStatus.done);
+    });
+  }
+
+  List<Task> _filteredTasks() {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final endOfWeek = today.add(Duration(days: DateTime.daysPerWeek - today.weekday));
+
+    switch (_selectedFilter) {
+      case _TaskFilter.today:
+        return _tasks
+            .where((task) => task.dueDate.year == today.year && task.dueDate.month == today.month && task.dueDate.day == today.day)
+            .toList();
+      case _TaskFilter.week:
+        return _tasks
+            .where((task) => !task.dueDate.isBefore(today) && !task.dueDate.isAfter(endOfWeek))
+            .toList();
+      case _TaskFilter.completed:
+        return _tasks.where((task) => task.status == TaskStatus.done).toList();
+      case _TaskFilter.all:
+      default:
+        return List.of(_tasks);
+    }
+  }
+
+  void _openTaskComposer() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+            left: 16,
+            right: 16,
+            top: 16,
+          ),
+          child: _TaskComposer(onSubmit: _addTask),
+        );
+      },
+    );
+  }
+
+  void _addTask(Task task) {
+    setState(() {
+      _tasks.add(task);
+      _selectedFilter = _TaskFilter.all;
+    });
+    Navigator.of(context).pop();
+  }
 }
 
-class _TaskCardData {
-  const _TaskCardData(this.title, this.subject, this.meta);
+class _TaskSummary extends StatelessWidget {
+  const _TaskSummary({required this.pendingCount, required this.completedCount});
 
-  final String title;
-  final String subject;
-  final String meta;
+  final int pendingCount;
+  final int completedCount;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Card(
+      color: colorScheme.surfaceContainerHigh,
+      elevation: 0,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Study planner', style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 4),
+                Text('Keep your tasks light and doable today.',
+                    style: Theme.of(context).textTheme.bodyMedium),
+              ],
+            ),
+            Column(
+              children: [
+                Text('$pendingCount pending',
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleSmall
+                        ?.copyWith(color: colorScheme.primary)),
+                Text('$completedCount done', style: Theme.of(context).textTheme.bodySmall),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _FilterRow extends StatelessWidget {
+  const _FilterRow({required this.selected, required this.onSelected});
+
+  final _TaskFilter selected;
+  final ValueChanged<_TaskFilter> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 8,
+      children: _TaskFilter.values
+          .map(
+            (filter) => FilterChip(
+              label: Text(_labelForFilter(filter)),
+              selected: selected == filter,
+              onSelected: (_) => onSelected(filter),
+            ),
+          )
+          .toList(),
+    );
+  }
+
+  String _labelForFilter(_TaskFilter filter) {
+    switch (filter) {
+      case _TaskFilter.today:
+        return 'Today';
+      case _TaskFilter.week:
+        return 'This week';
+      case _TaskFilter.completed:
+        return 'Completed';
+      case _TaskFilter.all:
+      default:
+        return 'All';
+    }
+  }
+}
+
+class _TaskCard extends StatelessWidget {
+  const _TaskCard({required this.task, required this.onToggle});
+
+  final Task task;
+  final VoidCallback onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final dueText = _dueText(task.dueDate);
+    final isOverdue = task.dueDate.isBefore(DateTime.now()) && task.status == TaskStatus.pending;
+
+    return Card(
+      elevation: 0,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Checkbox(
+              value: task.status == TaskStatus.done,
+              onChanged: (_) => onToggle(),
+              shape: const CircleBorder(),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          task.title,
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                decoration: task.status == TaskStatus.done
+                                    ? TextDecoration.lineThrough
+                                    : TextDecoration.none,
+                              ),
+                        ),
+                      ),
+                      _PriorityBadge(priority: task.priority),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(task.subject, style: Theme.of(context).textTheme.bodyMedium),
+                  const SizedBox(height: 4),
+                  Text(
+                    dueText,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: isOverdue ? colorScheme.error : colorScheme.onSurfaceVariant,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _dueText(DateTime dueDate) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final dueDay = DateTime(dueDate.year, dueDate.month, dueDate.day);
+
+    if (dueDay == today) return 'Due today';
+    if (dueDay.isBefore(today)) return 'Overdue - ${_formatDate(dueDate)}';
+    if (dueDay.difference(today).inDays == 1) return 'Due tomorrow';
+    return 'Due ${_formatDate(dueDate)}';
+  }
+
+  String _formatDate(DateTime date) {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
+    return '${months[date.month - 1]} ${date.day}';
+  }
+}
+
+class _PriorityBadge extends StatelessWidget {
+  const _PriorityBadge({required this.priority});
+
+  final TaskPriority priority;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    Color background;
+    Color foreground;
+
+    switch (priority) {
+      case TaskPriority.high:
+        background = colorScheme.errorContainer;
+        foreground = colorScheme.onErrorContainer;
+        break;
+      case TaskPriority.low:
+        background = colorScheme.tertiaryContainer;
+        foreground = colorScheme.onTertiaryContainer;
+        break;
+      case TaskPriority.medium:
+      default:
+        background = colorScheme.secondaryContainer;
+        foreground = colorScheme.onSecondaryContainer;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Text(
+        '${priority.name[0].toUpperCase()}${priority.name.substring(1)}',
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(color: foreground),
+      ),
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  const _EmptyState({required this.onAdd});
+
+  final VoidCallback onAdd;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.inbox, size: 48),
+          const SizedBox(height: 8),
+          Text('Nothing here yet', style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 4),
+          const Text('Add one gentle task to get started.'),
+          const SizedBox(height: 12),
+          ElevatedButton.icon(
+            onPressed: onAdd,
+            icon: const Icon(Icons.add),
+            label: const Text('Add a task'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TaskComposer extends StatefulWidget {
+  const _TaskComposer({required this.onSubmit});
+
+  final ValueChanged<Task> onSubmit;
+
+  @override
+  State<_TaskComposer> createState() => _TaskComposerState();
+}
+
+class _TaskComposerState extends State<_TaskComposer> {
+  final _titleController = TextEditingController();
+  final _subjectController = TextEditingController();
+  DateTime _selectedDate = DateTime.now();
+  TaskPriority _priority = TaskPriority.medium;
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _subjectController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('New task', style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _titleController,
+          decoration: const InputDecoration(labelText: 'Title'),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _subjectController,
+          decoration: const InputDecoration(labelText: 'Subject / module'),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: Text('Due: ${_formatDate(_selectedDate)}'),
+            ),
+            TextButton.icon(
+              onPressed: _pickDate,
+              icon: const Icon(Icons.calendar_today),
+              label: const Text('Pick date'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          children: TaskPriority.values
+              .map(
+                (priority) => ChoiceChip(
+                  label: Text(priority.name),
+                  selected: _priority == priority,
+                  onSelected: (_) => setState(() => _priority = priority),
+                ),
+              )
+              .toList(),
+        ),
+        const SizedBox(height: 16),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            const SizedBox(width: 8),
+            FilledButton.icon(
+              onPressed: _titleController.text.isNotEmpty &&
+                      _subjectController.text.isNotEmpty
+                  ? _submit
+                  : null,
+              icon: const Icon(Icons.check),
+              label: const Text('Save'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+      ],
+    );
+  }
+
+  Future<void> _pickDate() async {
+    final now = DateTime.now();
+    final selected = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: now.subtract(const Duration(days: 30)),
+      lastDate: now.add(const Duration(days: 365)),
+    );
+
+    if (selected != null) {
+      setState(() => _selectedDate = selected);
+    }
+  }
+
+  void _submit() {
+    final newTask = Task(
+      title: _titleController.text.trim(),
+      subject: _subjectController.text.trim(),
+      dueDate: _selectedDate,
+      priority: _priority,
+    );
+
+    widget.onSubmit(newTask);
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.day}/${date.month}/${date.year}';
+  }
 }

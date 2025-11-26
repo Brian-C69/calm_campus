@@ -1,3 +1,4 @@
+// lib/services/login_nudge_service.dart
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -27,9 +28,9 @@ class LoginNudgeService {
   };
 
   Future<LoginNudgeAction> maybePrompt(
-    BuildContext context,
-    LoginNudgeTrigger trigger,
-  ) async {
+      BuildContext context,
+      LoginNudgeTrigger trigger,
+      ) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     final String key = _preferenceKeys[trigger]!;
     final bool hasShown = prefs.getBool(key) ?? false;
@@ -40,12 +41,14 @@ class LoginNudgeService {
 
     await prefs.setBool(key, true);
 
-    return showModalBottomSheet<LoginNudgeAction>(
-          context: context,
-          isScrollControlled: true,
-          builder: (context) => _LoginPrompt(trigger: trigger),
-        ) ??
-        LoginNudgeAction.continueAsGuest;
+    // FIX: await the Future, then null-coalesce the nullable result
+    final action = await showModalBottomSheet<LoginNudgeAction>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => _LoginPrompt(trigger: trigger),
+    );
+
+    return action ?? LoginNudgeAction.continueAsGuest;
   }
 }
 

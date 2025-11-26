@@ -248,9 +248,9 @@ class _TimetablePageState extends State<TimetablePage> {
       },
     );
 
-    courseCodeController.dispose();
-    venueController.dispose();
-    lecturerController.dispose();
+    //courseCodeController.dispose();
+    //venueController.dispose();
+    //lecturerController.dispose();
   }
 
   List<Widget> _buildClassSections() {

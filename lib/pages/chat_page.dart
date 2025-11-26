@@ -21,11 +21,8 @@ class _ChatPageState extends State<ChatPage> {
 
     if (!mounted) return;
     if (action == LoginNudgeAction.loginSelected) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Login is optional unless you enable campus integrations or sync.'),
-        ),
-      );
+      await Navigator.pushNamed(context, '/auth');
+      if (!mounted) return;
     }
 
     // Allow customization even as guest.

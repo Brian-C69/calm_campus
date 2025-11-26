@@ -47,7 +47,8 @@ class _JournalPageState extends State<JournalPage> {
 
     if (!mounted) return;
     if (action == LoginNudgeAction.loginSelected) {
-      _showMessage('Login stays optional unless you choose cloud sync or campus sharing.');
+      await Navigator.pushNamed(context, '/auth');
+      if (!mounted) return;
     }
   }
 

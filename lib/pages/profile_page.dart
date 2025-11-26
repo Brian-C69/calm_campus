@@ -97,82 +97,85 @@ class _ProfilePageState extends State<ProfilePage> {
             );
           }
 
-          return Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Card(
-                  elevation: 0,
-                  color: theme.colorScheme.surfaceContainerHighest,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      children: [
-                        CircleAvatar(
-                          radius: 32,
-                          backgroundColor: theme.colorScheme.primaryContainer,
-                          child: Text(
-                            profile.initials,
-                            style: theme.textTheme.headlineSmall?.copyWith(
-                              color: theme.colorScheme.onPrimaryContainer,
+          return SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Card(
+                    elevation: 0,
+                    color: theme.colorScheme.surfaceContainerHighest,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        children: [
+                          CircleAvatar(
+                            radius: 32,
+                            backgroundColor: theme.colorScheme.primaryContainer,
+                            child: Text(
+                              profile.initials,
+                              style: theme.textTheme.headlineSmall?.copyWith(
+                                color: theme.colorScheme.onPrimaryContainer,
+                              ),
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          profile.nickname ?? 'Add your nickname in settings',
-                          style: theme.textTheme.titleLarge,
-                        ),
-                        Text(
-                          profile.course ?? 'Course not set',
-                          style: theme.textTheme.bodyMedium,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          profile.yearOfStudy != null
-                              ? 'Year ${profile.yearOfStudy}'
-                              : 'Year not set',
-                          style: theme.textTheme.bodyMedium,
-                        ),
-                      ],
+                          const SizedBox(height: 12),
+                          Text(
+                            profile.nickname ?? 'Add your nickname in settings',
+                            style: theme.textTheme.titleLarge,
+                          ),
+                          Text(
+                            profile.course ?? 'Course not set',
+                            style: theme.textTheme.bodyMedium,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            profile.yearOfStudy != null
+                                ? 'Year ${profile.yearOfStudy}'
+                                : 'Year not set',
+                            style: theme.textTheme.bodyMedium,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 16),
-                Card(
-                  elevation: 0,
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Overview',
-                          style: theme.textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 8),
-                        ListTile(
-                          leading: const Icon(Icons.email_outlined),
-                          title: const Text('Contact preferences'),
-                          subtitle: const Text('Add your course email later'),
-                        ),
-                        ListTile(
-                          leading: const Icon(Icons.schedule_outlined),
-                          title: const Text('Daily reminder'),
-                          subtitle: const Text('Manage reminder time in settings'),
-                        ),
-                      ],
+                  const SizedBox(height: 16),
+                  Card(
+                    elevation: 0,
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Overview',
+                            style: theme.textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: 8),
+                          ListTile(
+                            leading: const Icon(Icons.email_outlined),
+                            title: const Text('Contact preferences'),
+                            subtitle: const Text('Add your course email later'),
+                          ),
+                          ListTile(
+                            leading: const Icon(Icons.schedule_outlined),
+                            title: const Text('Daily reminder'),
+                            subtitle: const Text('Manage reminder time in settings'),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                const Spacer(),
-                FilledButton.icon(
-                  onPressed: _openSettings,
-                  icon: const Icon(Icons.settings),
-                  label: const Text('Open Settings'),
-                ),
-              ],
+                  const Spacer(),
+                  FilledButton.icon(
+                    onPressed: _openSettings,
+                    icon: const Icon(Icons.settings),
+                    label: const Text('Open Settings'),
+                  ),
+                ],
+              ),
             ),
           );
         },

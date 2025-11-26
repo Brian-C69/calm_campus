@@ -6,6 +6,8 @@ class ClassEntry {
     required this.startTime,
     required this.endTime,
     required this.location,
+    required this.classType,
+    required this.lecturer,
   });
 
   final int? id;
@@ -14,6 +16,8 @@ class ClassEntry {
   final String startTime;
   final String endTime;
   final String location;
+  final String classType;
+  final String lecturer;
 
   ClassEntry copyWith({
     int? id,
@@ -22,6 +26,8 @@ class ClassEntry {
     String? startTime,
     String? endTime,
     String? location,
+    String? classType,
+    String? lecturer,
   }) {
     return ClassEntry(
       id: id ?? this.id,
@@ -30,6 +36,8 @@ class ClassEntry {
       startTime: startTime ?? this.startTime,
       endTime: endTime ?? this.endTime,
       location: location ?? this.location,
+      classType: classType ?? this.classType,
+      lecturer: lecturer ?? this.lecturer,
     );
   }
 
@@ -41,6 +49,8 @@ class ClassEntry {
       'startTime': startTime,
       'endTime': endTime,
       'location': location,
+      'classType': classType,
+      'lecturer': lecturer,
     };
   }
 
@@ -52,6 +62,8 @@ class ClassEntry {
       startTime: map['startTime'] as String,
       endTime: map['endTime'] as String,
       location: map['location'] as String,
+      classType: map['classType'] as String? ?? '',
+      lecturer: map['lecturer'] as String? ?? '',
     );
   }
 }

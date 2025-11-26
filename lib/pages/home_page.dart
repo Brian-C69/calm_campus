@@ -11,17 +11,23 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   late Future<String?> _nicknameFuture;
+  late Future<bool> _isLoggedInFuture;
   bool _showCheckInReminder = true;
 
   @override
   void initState() {
     super.initState();
     _nicknameFuture = _loadNickname();
+    _isLoggedInFuture = _loadLoginState();
   }
 
   Future<String?> _loadNickname() async {
     final nickname = await UserProfileService.instance.getNickname();
     return nickname == null || nickname.trim().isEmpty ? null : nickname.trim();
+  }
+
+  Future<bool> _loadLoginState() {
+    return UserProfileService.instance.isLoggedIn();
   }
 
   @override
@@ -44,10 +50,25 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         title: const Text('CalmCampus'),
         actions: [
-          TextButton.icon(
-            onPressed: () => Navigator.pushNamed(context, '/auth'),
-            icon: const Icon(Icons.login),
-            label: const Text('Log in'),
+          FutureBuilder<bool>(
+            future: _isLoggedInFuture,
+            builder: (context, snapshot) {
+              final isLoggedIn = snapshot.data ?? false;
+
+              if (isLoggedIn) {
+                return IconButton(
+                  onPressed: () => Navigator.pushNamed(context, '/profile'),
+                  tooltip: 'View profile',
+                  icon: const Icon(Icons.verified_user),
+                );
+              }
+
+              return TextButton.icon(
+                onPressed: () => Navigator.pushNamed(context, '/auth'),
+                icon: const Icon(Icons.login),
+                label: const Text('Log in'),
+              );
+            },
           ),
         ],
       ),

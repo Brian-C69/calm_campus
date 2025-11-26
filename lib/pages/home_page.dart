@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../services/user_profile_service.dart';
+
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -8,7 +10,19 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  late Future<String?> _nicknameFuture;
   bool _showCheckInReminder = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _nicknameFuture = _loadNickname();
+  }
+
+  Future<String?> _loadNickname() async {
+    final nickname = await UserProfileService.instance.getNickname();
+    return nickname == null || nickname.trim().isEmpty ? null : nickname.trim();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,9 +61,19 @@ class _HomePageState extends State<HomePage> {
                 onDismiss: () => setState(() => _showCheckInReminder = false),
               ),
             if (_showCheckInReminder) const SizedBox(height: 12),
-            Text(
-              'Welcome back',
-              style: Theme.of(context).textTheme.titleLarge,
+            FutureBuilder<String?>(
+              future: _nicknameFuture,
+              builder: (context, snapshot) {
+                final nickname = snapshot.data;
+                final greeting = nickname != null
+                    ? 'Welcome back, $nickname'
+                    : 'Welcome back';
+
+                return Text(
+                  greeting,
+                  style: Theme.of(context).textTheme.titleLarge,
+                );
+              },
             ),
             const SizedBox(height: 12),
             Text(

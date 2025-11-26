@@ -1,3 +1,5 @@
+import 'dart:collection';
+
 import 'package:flutter/material.dart';
 
 import '../models/task.dart';
@@ -10,6 +12,7 @@ class TasksPage extends StatefulWidget {
 }
 
 enum _TaskFilter { all, today, week, completed }
+enum _TaskSort { custom, newestFirst, oldestFirst, urgency }
 
 class _TasksPageState extends State<TasksPage> {
   final List<Task> _tasks = [
@@ -18,22 +21,26 @@ class _TasksPageState extends State<TasksPage> {
       subject: 'Psychology',
       dueDate: DateTime.now().add(const Duration(days: 1)),
       priority: TaskPriority.medium,
+      createdAt: DateTime.now().subtract(const Duration(hours: 6)),
     ),
     Task(
       title: 'Revise lecture notes',
       subject: 'Algorithms',
       dueDate: DateTime.now().add(const Duration(days: 3)),
       priority: TaskPriority.high,
+      createdAt: DateTime.now().subtract(const Duration(hours: 3)),
     ),
     Task(
       title: 'Submit design sketch',
       subject: 'Design Lab',
       dueDate: DateTime.now().add(const Duration(days: 7)),
       priority: TaskPriority.low,
+      createdAt: DateTime.now().subtract(const Duration(days: 1, hours: 2)),
     ),
   ];
 
   _TaskFilter _selectedFilter = _TaskFilter.all;
+  _TaskSort _selectedSort = _TaskSort.custom;
 
   @override
   Widget build(BuildContext context) {
@@ -64,20 +71,47 @@ class _TasksPageState extends State<TasksPage> {
               onSelected: (filter) => setState(() => _selectedFilter = filter),
             ),
             const SizedBox(height: 12),
+            _SortRow(
+              selected: _selectedSort,
+              onSelected: (sort) => setState(() => _selectedSort = sort),
+            ),
+            const SizedBox(height: 12),
             Expanded(
               child: filteredTasks.isEmpty
                   ? _EmptyState(onAdd: _openTaskComposer)
-                  : ListView.separated(
-                      itemCount: filteredTasks.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 12),
-                      itemBuilder: (context, index) {
-                        final task = filteredTasks[index];
-                        return _TaskCard(
-                          task: task,
-                          onToggle: () => _toggleTask(task),
-                        );
-                      },
-                    ),
+                  : _selectedSort == _TaskSort.custom
+                      ? ReorderableListView.builder(
+                          buildDefaultDragHandles: false,
+                          itemCount: filteredTasks.length,
+                          onReorder: (oldIndex, newIndex) =>
+                              _reorderTasks(filteredTasks, oldIndex, newIndex),
+                          itemBuilder: (context, index) {
+                            final task = filteredTasks[index];
+                            return ReorderableDelayedDragStartListener(
+                              key: ValueKey(task),
+                              index: index,
+                              child: Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: _TaskCard(
+                                  task: task,
+                                  onToggle: () => _toggleTask(task),
+                                  showDragHandle: true,
+                                ),
+                              ),
+                            );
+                          },
+                        )
+                      : ListView.separated(
+                          itemCount: filteredTasks.length,
+                          separatorBuilder: (_, __) => const SizedBox(height: 12),
+                          itemBuilder: (context, index) {
+                            final task = filteredTasks[index];
+                            return _TaskCard(
+                              task: task,
+                              onToggle: () => _toggleTask(task),
+                            );
+                          },
+                        ),
             ),
           ],
         ),
@@ -113,21 +147,63 @@ class _TasksPageState extends State<TasksPage> {
     final today = DateTime(now.year, now.month, now.day);
     final endOfWeek = today.add(Duration(days: DateTime.daysPerWeek - today.weekday));
 
-    switch (_selectedFilter) {
-      case _TaskFilter.today:
-        return _tasks
-            .where((task) => task.dueDate.year == today.year && task.dueDate.month == today.month && task.dueDate.day == today.day)
-            .toList();
-      case _TaskFilter.week:
-        return _tasks
-            .where((task) => !task.dueDate.isBefore(today) && !task.dueDate.isAfter(endOfWeek))
-            .toList();
-      case _TaskFilter.completed:
-        return _tasks.where((task) => task.status == TaskStatus.done).toList();
-      case _TaskFilter.all:
-      default:
-        return List.of(_tasks);
+    final filtered = switch (_selectedFilter) {
+      _TaskFilter.today => _tasks
+          .where((task) => task.dueDate.year == today.year && task.dueDate.month == today.month && task.dueDate.day == today.day)
+          .toList(),
+      _TaskFilter.week =>
+          _tasks.where((task) => !task.dueDate.isBefore(today) && !task.dueDate.isAfter(endOfWeek)).toList(),
+      _TaskFilter.completed => _tasks.where((task) => task.status == TaskStatus.done).toList(),
+      _TaskFilter.all => List.of(_tasks),
+    };
+
+    return _applySorting(filtered);
+  }
+
+  List<Task> _applySorting(List<Task> tasks) {
+    final sorted = List<Task>.of(tasks);
+
+    switch (_selectedSort) {
+      case _TaskSort.newestFirst:
+        sorted.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        break;
+      case _TaskSort.oldestFirst:
+        sorted.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+        break;
+      case _TaskSort.urgency:
+        sorted.sort((a, b) {
+          final priorityOrder = b.priority.index.compareTo(a.priority.index);
+          if (priorityOrder != 0) return priorityOrder;
+          return a.dueDate.compareTo(b.dueDate);
+        });
+        break;
+      case _TaskSort.custom:
+        break;
     }
+
+    return sorted;
+  }
+
+  void _reorderTasks(List<Task> visibleTasks, int oldIndex, int newIndex) {
+    setState(() {
+      if (newIndex > oldIndex) newIndex -= 1;
+
+      final updatedVisible = List<Task>.of(visibleTasks);
+      final movedTask = updatedVisible.removeAt(oldIndex);
+      updatedVisible.insert(newIndex, movedTask);
+
+      final queue = Queue<Task>.from(updatedVisible);
+      final reordered = _tasks.map((task) {
+        if (visibleTasks.contains(task)) {
+          return queue.removeFirst();
+        }
+        return task;
+      }).toList();
+
+      _tasks
+        ..clear()
+        ..addAll(reordered);
+    });
   }
 
   void _openTaskComposer() {
@@ -135,14 +211,19 @@ class _TasksPageState extends State<TasksPage> {
       context: context,
       isScrollControlled: true,
       builder: (context) {
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
-            left: 16,
-            right: 16,
-            top: 16,
+        final insets = MediaQuery.of(context).viewInsets.bottom;
+        final safeBottom = MediaQuery.of(context).padding.bottom;
+
+        return SafeArea(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.only(
+              bottom: insets + safeBottom + 24,
+              left: 16,
+              right: 16,
+              top: 16,
+            ),
+            child: _TaskComposer(onSubmit: _addTask),
           ),
-          child: _TaskComposer(onSubmit: _addTask),
         );
       },
     );
@@ -237,11 +318,54 @@ class _FilterRow extends StatelessWidget {
   }
 }
 
+class _SortRow extends StatelessWidget {
+  const _SortRow({required this.selected, required this.onSelected});
+
+  final _TaskSort selected;
+  final ValueChanged<_TaskSort> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(Icons.sort, size: 18),
+            const SizedBox(width: 6),
+            Text('Sort tasks', style: Theme.of(context).textTheme.labelLarge),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Wrap(
+          spacing: 8,
+          runSpacing: 6,
+          children: [
+            _buildChip('Custom order', _TaskSort.custom),
+            _buildChip('Newest first', _TaskSort.newestFirst),
+            _buildChip('Oldest first', _TaskSort.oldestFirst),
+            _buildChip('Urgency', _TaskSort.urgency),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildChip(String label, _TaskSort sort) {
+    return ChoiceChip(
+      label: Text(label),
+      selected: selected == sort,
+      onSelected: (_) => onSelected(sort),
+    );
+  }
+}
+
 class _TaskCard extends StatelessWidget {
-  const _TaskCard({required this.task, required this.onToggle});
+  const _TaskCard({required this.task, required this.onToggle, this.showDragHandle = false});
 
   final Task task;
   final VoidCallback onToggle;
+  final bool showDragHandle;
 
   @override
   Widget build(BuildContext context) {
@@ -275,10 +399,17 @@ class _TaskCard extends StatelessWidget {
                                 decoration: task.status == TaskStatus.done
                                     ? TextDecoration.lineThrough
                                     : TextDecoration.none,
-                              ),
+                            ),
                         ),
                       ),
                       _PriorityBadge(priority: task.priority),
+                      if (showDragHandle) ...[
+                        const SizedBox(width: 6),
+                        Icon(
+                          Icons.drag_indicator_rounded,
+                          color: colorScheme.outline,
+                        ),
+                      ],
                     ],
                   ),
                   const SizedBox(height: 4),

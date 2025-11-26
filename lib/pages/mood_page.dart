@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/mood_entry.dart';
 import '../services/db_service.dart';
 import '../services/login_nudge_service.dart';
+import '../services/user_profile_service.dart';
 
 class MoodOption {
   const MoodOption({
@@ -24,7 +25,6 @@ class MoodPage extends StatefulWidget {
 }
 
 class _MoodPageState extends State<MoodPage> {
-  final TextEditingController _nameController = TextEditingController();
   final TextEditingController _noteController = TextEditingController();
   final List<MoodOption> _moodOptions = const [
     MoodOption(label: 'Happy', emoji: '😊', level: MoodLevel.happy),
@@ -42,13 +42,30 @@ class _MoodPageState extends State<MoodPage> {
   ];
 
   MoodLevel? _selectedMood;
+  String _userName = 'Friend';
   bool _isSaving = false;
+  bool _hasPromptedForLogin = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserName();
+  }
 
   @override
   void dispose() {
-    _nameController.dispose();
     _noteController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadUserName() async {
+    final String? storedName = await UserProfileService.instance.getNickname();
+    if (!mounted) return;
+    setState(() {
+      _userName = (storedName?.trim().isNotEmpty ?? false)
+          ? storedName!.trim()
+          : 'Friend';
+    });
   }
 
   String get _timeGreeting {
@@ -58,13 +75,7 @@ class _MoodPageState extends State<MoodPage> {
     return 'Good Night';
   }
 
-  bool get _hasName => _nameController.text.trim().isNotEmpty;
-
   Future<void> _saveMood() async {
-    if (!_hasName) {
-      _showMessage('Please share your name first.');
-      return;
-    }
     if (_selectedMood == null) {
       _showMessage('Please choose how you feel today.');
       return;
@@ -89,13 +100,11 @@ class _MoodPageState extends State<MoodPage> {
       _selectedMood = null;
     });
     _noteController.clear();
-    _showMessage('Thanks, ${_nameController.text.trim()}! Your check-in is saved.');
-
-    await _handleLoginNudge();
+    _showMessage('Thanks, $_userName! Your check-in is saved.');
   }
 
   Future<void> _handleLoginNudge() async {
-    if (!mounted) return;
+    if (!mounted || _hasPromptedForLogin) return;
 
     final LoginNudgeAction action = await LoginNudgeService.instance.maybePrompt(
       context,
@@ -103,13 +112,17 @@ class _MoodPageState extends State<MoodPage> {
     );
 
     if (!mounted) return;
+    setState(() {
+      _hasPromptedForLogin = true;
+    });
+
     if (action == LoginNudgeAction.loginSelected) {
       _showMessage('Login is only required for sharing or cloud sync. You can stay as a guest for now.');
     }
   }
 
   String _buildNoteWithName() {
-    final String name = _nameController.text.trim();
+    final String name = _userName.trim();
     final String note = _noteController.text.trim();
     if (note.isEmpty) return 'Check-in by $name';
     return '$note — $name';
@@ -134,24 +147,13 @@ class _MoodPageState extends State<MoodPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '$_timeGreeting!',
+                '$_timeGreeting, $_userName!',
                 style: textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 4),
               Text(
-                'Let\'s start with your name before we check in on your mood.',
+                'We\'ll personalise this check-in using your saved name.',
                 style: textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'What should we call you?',
-                  hintText: 'Enter your name',
-                  border: OutlineInputBorder(),
-                ),
-                textInputAction: TextInputAction.next,
-                onChanged: (_) => setState(() {}),
               ),
               const SizedBox(height: 24),
               Text(
@@ -160,9 +162,7 @@ class _MoodPageState extends State<MoodPage> {
               ),
               const SizedBox(height: 8),
               Text(
-                _hasName
-                    ? 'Tap the option that matches your mood.'
-                    : 'Share your name above to unlock today\'s moods.',
+                'Tap the option that matches your mood.',
                 style: textTheme.bodyMedium?.copyWith(color: Colors.grey[700]),
               ),
               const SizedBox(height: 12),
@@ -171,28 +171,24 @@ class _MoodPageState extends State<MoodPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      IgnorePointer(
-                        ignoring: !_hasName,
-                        child: Opacity(
-                          opacity: _hasName ? 1 : 0.5,
-                          child: Wrap(
-                            spacing: 12,
-                            runSpacing: 12,
-                            children: _moodOptions
-                                .map(
-                                  (option) => ChoiceChip(
-                                    label: Text('${option.emoji} ${option.label}'),
-                                    selected: _selectedMood == option.level,
-                                    onSelected: (_) {
-                                      setState(() {
-                                        _selectedMood = option.level;
-                                      });
-                                    },
-                                  ),
-                                )
-                                .toList(),
-                          ),
-                        ),
+                      Wrap(
+                        spacing: 12,
+                        runSpacing: 12,
+                        children: _moodOptions
+                            .map(
+                              (option) => ChoiceChip(
+                                label: Text('${option.emoji} ${option.label}'),
+                                selected: _selectedMood == option.level,
+                                onSelected: (_) async {
+                                  await _handleLoginNudge();
+                                  if (!mounted) return;
+                                  setState(() {
+                                    _selectedMood = option.level;
+                                  });
+                                },
+                              ),
+                            )
+                            .toList(),
                       ),
                       const SizedBox(height: 20),
                       TextField(

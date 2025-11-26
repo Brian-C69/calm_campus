@@ -16,6 +16,7 @@ class _HomePageState extends State<HomePage> {
       _HomeRouteInfo('Mood Check-in', Icons.favorite, '/mood'),
       _HomeRouteInfo('Mood History', Icons.timeline, '/history'),
       _HomeRouteInfo('Journal', Icons.menu_book, '/journal'),
+      _HomeRouteInfo('My Profile', Icons.person, '/profile'),
       _HomeRouteInfo('Timetable', Icons.schedule, '/timetable'),
       _HomeRouteInfo('Tasks', Icons.checklist, '/tasks'),
       _HomeRouteInfo('AI Buddy', Icons.chat, '/chat'),

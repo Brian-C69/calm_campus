@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'pages/chat_page.dart';
+import 'pages/auth_page.dart';
 import 'pages/common_challenges_page.dart';
 import 'pages/dsa_summary_page.dart';
 import 'pages/help_now_page.dart';
@@ -27,8 +28,9 @@ class MyApp extends StatelessWidget {
         colorSchemeSeed: Colors.teal,
         useMaterial3: true,
       ),
-      initialRoute: '/home',
+      initialRoute: '/auth',
       routes: {
+        '/auth': (_) => const AuthPage(),
         '/home': (_) => const MainNavigation(),
         '/mood': (_) => const MoodPage(),
         '/history': (_) => const HistoryPage(),

@@ -47,11 +47,7 @@ class _AuthPageState extends State<AuthPage> {
       ),
     );
 
-    if (Navigator.of(context).canPop()) {
-      Navigator.of(context).pop();
-    } else {
-      Navigator.of(context).pushReplacementNamed('/home');
-    }
+    Navigator.of(context).pushReplacementNamed('/home');
   }
 
   @override

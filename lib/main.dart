@@ -28,7 +28,7 @@ class MyApp extends StatelessWidget {
         colorSchemeSeed: Colors.teal,
         useMaterial3: true,
       ),
-      initialRoute: '/home',
+      initialRoute: '/auth',
       routes: {
         '/auth': (_) => const AuthPage(),
         '/home': (_) => const MainNavigation(),

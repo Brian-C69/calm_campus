@@ -71,6 +71,14 @@ class _TimetablePageState extends State<TimetablePage> {
     });
   }
 
+  Future<void> _loadClasses() async {
+    final classes = await DbService.instance.getAllClasses();
+    if (!mounted) return;
+    setState(() {
+      _classes = classes;
+    });
+  }
+
   String _dayLabel(int day) =>
       _dayNames[((day - 1).clamp(0, _dayNames.length - 1)).toInt()];
 

@@ -84,7 +84,7 @@ class _JournalPageState extends State<JournalPage> {
     if (!mounted) return false;
     if (action == LoginNudgeAction.loginSelected) {
       await Navigator.pushNamed(context, '/auth');
-      if (!mounted) return;
+      if (!mounted) return _isLoggedIn;
       final bool refreshedLogin = await UserProfileService.instance.isLoggedIn();
       setState(() => _isLoggedIn = refreshedLogin);
       if (refreshedLogin) {

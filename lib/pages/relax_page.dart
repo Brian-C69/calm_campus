@@ -184,12 +184,14 @@ class _RelaxPageState extends State<RelaxPage> {
 
   @override
   Widget build(BuildContext context) {
+    final safeBottom = MediaQuery.of(context).padding.bottom;
+
     return Scaffold(
       appBar: AppBar(title: const Text('Relax & Meditations')),
       body: Stack(
         children: [
           ListView(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 220),
+            padding: EdgeInsets.fromLTRB(16, 16, 16, 220 + safeBottom),
             children: [
               const Text(
                 'Layer a calming ambient bed with a short guided focus session. '
@@ -228,7 +230,7 @@ class _RelaxPageState extends State<RelaxPage> {
           Positioned(
             left: 16,
             right: 16,
-            bottom: 16,
+            bottom: 16 + safeBottom,
             child: _buildFloatingPlayer(),
           ),
         ],

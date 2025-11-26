@@ -141,7 +141,16 @@ class _MoodPageState extends State<MoodPage> {
     final TextTheme textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Mood Check-in')),
+      appBar: AppBar(
+        title: const Text('Mood Check-in'),
+        actions: [
+          IconButton(
+            tooltip: 'View mood history',
+            onPressed: () => Navigator.pushNamed(context, '/history'),
+            icon: const Icon(Icons.timeline),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16),

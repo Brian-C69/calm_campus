@@ -1,4 +1,7 @@
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+enum AppThemeMode { system, light, dark }
 
 class UserProfileService {
   UserProfileService._();
@@ -6,6 +9,11 @@ class UserProfileService {
   static final UserProfileService instance = UserProfileService._();
 
   final String _nicknameKey = 'nickname';
+  final String _courseKey = 'course';
+  final String _yearKey = 'year_of_study';
+  final String _firstRunKey = 'is_first_run';
+  final String _themeKey = 'app_theme';
+  final String _reminderTimeKey = 'daily_reminder_time';
 
   Future<String?> getNickname() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -15,5 +23,71 @@ class UserProfileService {
   Future<void> saveNickname(String nickname) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString(_nicknameKey, nickname.trim());
+  }
+
+  Future<bool> isFirstRun() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_firstRunKey) ?? true;
+  }
+
+  Future<void> completeFirstRun() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_firstRunKey, false);
+  }
+
+  Future<void> saveCourse(String course) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_courseKey, course.trim());
+  }
+
+  Future<String?> getCourse() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_courseKey);
+  }
+
+  Future<void> saveYearOfStudy(int year) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_yearKey, year);
+  }
+
+  Future<int?> getYearOfStudy() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getInt(_yearKey);
+  }
+
+  Future<void> saveTheme(AppThemeMode theme) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_themeKey, theme.name);
+  }
+
+  Future<AppThemeMode> getTheme() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final String? stored = prefs.getString(_themeKey);
+    if (stored == null) return AppThemeMode.system;
+    return AppThemeMode.values.byName(stored);
+  }
+
+  Future<void> saveDailyReminderTime(TimeOfDay time) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final String formatted = '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+    await prefs.setString(_reminderTimeKey, formatted);
+  }
+
+  Future<TimeOfDay?> getDailyReminderTime() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final String? stored = prefs.getString(_reminderTimeKey);
+    if (stored == null || !stored.contains(':')) return null;
+
+    final parts = stored.split(':');
+    final int? hour = int.tryParse(parts[0]);
+    final int? minute = int.tryParse(parts[1]);
+    if (hour == null || minute == null) return null;
+
+    return TimeOfDay(hour: hour, minute: minute);
+  }
+
+  Future<void> clearDailyReminderTime() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_reminderTimeKey);
   }
 }

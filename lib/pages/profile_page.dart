@@ -49,6 +49,20 @@ class _ProfilePageState extends State<ProfilePage> {
     });
   }
 
+  Future<void> _logout() async {
+    await UserProfileService.instance.setLoggedIn(false);
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('You have been logged out.')),
+    );
+
+    setState(() {
+      _profileFuture = _loadProfile();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -173,6 +187,12 @@ class _ProfilePageState extends State<ProfilePage> {
                     onPressed: _openSettings,
                     icon: const Icon(Icons.settings),
                     label: const Text('Open Settings'),
+                  ),
+                  const SizedBox(height: 8),
+                  OutlinedButton.icon(
+                    onPressed: _logout,
+                    icon: const Icon(Icons.logout),
+                    label: const Text('Log out'),
                   ),
                 ],
               ),

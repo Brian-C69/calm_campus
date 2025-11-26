@@ -41,6 +41,9 @@ class _AuthPageState extends State<AuthPage> {
 
     final friendlyAction = _isLogin ? 'signed in' : 'signed up';
 
+    if (!_isLogin) {
+      await UserProfileService.instance.saveNickname(_nameController.text);
+    }
     await UserProfileService.instance.setLoggedIn(true);
 
     ScaffoldMessenger.of(context).showSnackBar(

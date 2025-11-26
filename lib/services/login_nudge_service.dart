@@ -2,6 +2,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'user_profile_service.dart';
+
 enum LoginNudgeTrigger {
   journalSave,
   moodHistorySave,
@@ -31,6 +33,11 @@ class LoginNudgeService {
       BuildContext context,
       LoginNudgeTrigger trigger,
       ) async {
+    final bool isLoggedIn = await UserProfileService.instance.isLoggedIn();
+    if (isLoggedIn) {
+      return LoginNudgeAction.notNeeded;
+    }
+
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     final String key = _preferenceKeys[trigger]!;
     final bool hasShown = prefs.getBool(key) ?? false;

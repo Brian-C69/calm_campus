@@ -102,14 +102,14 @@ You can change `[ ]` to `[x]` as you complete items.
 
 ### 2.3 Shared Preferences
 
-- [ ] Store “first run” flag (`isFirstRun`)
-- [ ] Store simple profile:
+- [x] Store “first run” flag (`isFirstRun`)
+- [x] Store simple profile:
     - [x] nickname
-    - [ ] course
-    - [ ] year of study
-- [ ] Store app settings:
-    - [ ] theme (light/dark/system)
-    - [ ] daily reminder time (if implemented)
+    - [x] course
+    - [x] year of study
+- [x] Store app settings:
+    - [x] theme (light/dark/system)
+    - [x] daily reminder time (if implemented)
 
 ---
 

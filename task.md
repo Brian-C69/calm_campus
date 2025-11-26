@@ -11,31 +11,31 @@ You can change `[ ]` to `[x]` as you complete items.
 
 ## 1. Project Setup & Architecture
 
-- [ ] Create Flutter project `calm_campus` (or final name)
-- [ ] Set up basic folder structure:
-    - [ ] `lib/pages/`
-    - [ ] `lib/models/`
-    - [ ] `lib/services/`
-    - [ ] `lib/widgets/`
-- [ ] Configure `pubspec.yaml`:
-    - [ ] Add `http`
-    - [ ] Add `sqflite` + `path` (or chosen DB)
-    - [ ] Add `shared_preferences`
-    - [ ] Add audio package (`just_audio` or `audioplayers`)
-- [ ] Set up base `MaterialApp`:
-    - [ ] `theme`, `colorSchemeSeed`, `useMaterial3`
-    - [ ] Named routes for all main pages
-- [ ] Create placeholder pages:
-    - [ ] `HomePage`
-    - [ ] `MoodPage`
-    - [ ] `HistoryPage`
-    - [ ] `TimetablePage`
-    - [ ] `TasksPage`
-    - [ ] `ChatPage` (AI Buddy)
-    - [ ] `RelaxPage` (Music + Meditations)
-    - [ ] `HelpNowPage`
-    - [ ] `DsaSummaryPage`
-    - [ ] “Common Challenges” info section page(s)
+- [x] Create Flutter project `calm_campus` (or final name)
+- [x] Set up basic folder structure:
+    - [x] `lib/pages/`
+    - [x] `lib/models/`
+    - [x] `lib/services/`
+    - [x] `lib/widgets/`
+- [x] Configure `pubspec.yaml`:
+    - [x] Add `http`
+    - [x] Add `sqflite` + `path` (or chosen DB)
+    - [x] Add `shared_preferences`
+    - [x] Add audio package (`just_audio` or `audioplayers`)
+- [x] Set up base `MaterialApp`:
+    - [x] `theme`, `colorSchemeSeed`, `useMaterial3`
+    - [x] Named routes for all main pages
+- [x] Create placeholder pages:
+    - [x] `HomePage`
+    - [x] `MoodPage`
+    - [x] `HistoryPage`
+    - [x] `TimetablePage`
+    - [x] `TasksPage`
+    - [x] `ChatPage` (AI Buddy)
+    - [x] `RelaxPage` (Music + Meditations)
+    - [x] `HelpNowPage`
+    - [x] `DsaSummaryPage`
+    - [x] “Common Challenges” info section page(s)
 
 ---
 
@@ -43,68 +43,68 @@ You can change `[ ]` to `[x]` as you complete items.
 
 ### 2.1 Models
 
-- [ ] Define `MoodEntry` model
-    - [ ] `id`
-    - [ ] `dateTime`
-    - [ ] `overallMood` (string/enum)
-    - [ ] `mainThemeTag` (e.g. Stress, Food & Body, Social, etc.)
-    - [ ] `note`
-    - [ ] `extraTags` (optional)
-- [ ] Define `ClassEntry` (timetable)
-    - [ ] `id`
-    - [ ] `subject`
-    - [ ] `dayOfWeek`
-    - [ ] `startTime`, `endTime`
-    - [ ] `location`
-- [ ] Define `Task` (study planner)
-    - [ ] `id`
-    - [ ] `title`
-    - [ ] `subject`
-    - [ ] `dueDate`
-    - [ ] `status` (pending/done)
-    - [ ] `priority`
-- [ ] Define `RelaxTrack`
-    - [ ] `id`
-    - [ ] `title`
-    - [ ] `assetPath`
-    - [ ] `category` (Focus/Sleep/Calm)
-    - [ ] `duration` (optional)
-- [ ] Define `MeditationSession`
-    - [ ] `id`
-    - [ ] `title`
-    - [ ] `description`
-    - [ ] `audioAssetPath` (optional)
-    - [ ] `steps` (list of strings)
-    - [ ] `estimatedTime`
+- [x] Define `MoodEntry` model
+    - [x] `id`
+    - [x] `dateTime`
+    - [x] `overallMood` (string/enum)
+    - [x] `mainThemeTag` (e.g. Stress, Food & Body, Social, etc.)
+    - [x] `note`
+    - [x] `extraTags` (optional)
+- [x] Define `ClassEntry` (timetable)
+    - [x] `id`
+    - [x] `subject`
+    - [x] `dayOfWeek`
+    - [x] `startTime`, `endTime`
+    - [x] `location`
+- [x] Define `Task` (study planner)
+    - [x] `id`
+    - [x] `title`
+    - [x] `subject`
+    - [x] `dueDate`
+    - [x] `status` (pending/done)
+    - [x] `priority`
+- [x] Define `RelaxTrack`
+    - [x] `id`
+    - [x] `title`
+    - [x] `assetPath`
+    - [x] `category` (Focus/Sleep/Calm)
+    - [x] `duration` (optional)
+- [x] Define `MeditationSession`
+    - [x] `id`
+    - [x] `title`
+    - [x] `description`
+    - [x] `audioAssetPath` (optional)
+    - [x] `steps` (list of strings)
+    - [x] `estimatedTime`
 
 ### 2.2 Local DB (SQLite or chosen solution)
 
-- [ ] Set up DB service (e.g. `DbService`):
-    - [ ] `initDatabase()`
-- [ ] Create `moods` table + CRUD:
-    - [ ] `insertMoodEntry(MoodEntry entry)`
-    - [ ] `getMoodEntries({from, to})`
-    - [ ] `getTodayMood()`
-    - [ ] `updateMoodEntry()`
-    - [ ] `deleteMoodEntry()`
-- [ ] Create `classes` table + CRUD:
-    - [ ] `insertClass(ClassEntry entry)`
-    - [ ] `getClassesForDay(weekday)`
-    - [ ] `getAllClasses()`
-    - [ ] `updateClassEntry()`
-    - [ ] `deleteClassEntry()`
-- [ ] Create `tasks` table + CRUD:
-    - [ ] `insertTask(Task task)`
-    - [ ] `getPendingTasks()`
-    - [ ] `getTasksByDate(DateTime date)`
-    - [ ] `updateTaskStatus()`
-    - [ ] `deleteTask()`
+- [x] Set up DB service (e.g. `DbService`):
+    - [x] `initDatabase()`
+- [x] Create `moods` table + CRUD:
+    - [x] `insertMoodEntry(MoodEntry entry)`
+    - [x] `getMoodEntries({from, to})`
+    - [x] `getTodayMood()`
+    - [x] `updateMoodEntry()`
+    - [x] `deleteMoodEntry()`
+- [x] Create `classes` table + CRUD:
+    - [x] `insertClass(ClassEntry entry)`
+    - [x] `getClassesForDay(weekday)`
+    - [x] `getAllClasses()`
+    - [x] `updateClassEntry()`
+    - [x] `deleteClassEntry()`
+- [x] Create `tasks` table + CRUD:
+    - [x] `insertTask(Task task)`
+    - [x] `getPendingTasks()`
+    - [x] `getTasksByDate(DateTime date)`
+    - [x] `updateTaskStatus()`
+    - [x] `deleteTask()`
 
 ### 2.3 Shared Preferences
 
 - [ ] Store “first run” flag (`isFirstRun`)
 - [ ] Store simple profile:
-    - [ ] nickname
+    - [x] nickname
     - [ ] course
     - [ ] year of study
 - [ ] Store app settings:

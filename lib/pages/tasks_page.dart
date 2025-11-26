@@ -48,7 +48,7 @@ class _TasksPageState extends State<TasksPage> {
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _TaskSummary(pendingCount: pendingCount, completedCount: completedCount),
             const SizedBox(height: 12),

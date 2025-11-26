@@ -4,6 +4,7 @@ import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../models/class_entry.dart';
+import '../models/journal_entry.dart';
 import '../models/mood_entry.dart';
 import '../models/task.dart';
 
@@ -13,11 +14,12 @@ class DbService {
   static final DbService instance = DbService._();
 
   static const String _databaseName = 'calm_campus.db';
-  static const int _databaseVersion = 2;
+  static const int _databaseVersion = 3;
 
   static const String _moodsTable = 'moods';
   static const String _classesTable = 'classes';
   static const String _tasksTable = 'tasks';
+  static const String _journalTable = 'journal_entries';
 
   Database? _database;
 
@@ -32,6 +34,7 @@ class DbService {
       await _createMoodTable(db);
       await _createClassesTable(db);
       await _createTasksTable(db);
+      await _createJournalTable(db);
     }, onUpgrade: (Database db, int oldVersion, int newVersion) async {
       if (oldVersion < 2) {
         await db.execute(
@@ -40,6 +43,10 @@ class DbService {
         await db.execute(
           'ALTER TABLE $_classesTable ADD COLUMN lecturer TEXT NOT NULL DEFAULT ""',
         );
+      }
+
+      if (oldVersion < 3) {
+        await _createJournalTable(db);
       }
     });
 
@@ -83,6 +90,16 @@ class DbService {
         dueDate TEXT NOT NULL,
         status TEXT NOT NULL,
         priority TEXT NOT NULL
+      )
+    ''');
+  }
+
+  Future<void> _createJournalTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE $_journalTable (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        content TEXT NOT NULL,
+        createdAt TEXT NOT NULL
       )
     ''');
   }
@@ -252,5 +269,19 @@ class DbService {
       where: 'id = ?',
       whereArgs: [id],
     );
+  }
+
+  Future<int> insertJournalEntry(JournalEntry entry) async {
+    final Database db = await database;
+    return db.insert(_journalTable, entry.toMap());
+  }
+
+  Future<List<JournalEntry>> getJournalEntries() async {
+    final Database db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      _journalTable,
+      orderBy: 'createdAt DESC',
+    );
+    return maps.map(JournalEntry.fromMap).toList();
   }
 }

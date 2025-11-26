@@ -117,7 +117,8 @@ class _MoodPageState extends State<MoodPage> {
     });
 
     if (action == LoginNudgeAction.loginSelected) {
-      _showMessage('Login is only required for sharing or cloud sync. You can stay as a guest for now.');
+      await Navigator.pushNamed(context, '/auth');
+      if (!mounted) return;
     }
   }
 

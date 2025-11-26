@@ -41,11 +41,8 @@ class _TimetablePageState extends State<TimetablePage> {
 
     if (!mounted) return;
     if (action == LoginNudgeAction.loginSelected) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Login only becomes required for campus integrations or cloud sync.'),
-        ),
-      );
+      await Navigator.pushNamed(context, '/auth');
+      if (!mounted) return;
     }
   }
 

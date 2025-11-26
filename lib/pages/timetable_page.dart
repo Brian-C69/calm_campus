@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/class_entry.dart';
 import '../services/db_service.dart';
 import '../services/login_nudge_service.dart';
+import '../services/user_profile_service.dart';
 
 class TimetablePage extends StatefulWidget {
   const TimetablePage({super.key});
@@ -14,6 +15,7 @@ class TimetablePage extends StatefulWidget {
 class _TimetablePageState extends State<TimetablePage> {
   bool _remindersEnabled = false;
   bool _isLoading = true;
+  bool _isLoggedIn = false;
   List<ClassEntry> _classes = [];
 
   static const List<String> _dayNames = [
@@ -29,29 +31,43 @@ class _TimetablePageState extends State<TimetablePage> {
   @override
   void initState() {
     super.initState();
-    _loadClasses();
+    _loadState();
   }
 
   Future<void> _startReminders() async {
-    setState(() => _remindersEnabled = true);
-    final LoginNudgeAction action = await LoginNudgeService.instance.maybePrompt(
-      context,
-      LoginNudgeTrigger.timetableSetup,
-    );
-
+    final bool alreadyLoggedIn = await UserProfileService.instance.isLoggedIn();
     if (!mounted) return;
-    if (action == LoginNudgeAction.loginSelected) {
-      await Navigator.pushNamed(context, '/auth');
+
+    if (!alreadyLoggedIn) {
+      final LoginNudgeAction action = await LoginNudgeService.instance.maybePrompt(
+        context,
+        LoginNudgeTrigger.timetableSetup,
+      );
+
       if (!mounted) return;
+      if (action == LoginNudgeAction.loginSelected) {
+        await Navigator.pushNamed(context, '/auth');
+        if (!mounted) return;
+      }
     }
+
+    final bool refreshedLogin = await UserProfileService.instance.isLoggedIn();
+    if (!mounted) return;
+
+    setState(() {
+      _remindersEnabled = true;
+      _isLoggedIn = refreshedLogin;
+    });
   }
 
-  Future<void> _loadClasses() async {
+  Future<void> _loadState() async {
     final classes = await DbService.instance.getAllClasses();
+    final bool loggedIn = await UserProfileService.instance.isLoggedIn();
     if (!mounted) return;
     setState(() {
       _classes = classes;
       _isLoading = false;
+      _isLoggedIn = loggedIn;
     });
   }
 
@@ -368,7 +384,11 @@ class _TimetablePageState extends State<TimetablePage> {
                   onPressed: _remindersEnabled ? null : _startReminders,
                   icon: const Icon(Icons.notifications_active_outlined),
                   label: Text(
-                    _remindersEnabled ? 'Reminders on (guest mode)' : 'Set up timetable reminders',
+                    _remindersEnabled
+                        ? _isLoggedIn
+                            ? 'Reminders on (saved to your account)'
+                            : 'Reminders on (guest mode)'
+                        : 'Set up timetable reminders',
                   ),
                 ),
                 ..._buildClassSections(),

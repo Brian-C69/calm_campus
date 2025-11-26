@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'pages/chat_page.dart';
+import 'pages/auth_page.dart';
 import 'pages/common_challenges_page.dart';
 import 'pages/dsa_summary_page.dart';
 import 'pages/help_now_page.dart';
@@ -29,6 +30,7 @@ class MyApp extends StatelessWidget {
       ),
       initialRoute: '/home',
       routes: {
+        '/auth': (_) => const AuthPage(),
         '/home': (_) => const MainNavigation(),
         '/mood': (_) => const MoodPage(),
         '/history': (_) => const HistoryPage(),
@@ -41,7 +43,6 @@ class MyApp extends StatelessWidget {
         '/dsa-summary': (_) => const DsaSummaryPage(),
         '/challenges': (_) => const CommonChallengesPage(),
       },
-      home: const MainNavigation(),
     );
   }
 }
@@ -55,6 +56,7 @@ class MainNavigation extends StatefulWidget {
 
 class _MainNavigationState extends State<MainNavigation> {
   int _currentIndex = 0;
+  bool _hasPromptedForLogin = false;
 
   final List<Widget> _pages = const [
     HomePage(),
@@ -67,6 +69,16 @@ class _MainNavigationState extends State<MainNavigation> {
     if (index == _currentIndex) return;
     setState(() {
       _currentIndex = index;
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _hasPromptedForLogin) return;
+      _hasPromptedForLogin = true;
+      Navigator.of(context).pushNamed('/auth');
     });
   }
 

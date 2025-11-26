@@ -48,7 +48,7 @@ class _TasksPageState extends State<TasksPage> {
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _TaskSummary(pendingCount: pendingCount, completedCount: completedCount),
             const SizedBox(height: 12),
@@ -276,26 +276,25 @@ class _TaskSummary extends StatelessWidget {
       elevation: 0,
       child: Padding(
         padding: const EdgeInsets.all(12),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Study planner', style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 4),
-                Text('Keep your tasks light and doable today.',
-                    style: Theme.of(context).textTheme.bodyMedium),
-              ],
-            ),
-            Column(
+            Text('Study planner', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 4),
+            Text('Keep your tasks light and doable today.',
+                style: Theme.of(context).textTheme.bodyMedium),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 12,
+              runSpacing: 4,
               children: [
                 Text('$pendingCount pending',
                     style: Theme.of(context)
                         .textTheme
                         .titleSmall
                         ?.copyWith(color: colorScheme.primary)),
-                Text('$completedCount done', style: Theme.of(context).textTheme.bodySmall),
+                Text('$completedCount done',
+                    style: Theme.of(context).textTheme.bodySmall),
               ],
             ),
           ],

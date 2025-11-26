@@ -102,7 +102,12 @@ class _RelaxPageState extends State<RelaxPage> {
 
   Future<void> _toggleAmbient(RelaxTrack track) async {
     final isCurrent = _currentAmbientTrack?.assetPath == track.assetPath;
-    setState(() => _isLoadingAmbient = true);
+    setState(() {
+      _isLoadingAmbient = true;
+      if (!isCurrent) {
+        _currentAmbientTrack = track;
+      }
+    });
 
     try {
       if (!isCurrent) {
@@ -110,7 +115,6 @@ class _RelaxPageState extends State<RelaxPage> {
         await _ambientPlayer.setAudioSource(AudioSource.asset(track.assetPath));
         await _ambientPlayer.setLoopMode(LoopMode.all);
         await _ambientPlayer.play();
-        setState(() => _currentAmbientTrack = track);
       } else {
         final state = _ambientPlayer.playerState;
         final isCompleted = state.processingState == ProcessingState.completed;
@@ -139,7 +143,12 @@ class _RelaxPageState extends State<RelaxPage> {
 
   Future<void> _toggleGuided(RelaxTrack track) async {
     final isCurrent = _currentGuidedTrack?.assetPath == track.assetPath;
-    setState(() => _isLoadingGuided = true);
+    setState(() {
+      _isLoadingGuided = true;
+      if (!isCurrent) {
+        _currentGuidedTrack = track;
+      }
+    });
 
     try {
       if (!isCurrent) {
@@ -147,7 +156,6 @@ class _RelaxPageState extends State<RelaxPage> {
         await _guidedPlayer.setAudioSource(AudioSource.asset(track.assetPath));
         await _guidedPlayer.setLoopMode(LoopMode.off);
         await _guidedPlayer.play();
-        setState(() => _currentGuidedTrack = track);
       } else {
         final state = _guidedPlayer.playerState;
         final isCompleted = state.processingState == ProcessingState.completed;

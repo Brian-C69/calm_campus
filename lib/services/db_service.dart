@@ -13,7 +13,7 @@ class DbService {
   static final DbService instance = DbService._();
 
   static const String _databaseName = 'calm_campus.db';
-  static const int _databaseVersion = 1;
+  static const int _databaseVersion = 2;
 
   static const String _moodsTable = 'moods';
   static const String _classesTable = 'classes';
@@ -27,15 +27,21 @@ class DbService {
     final String databasePath = await getDatabasesPath();
     final String path = join(databasePath, _databaseName);
 
-    _database = await openDatabase(
-      path,
-      version: _databaseVersion,
-      onCreate: (Database db, int version) async {
-        await _createMoodTable(db);
-        await _createClassesTable(db);
-        await _createTasksTable(db);
-      },
-    );
+    _database = await openDatabase(path, version: _databaseVersion,
+        onCreate: (Database db, int version) async {
+      await _createMoodTable(db);
+      await _createClassesTable(db);
+      await _createTasksTable(db);
+    }, onUpgrade: (Database db, int oldVersion, int newVersion) async {
+      if (oldVersion < 2) {
+        await db.execute(
+          'ALTER TABLE $_classesTable ADD COLUMN classType TEXT NOT NULL DEFAULT ""',
+        );
+        await db.execute(
+          'ALTER TABLE $_classesTable ADD COLUMN lecturer TEXT NOT NULL DEFAULT ""',
+        );
+      }
+    });
 
     return _database!;
   }
@@ -61,7 +67,9 @@ class DbService {
         dayOfWeek INTEGER NOT NULL,
         startTime TEXT NOT NULL,
         endTime TEXT NOT NULL,
-        location TEXT NOT NULL
+        location TEXT NOT NULL,
+        classType TEXT NOT NULL,
+        lecturer TEXT NOT NULL
       )
     ''');
   }

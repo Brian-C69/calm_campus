@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../services/user_profile_service.dart';
+
 class AuthPage extends StatefulWidget {
   const AuthPage({super.key});
 
@@ -33,11 +35,13 @@ class _AuthPageState extends State<AuthPage> {
     });
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     final isValid = _formKey.currentState?.validate() ?? false;
     if (!isValid) return;
 
     final friendlyAction = _isLogin ? 'signed in' : 'signed up';
+
+    await UserProfileService.instance.setLoggedIn(true);
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(

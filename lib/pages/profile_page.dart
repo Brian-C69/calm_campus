@@ -19,14 +19,31 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<_ProfileData> _loadProfile() async {
+    final isLoggedIn = await UserProfileService.instance.isLoggedIn();
+    if (!isLoggedIn) {
+      return const _ProfileData(isLoggedIn: false);
+    }
+
     final nickname = await UserProfileService.instance.getNickname();
     final course = await UserProfileService.instance.getCourse();
     final year = await UserProfileService.instance.getYearOfStudy();
-    return _ProfileData(nickname: nickname, course: course, yearOfStudy: year);
+    return _ProfileData(
+      isLoggedIn: true,
+      nickname: nickname,
+      course: course,
+      yearOfStudy: year,
+    );
   }
 
   Future<void> _openSettings() async {
     await Navigator.pushNamed(context, '/settings');
+    setState(() {
+      _profileFuture = _loadProfile();
+    });
+  }
+
+  Future<void> _openLogin() async {
+    await Navigator.pushNamed(context, '/auth');
     setState(() {
       _profileFuture = _loadProfile();
     });
@@ -47,6 +64,38 @@ class _ProfilePageState extends State<ProfilePage> {
 
           final profile = snapshot.data!;
           final theme = Theme.of(context);
+
+          if (!profile.isLoggedIn) {
+            return Padding(
+              padding: const EdgeInsets.all(16),
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.lock_outline,
+                        size: 56, color: theme.colorScheme.primary),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Log in to see your saved profile details.',
+                      style: theme.textTheme.titleMedium,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'We keep your nickname, course, and study year private. Sign in to view or update them.',
+                      style: theme.textTheme.bodyMedium,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    FilledButton(
+                      onPressed: _openLogin,
+                      child: const Text('Log in'),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
 
           return Padding(
             padding: const EdgeInsets.all(16),
@@ -133,8 +182,9 @@ class _ProfilePageState extends State<ProfilePage> {
 }
 
 class _ProfileData {
-  _ProfileData({this.nickname, this.course, this.yearOfStudy});
+  const _ProfileData({required this.isLoggedIn, this.nickname, this.course, this.yearOfStudy});
 
+  final bool isLoggedIn;
   final String? nickname;
   final String? course;
   final int? yearOfStudy;

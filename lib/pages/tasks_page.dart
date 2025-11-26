@@ -113,25 +113,15 @@ class _TasksPageState extends State<TasksPage> {
   }
 
   Future<void> _loadTasks() async {
-    setState(() => _isLoading = true);
+    final tasks = await DbService.instance.getAllTasks();
+    if (!mounted) return;
 
-    try {
-      final tasks = await DbService.instance.getAllTasks();
-
-      if (!mounted) return;
-
-      setState(() {
-        _tasks
-          ..clear()
-          ..addAll(tasks);
-      });
-    } catch (_) {
-      if (!mounted) return;
-      _showError('Could not load your tasks. Please try again.');
-    } finally {
-      if (!mounted) return;
-      setState(() => _isLoading = false);
-    }
+    setState(() {
+      _tasks
+        ..clear()
+        ..addAll(tasks);
+      _isLoading = false;
+    });
   }
 
   Future<void> _toggleTask(Task task) async {
@@ -257,32 +247,18 @@ class _TasksPageState extends State<TasksPage> {
 
   Future<void> _addTask(Task task) async {
     setState(() => _isLoading = true);
+    final id = await DbService.instance.insertTask(task);
+    final created = task.copyWith(id: id);
 
-    try {
-      final id = await DbService.instance.insertTask(task);
-      final created = task.copyWith(id: id);
+    if (!mounted) return;
 
-      if (!mounted) return;
+    setState(() {
+      _tasks.add(created);
+      _selectedFilter = _TaskFilter.all;
+      _isLoading = false;
+    });
 
-      setState(() {
-        _tasks.add(created);
-        _selectedFilter = _TaskFilter.all;
-      });
-
-      Navigator.of(context).pop();
-    } catch (_) {
-      if (!mounted) return;
-      _showError('Could not save your task. Please try again.');
-    } finally {
-      if (!mounted) return;
-      setState(() => _isLoading = false);
-    }
-  }
-
-  void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    Navigator.of(context).pop();
   }
 }
 

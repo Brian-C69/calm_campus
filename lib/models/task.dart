@@ -3,14 +3,15 @@ enum TaskStatus { pending, done }
 enum TaskPriority { low, medium, high }
 
 class Task {
-  const Task({
+  Task({
     this.id,
     required this.title,
     required this.subject,
     required this.dueDate,
     this.status = TaskStatus.pending,
     this.priority = TaskPriority.medium,
-  });
+    DateTime? createdAt,
+  }) : createdAt = createdAt ?? DateTime.now();
 
   final int? id;
   final String title;
@@ -18,6 +19,7 @@ class Task {
   final DateTime dueDate;
   final TaskStatus status;
   final TaskPriority priority;
+  final DateTime createdAt;
 
   Task copyWith({
     int? id,
@@ -34,6 +36,7 @@ class Task {
       dueDate: dueDate ?? this.dueDate,
       status: status ?? this.status,
       priority: priority ?? this.priority,
+      createdAt: createdAt ?? this.createdAt,
     );
   }
 
@@ -45,6 +48,7 @@ class Task {
       'dueDate': dueDate.toIso8601String(),
       'status': status.name,
       'priority': priority.name,
+      'createdAt': createdAt.toIso8601String(),
     };
   }
 
@@ -56,6 +60,9 @@ class Task {
       dueDate: DateTime.parse(map['dueDate'] as String),
       status: TaskStatus.values.byName(map['status'] as String),
       priority: TaskPriority.values.byName(map['priority'] as String),
+      createdAt: map['createdAt'] != null
+          ? DateTime.parse(map['createdAt'] as String)
+          : DateTime.now(),
     );
   }
 }

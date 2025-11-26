@@ -28,6 +28,7 @@ class Task {
     DateTime? dueDate,
     TaskStatus? status,
     TaskPriority? priority,
+    DateTime? createdAt,
   }) {
     return Task(
       id: id ?? this.id,

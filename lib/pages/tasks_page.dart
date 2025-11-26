@@ -336,8 +336,7 @@ class _FilterRow extends StatelessWidget {
       case _TaskFilter.completed:
         return 'Completed';
       case _TaskFilter.all:
-      default:
-        return 'All';
+      return 'All';
     }
   }
 }
@@ -505,8 +504,7 @@ class _PriorityBadge extends StatelessWidget {
         foreground = colorScheme.onTertiaryContainer;
         break;
       case TaskPriority.medium:
-      default:
-        background = colorScheme.secondaryContainer;
+      background = colorScheme.secondaryContainer;
         foreground = colorScheme.onSecondaryContainer;
     }
 

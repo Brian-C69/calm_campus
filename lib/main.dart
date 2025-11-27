@@ -17,6 +17,7 @@ import 'pages/settings_page.dart';
 import 'pages/support_plan_page.dart';
 import 'pages/tasks_page.dart';
 import 'pages/timetable_page.dart';
+import 'pages/movement_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -52,6 +53,7 @@ class MyApp extends StatelessWidget {
         '/sleep': (_) => const SleepPage(),
         '/period-tracker': (_) => const PeriodTrackerPage(),
         '/support-plan': (_) => const SupportPlanPage(),
+        '/movement': (_) => const MovementPage(),
       },
     );
   }

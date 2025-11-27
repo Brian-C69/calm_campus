@@ -580,26 +580,26 @@ So the app can remember “my safe people” and show them quickly in rough time
 
 ### 15 Movement & Energy (Fitness-lite, non-diet)
 
-- [ ] Add `MovementEntry` model
-    - [ ] `id`
-    - [ ] `date`
-    - [ ] `minutes`
-    - [ ] `type` (enum: walk, stretch, sport, etc.)
-    - [ ] `intensity` (enum: light, moderate, vigorous)
-    - [ ] `energyBefore` (1–5)
-    - [ ] `energyAfter` (1–5)
-    - [ ] `note` (optional)
+- [x] Add `MovementEntry` model
+    - [x] `id`
+    - [x] `date`
+    - [x] `minutes`
+    - [x] `type` (enum: walk, stretch, sport, etc.)
+    - [x] `intensity` (enum: light, moderate, vigorous)
+    - [x] `energyBefore` (1–5)
+    - [x] `energyAfter` (1–5)
+    - [x] `note` (optional)
 
-- [ ] DB: `movement_entries` table + CRUD
-    - [ ] `insertMovementEntry(MovementEntry entry)`
-    - [ ] `getMovementEntries({from, to})`
-    - [ ] `deleteMovementEntry(id)`
+- [x] DB: `movement_entries` table + CRUD
+    - [x] `insertMovementEntry(MovementEntry entry)`
+    - [x] `getMovementEntries({from, to})`
+    - [x] `deleteMovementEntry(id)`
 
-- [ ] `MovementPage` UI
-    - [ ] “Today’s movement” quick log (minutes + type + intensity)
-    - [ ] Optional energy before/after sliders
-    - [ ] “Movement ideas for study days” cards (2–3 preset suggestions)
-    - [ ] Recent week summary (total active days + avg minutes)
+- [x] `MovementPage` UI
+    - [x] “Today’s movement” quick log (minutes + type + intensity)
+    - [x] Optional energy before/after sliders
+    - [x] “Movement ideas for study days” cards (2–3 preset suggestions)
+    - [x] Recent week summary (total active days + avg minutes)
 
 - [ ] Insights linking movement ↔ mood/sleep
     - [ ] Helper: compute average movement on “brighter” vs “tougher” mood days

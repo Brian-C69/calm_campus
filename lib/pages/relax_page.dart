@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 
 import '../models/relax_track.dart';
+import 'breathing_page.dart';
 
 class RelaxPage extends StatefulWidget {
   const RelaxPage({super.key});
@@ -322,6 +323,8 @@ class _RelaxPageState extends State<RelaxPage> {
           ListView(
             padding: EdgeInsets.fromLTRB(16, 16, 16, 220 + safeBottom),
             children: [
+              _buildBreathingCard(context),
+              const SizedBox(height: 12),
               const Text(
                 'Layer a calming ambient bed with a short guided focus session. '
                 'You can play ambient and guided audio together.',
@@ -365,6 +368,58 @@ class _RelaxPageState extends State<RelaxPage> {
             child: _buildFloatingPlayer(),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildBreathingCard(BuildContext context) {
+    return Card(
+      elevation: 0,
+      color: Theme.of(context).colorScheme.secondaryContainer,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Guided breathing',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Short guided breathing to help your body settle when stress spikes. Start to follow clear prompts and a countdown.',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                FilledButton.icon(
+                  icon: const Icon(Icons.self_improvement_outlined),
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const BreathingPage(),
+                      ),
+                    );
+                  },
+                  label: const Text('Start breathing exercise'),
+                ),
+                OutlinedButton(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const BreathingPage(),
+                      ),
+                    );
+                  },
+                  child: const Text('View exercises'),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

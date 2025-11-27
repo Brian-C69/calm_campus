@@ -618,50 +618,50 @@ So the app can remember “my safe people” and show them quickly in rough time
 
 ### 16.2 Data Model
 
-- [ ] Define `BreathingExercise` model (code-level, not necessarily DB):
-    - [ ] `id` (string)
-    - [ ] `name` (e.g. "Box Breathing", "4–7–8 Calm")
-    - [ ] `description` (short human-friendly text)
-    - [ ] `inhaleSeconds`
-    - [ ] `holdSeconds`
-    - [ ] `exhaleSeconds`
-    - [ ] `cycles` (or total duration)
+- [x] Define `BreathingExercise` model (code-level, not necessarily DB):
+    - [x] `id` (string)
+    - [x] `name` (e.g. "Box Breathing", "4–7–8 Calm")
+    - [x] `description` (short human-friendly text)
+    - [x] `inhaleSeconds`
+    - [x] `holdSeconds`
+    - [x] `exhaleSeconds`
+    - [x] `cycles` (or total duration)
 
-- [ ] Create a small catalog of built-in exercises:
-    - [ ] Box Breathing (4–4–4–4, 4–6 cycles)
-    - [ ] 4–7–8 Breathing (sleep + anxiety down-regulation)
-    - [ ] Gentle 4–6 Breathing (for beginners / sensitive users)
-    - [ ] “Quick Calm” preset (~1 minute)
+- [x] Create a small catalog of built-in exercises:
+    - [x] Box Breathing (4–4–4–4, 4–6 cycles)
+    - [x] 4–7–8 Breathing (sleep + anxiety down-regulation)
+    - [x] Gentle 4–6 Breathing (for beginners / sensitive users)
+    - [x] “Quick Calm” preset (~1 minute)
 
 ### 16.3 Breathing Page / UI
 
-- [ ] Add `BreathingPage` **or** a `Breathing` tab in `RelaxPage`:
-    - [ ] Intro text: “Short guided breathing to help your body settle.”
-    - [ ] List of `BreathingExercise` cards:
-        - [ ] Name
-        - [ ] Short description
-        - [ ] Approx duration (e.g. “~2 minutes”)
-        - [ ] Start button / icon
+- [x] Add `BreathingPage` **or** a `Breathing` tab in `RelaxPage`:
+    - [x] Intro text: “Short guided breathing to help your body settle.”
+    - [x] List of `BreathingExercise` cards:
+        - [x] Name
+        - [x] Short description
+        - [x] Approx duration (e.g. “~2 minutes”)
+        - [x] Start button / icon
 
-- [ ] When tapping an exercise:
-    - [ ] Navigate to `BreathingSessionPage(exercise: ...)`
+- [x] When tapping an exercise:
+    - [x] Navigate to `BreathingSessionPage(exercise: ...)`
 
 ### 16.4 BreathingSessionPage Behaviour
 
-- [ ] Show current phase clearly:
-    - [ ] Text: “Breathe in”, “Hold”, “Breathe out”
-    - [ ] Countdown for remaining seconds in this phase
-- [ ] Visual guidance:
-    - [ ] Simple circle / ring / shape that expands on inhale and shrinks on exhale
-    - [ ] Optional subtle color/opacity change per phase
-- [ ] Session control:
-    - [ ] Automatically step through `inhale → hold → exhale` per cycle
-    - [ ] Show `currentCycle / totalCycles` (e.g. `3 / 6`)
-    - [ ] “End session” / “Stop” button at bottom
+- [x] Show current phase clearly:
+    - [x] Text: “Breathe in”, “Hold”, “Breathe out”
+    - [x] Countdown for remaining seconds in this phase
+- [x] Visual guidance:
+    - [x] Simple circle / ring / shape that expands on inhale and shrinks on exhale
+    - [x] Optional subtle color/opacity change per phase
+- [x] Session control:
+    - [x] Automatically step through `inhale → hold → exhale` per cycle
+    - [x] Show `currentCycle / totalCycles` (e.g. `3 / 6`)
+    - [x] “End session” / “Stop” button at bottom
 
-- [ ] End-of-session message:
-    - [ ] Gentle text like: “Nice work. Notice if your shoulders feel softer now.”
-    - [ ] Optional button: “Repeat exercise” or “Back to Relax”
+- [x] End-of-session message:
+    - [x] Gentle text like: “Nice work. Notice if your shoulders feel softer now.”
+    - [x] Optional button: “Repeat exercise” or “Back to Relax”
 
 ### 16.5 Integration Points (Future)
 

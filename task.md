@@ -605,3 +605,70 @@ So the app can remember “my safe people” and show them quickly in rough time
     - [ ] Helper: compute average movement on “brighter” vs “tougher” mood days
     - [ ] Helper: compare movement on days with better restfulness
     - [ ] Show 1–2 gentle, non-judgy statements in Movement or Sleep insights
+
+---
+
+## 16 Breathing Exercises (Guided Calm)
+
+### 16.1 Feature Goals
+
+- Give students a fast, structured way to calm their body during stress, anxiety, or before sleep.
+- Keep it simple enough to use even when overwhelmed (minimal decisions, clear instructions).
+- Make it easy for the AI Buddy and Help flows to suggest a breathing exercise as an immediate step.
+
+### 16.2 Data Model
+
+- [ ] Define `BreathingExercise` model (code-level, not necessarily DB):
+    - [ ] `id` (string)
+    - [ ] `name` (e.g. "Box Breathing", "4–7–8 Calm")
+    - [ ] `description` (short human-friendly text)
+    - [ ] `inhaleSeconds`
+    - [ ] `holdSeconds`
+    - [ ] `exhaleSeconds`
+    - [ ] `cycles` (or total duration)
+
+- [ ] Create a small catalog of built-in exercises:
+    - [ ] Box Breathing (4–4–4–4, 4–6 cycles)
+    - [ ] 4–7–8 Breathing (sleep + anxiety down-regulation)
+    - [ ] Gentle 4–6 Breathing (for beginners / sensitive users)
+    - [ ] “Quick Calm” preset (~1 minute)
+
+### 16.3 Breathing Page / UI
+
+- [ ] Add `BreathingPage` **or** a `Breathing` tab in `RelaxPage`:
+    - [ ] Intro text: “Short guided breathing to help your body settle.”
+    - [ ] List of `BreathingExercise` cards:
+        - [ ] Name
+        - [ ] Short description
+        - [ ] Approx duration (e.g. “~2 minutes”)
+        - [ ] Start button / icon
+
+- [ ] When tapping an exercise:
+    - [ ] Navigate to `BreathingSessionPage(exercise: ...)`
+
+### 16.4 BreathingSessionPage Behaviour
+
+- [ ] Show current phase clearly:
+    - [ ] Text: “Breathe in”, “Hold”, “Breathe out”
+    - [ ] Countdown for remaining seconds in this phase
+- [ ] Visual guidance:
+    - [ ] Simple circle / ring / shape that expands on inhale and shrinks on exhale
+    - [ ] Optional subtle color/opacity change per phase
+- [ ] Session control:
+    - [ ] Automatically step through `inhale → hold → exhale` per cycle
+    - [ ] Show `currentCycle / totalCycles` (e.g. `3 / 6`)
+    - [ ] “End session” / “Stop” button at bottom
+
+- [ ] End-of-session message:
+    - [ ] Gentle text like: “Nice work. Notice if your shoulders feel softer now.”
+    - [ ] Optional button: “Repeat exercise” or “Back to Relax”
+
+### 16.5 Integration Points (Future)
+
+- [ ] AI Buddy:
+    - [ ] Allow backend to suggest a breathing exercise (by `id`) as a `suggested_action`
+    - [ ] App can deep link from AI suggestion to `BreathingSessionPage`
+- [ ] Mood / Sleep context:
+    - [ ] (Future) Optionally log “breathing session completed” with timestamp
+    - [ ] (Future) Use this in insights: e.g. “You tend to use breathing before late-night study blocks.”
+

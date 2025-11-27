@@ -52,11 +52,6 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         title: const Text('CalmCampus'),
         actions: [
-          IconButton(
-            tooltip: 'Mood history',
-            onPressed: () => Navigator.pushNamed(context, '/history'),
-            icon: const Icon(Icons.timeline),
-          ),
           FutureBuilder<bool>(
             future: _isLoggedInFuture,
             builder: (context, snapshot) {

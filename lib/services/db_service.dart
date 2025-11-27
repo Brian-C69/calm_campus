@@ -6,6 +6,7 @@ import 'package:sqflite/sqflite.dart';
 import '../models/class_entry.dart';
 import '../models/journal_entry.dart';
 import '../models/mood_entry.dart';
+import '../models/period_cycle.dart';
 import '../models/sleep_entry.dart';
 import '../models/task.dart';
 
@@ -15,13 +16,14 @@ class DbService {
   static final DbService instance = DbService._();
 
   static const String _databaseName = 'calm_campus.db';
-  static const int _databaseVersion = 5;
+  static const int _databaseVersion = 6;
 
   static const String _moodsTable = 'moods';
   static const String _classesTable = 'classes';
   static const String _tasksTable = 'tasks';
   static const String _journalTable = 'journal_entries';
   static const String _sleepTable = 'sleep_entries';
+  static const String _periodCyclesTable = 'period_cycles';
 
   Database? _database;
 
@@ -38,6 +40,7 @@ class DbService {
       await _createTasksTable(db);
       await _createJournalTable(db);
       await _createSleepTable(db);
+      await _createPeriodCyclesTable(db);
     }, onUpgrade: (Database db, int oldVersion, int newVersion) async {
       if (oldVersion < 2) {
         await db.execute(
@@ -60,6 +63,10 @@ class DbService {
 
       if (oldVersion < 5) {
         await _createSleepTable(db);
+      }
+
+      if (oldVersion < 6) {
+        await _createPeriodCyclesTable(db);
       }
     });
 
@@ -127,6 +134,18 @@ class DbService {
         sleepEnd TEXT NOT NULL,
         durationHours REAL NOT NULL,
         restfulness INTEGER NOT NULL
+      )
+    ''');
+  }
+
+  Future<void> _createPeriodCyclesTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE $_periodCyclesTable (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        cycleStartDate TEXT NOT NULL,
+        cycleEndDate TEXT NOT NULL,
+        calculatedCycleLength INTEGER,
+        periodDurationDays INTEGER NOT NULL
       )
     ''');
   }
@@ -369,5 +388,112 @@ class DbService {
       where: 'id = ?',
       whereArgs: [id],
     );
+  }
+
+  Future<int> insertPeriodCycle(PeriodCycle cycle) async {
+    final Database db = await database;
+
+    int? calculatedCycleLength = cycle.calculatedCycleLength;
+    final DateTime? previousStart =
+        await _findPreviousCycleStart(cycle.cycleStartDate);
+    if (calculatedCycleLength == null && previousStart != null) {
+      calculatedCycleLength = cycle.cycleStartDate
+          .difference(DateTime(previousStart.year, previousStart.month,
+              previousStart.day))
+          .inDays;
+    }
+
+    final PeriodCycle toSave = cycle.copyWith(
+      calculatedCycleLength: calculatedCycleLength,
+      periodDurationDays: cycle.periodDurationDays,
+    );
+
+    return db.insert(_periodCyclesTable, toSave.toMap());
+  }
+
+  Future<List<PeriodCycle>> getRecentCycles({int? limit}) async {
+    final Database db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      _periodCyclesTable,
+      orderBy: 'cycleStartDate DESC',
+      limit: limit,
+    );
+
+    return maps.map(PeriodCycle.fromMap).toList();
+  }
+
+  Future<List<PeriodCycle>> getCyclesBetween(
+      DateTime from, DateTime to) async {
+    final Database db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      _periodCyclesTable,
+      where: 'cycleStartDate >= ? AND cycleEndDate <= ?',
+      whereArgs: [
+        DateTime(from.year, from.month, from.day).toIso8601String(),
+        DateTime(to.year, to.month, to.day).toIso8601String(),
+      ],
+      orderBy: 'cycleStartDate DESC',
+    );
+
+    return maps.map(PeriodCycle.fromMap).toList();
+  }
+
+  Future<int> updatePeriodCycle(PeriodCycle cycle) async {
+    if (cycle.id == null) return 0;
+
+    final Database db = await database;
+    int? calculatedCycleLength = cycle.calculatedCycleLength;
+    final DateTime? previousStart = await _findPreviousCycleStart(
+      cycle.cycleStartDate,
+      excludeId: cycle.id,
+    );
+
+    if (calculatedCycleLength == null && previousStart != null) {
+      calculatedCycleLength = cycle.cycleStartDate
+          .difference(DateTime(previousStart.year, previousStart.month,
+              previousStart.day))
+          .inDays;
+    }
+
+    return db.update(
+      _periodCyclesTable,
+      cycle.copyWith(calculatedCycleLength: calculatedCycleLength).toMap(),
+      where: 'id = ?',
+      whereArgs: [cycle.id],
+    );
+  }
+
+  Future<int> deletePeriodCycle(int id) async {
+    final Database db = await database;
+    return db.delete(
+      _periodCyclesTable,
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<DateTime?> _findPreviousCycleStart(DateTime start,
+      {int? excludeId}) async {
+    final Database db = await database;
+    final List<String> whereClauses = ['cycleStartDate < ?'];
+    final List<Object?> whereArgs = [
+      DateTime(start.year, start.month, start.day).toIso8601String()
+    ];
+
+    if (excludeId != null) {
+      whereClauses.add('id != ?');
+      whereArgs.add(excludeId);
+    }
+
+    final List<Map<String, dynamic>> result = await db.query(
+      _periodCyclesTable,
+      where: whereClauses.join(' AND '),
+      whereArgs: whereArgs,
+      orderBy: 'cycleStartDate DESC',
+      limit: 1,
+    );
+
+    if (result.isEmpty) return null;
+    return DateTime.parse(result.first['cycleStartDate'] as String);
   }
 }

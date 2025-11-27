@@ -441,63 +441,63 @@ You can change `[ ]` to `[x]` as you complete items.
 
 ### 13.1 Data Model & Storage
 
-- [ ] Define `PeriodCycle` model:
-    - [ ] `id`
-    - [ ] `cycleStartDate` (first day of bleeding)
-    - [ ] `cycleEndDate` (last day of bleeding)
-    - [ ] `calculatedCycleLength` (days between this start and previous start)
-    - [ ] `periodDurationDays`
-- [ ] Add `period_cycles` table in SQLite:
-    - [ ] Create migration in `DbService`
-    - [ ] CRUD methods:
-        - [ ] `insertPeriodCycle(PeriodCycle cycle)`
-        - [ ] `getRecentCycles({limit})`
-        - [ ] `getCyclesBetween(DateTime from, DateTime to)`
-        - [ ] `deleteCycle(int id)`
-        - [ ] (Optional) `updateCycle(PeriodCycle cycle)`
+- [x] Define `PeriodCycle` model:
+    - [x] `id`
+    - [x] `cycleStartDate` (first day of bleeding)
+    - [x] `cycleEndDate` (last day of bleeding)
+    - [x] `calculatedCycleLength` (days between this start and previous start)
+    - [x] `periodDurationDays`
+- [x] Add `period_cycles` table in SQLite:
+    - [x] Create migration in `DbService`
+    - [x] CRUD methods:
+        - [x] `insertPeriodCycle(PeriodCycle cycle)`
+        - [x] `getRecentCycles({limit})`
+        - [x] `getCyclesBetween(DateTime from, DateTime to)`
+        - [x] `deleteCycle(int id)`
+        - [x] (Optional) `updateCycle(PeriodCycle cycle)`
 
 ### 13.2 Cycle Tracker UI & Flows
 
-- [ ] Create `PeriodTrackerPage` (or tab under a “Health” / “Body & Sleep” section)
-- [ ] Manual entry flow:
-    - [ ] Date pickers:
-        - [ ] “Period started” (start date)
-        - [ ] “Period ended” (end date)
-    - [ ] Quick actions:
-        - [ ] Button: **“Period started today”** → auto-fill start with today
-        - [ ] Button: **“Period ended today”** → auto-fill end with today for the active cycle
-    - [ ] Validate:
-        - [ ] End date not before start date
-        - [ ] Reasonable duration (e.g. 1–14 days, but not enforced too strictly)
-- [ ] Edit/delete past cycles:
-    - [ ] List recent periods with start / end / duration
-    - [ ] Option to correct wrong entries
+- [x] Create `PeriodTrackerPage` (or tab under a “Health” / “Body & Sleep” section)
+- [x] Manual entry flow:
+    - [x] Date pickers:
+        - [x] “Period started” (start date)
+        - [x] “Period ended” (end date)
+    - [x] Quick actions:
+        - [x] Button: **“Period started today”** → auto-fill start with today
+        - [x] Button: **“Period ended today”** → auto-fill end with today for the active cycle
+    - [x] Validate:
+        - [x] End date not before start date
+        - [x] Reasonable duration (e.g. 1–14 days, but not enforced too strictly)
+- [x] Edit/delete past cycles:
+    - [x] List recent periods with start / end / duration
+    - [x] Option to correct wrong entries
 
 ### 13.3 Cycle Statistics & Insights
 
-- [ ] Compute stats from last N cycles (e.g. last 6 cycles):
-    - [ ] Average cycle length (days between starts)
-    - [ ] Average period duration
+- [x] Compute stats from last N cycles (e.g. last 6 cycles):
+    - [x] Average cycle length (days between starts)
+    - [x] Average period duration
     - [ ] Shortest / longest cycle (optional)
-- [ ] Show simple summary UI:
-    - [ ] “Average cycle: ~X days”
-    - [ ] “Average period: ~Y days”
-    - [ ] “Last period: [start] – [end] (Z days)”
-- [ ] Add gentle explanatory text:
-    - [ ] Cycles are approximate and can vary
-    - [ ] Not for contraception or medical decisions
+- [x] Show simple summary UI:
+    - [x] “Average cycle: ~X days”
+    - [x] “Average period: ~Y days”
+    - [x] “Last period: [start] – [end] (Z days)”
+- [x] Add gentle explanatory text:
+    - [x] Cycles are approximate and can vary
+    - [x] Not for contraception or medical decisions
 
 ### 13.4 Prediction & Ovulation Estimation
 
-- [ ] Implement helper functions:
-    - [ ] `DateTime? predictNextPeriodStart(List<PeriodCycle> recentCycles)`
-        - [ ] Use average cycle length from last N cycles
-    - [ ] `DateTimeRange? estimateOvulationWindow(DateTime predictedNextStart)`
-        - [ ] Approx: ovulation ~ 14 days before next period
-        - [ ] Window like: day -16 to day -12 (configurable)
-- [ ] UI for predictions:
-    - [ ] “Next period predicted in **X days** (approx. [date])”
-    - [ ] “Estimated ovulation window: [start] – [end] (approx.)”
+- [x] Implement helper functions:
+    - [x] `DateTime? predictNextPeriodStart(List<PeriodCycle> recentCycles)`
+        - [x] Use average cycle length from last N cycles
+    - [x] `DateTimeRange? estimateOvulationWindow(DateTime predictedNextStart)`
+        - [x] Approx: ovulation ~ 14 days before next period
+        - [x] Window like: day -16 to day -12 (configurable)
+- [x] UI for predictions:
+    - [x] “Next period predicted in **X days** (approx. [date])”
+    - [x] “Estimated ovulation window: [start] – [end] (approx.)”
 - [ ] Add home-level hint (if user opted in):
     - [ ] Small chip/card: **“Your period may start in ~X days”**
     - [ ] Or “Likely ovulation window this week” (no red alerts, just gentle info)
@@ -517,8 +517,8 @@ You can change `[ ]` to `[x]` as you complete items.
 - [ ] Opt-in toggle for Period Tracker:
     - [ ] “Track my menstrual cycle in CalmCampus”
     - [ ] Clarify: stored only on device (for now), not auto-shared
-- [ ] Explicit statement:
-    - [ ] “Cycle predictions are approximate and **not** for contraception or medical use.”
-- [ ] Ensure:
-    - [ ] No automatic sharing with DSA or admins (only via explicit reports the student chooses)
-    - [ ] Language is non-judgmental, body-neutral, and inclusive
+- [x] Explicit statement:
+    - [x] “Cycle predictions are approximate and **not** for contraception or medical use.”
+- [x] Ensure:
+    - [x] No automatic sharing with DSA or admins (only via explicit reports the student chooses)
+    - [x] Language is non-judgmental, body-neutral, and inclusive

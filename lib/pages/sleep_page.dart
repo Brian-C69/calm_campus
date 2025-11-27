@@ -550,81 +550,79 @@ class _SleepPageState extends State<SleepPage> {
                         style: textTheme.titleLarge,
                       ),
                       const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _SleepField(
-                              label: 'Date',
-                              value: _formatDate(_selectedDate),
-                              icon: Icons.calendar_today,
-                              onTap: _pickDate,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _SleepField(
-                              label: 'Went to bed',
-                              value: _sleepStart.format(context),
-                              icon: Icons.bedtime,
-                              onTap: () => _pickTime(isStart: true),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _SleepField(
-                              label: 'Woke up',
-                              value: _sleepEnd.format(context),
-                              icon: Icons.wb_sunny_outlined,
-                              onTap: () => _pickTime(isStart: false),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text('Restfulness', style: textTheme.titleMedium),
-                                    Text(_restfulness.toStringAsFixed(0)),
-                                  ],
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          final bool useTwoColumns = constraints.maxWidth >= 520;
+                          final double fieldWidth = useTwoColumns
+                              ? (constraints.maxWidth - 12) / 2
+                              : constraints.maxWidth;
+
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Wrap(
+                                spacing: 12,
+                                runSpacing: 12,
+                                children: [
+                                  SizedBox(
+                                    width: fieldWidth,
+                                    child: _SleepField(
+                                      label: 'Date',
+                                      value: _formatDate(_selectedDate),
+                                      icon: Icons.calendar_today,
+                                      onTap: _pickDate,
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    width: fieldWidth,
+                                    child: _SleepField(
+                                      label: 'Went to bed',
+                                      value: _sleepStart.format(context),
+                                      icon: Icons.bedtime,
+                                      onTap: () => _pickTime(isStart: true),
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    width: fieldWidth,
+                                    child: _SleepField(
+                                      label: 'Woke up',
+                                      value: _sleepEnd.format(context),
+                                      icon: Icons.wb_sunny_outlined,
+                                      onTap: () => _pickTime(isStart: false),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              _RestfulnessSlider(
+                                restfulness: _restfulness,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _restfulness = value;
+                                  });
+                                },
+                                textTheme: textTheme,
+                              ),
+                              const SizedBox(height: 12),
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton.icon(
+                                  onPressed: _isSaving ? null : _saveEntry,
+                                  icon: _isSaving
+                                      ? const SizedBox(
+                                          height: 18,
+                                          width: 18,
+                                          child:
+                                              CircularProgressIndicator(strokeWidth: 2),
+                                        )
+                                      : const Icon(Icons.nights_stay),
+                                  label:
+                                      Text(_isSaving ? 'Saving...' : 'Save sleep entry'),
                                 ),
-                                Slider(
-                                  value: _restfulness,
-                                  divisions: 4,
-                                  min: 1,
-                                  max: 5,
-                                  label: _restfulness.toStringAsFixed(0),
-                                  onChanged: (double value) {
-                                    setState(() {
-                                      _restfulness = value;
-                                    });
-                                  },
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed: _isSaving ? null : _saveEntry,
-                          icon: _isSaving
-                              ? const SizedBox(
-                                  height: 18,
-                                  width: 18,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
-                                )
-                              : const Icon(Icons.nights_stay),
-                          label: Text(_isSaving ? 'Saving...' : 'Save sleep entry'),
-                        ),
+                              ),
+                            ],
+                          );
+                        },
                       ),
                     ],
                   ),
@@ -793,6 +791,42 @@ class _SleepInsightCard extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class _RestfulnessSlider extends StatelessWidget {
+  const _RestfulnessSlider({
+    required this.restfulness,
+    required this.onChanged,
+    required this.textTheme,
+  });
+
+  final double restfulness;
+  final ValueChanged<double> onChanged;
+  final TextTheme textTheme;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('Restfulness', style: textTheme.titleMedium),
+            Text(restfulness.toStringAsFixed(0)),
+          ],
+        ),
+        Slider(
+          value: restfulness,
+          divisions: 4,
+          min: 1,
+          max: 5,
+          label: restfulness.toStringAsFixed(0),
+          onChanged: onChanged,
+        ),
+      ],
     );
   }
 }

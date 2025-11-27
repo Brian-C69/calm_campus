@@ -22,6 +22,7 @@ class _RelaxPageState extends State<RelaxPage> {
 
   bool _isLoadingAmbient = false;
   bool _isLoadingGuided = false;
+  bool _isPlayerExpanded = false;
   double _ambientVolume = 0.8;
   double _guidedVolume = 0.8;
 
@@ -315,13 +316,14 @@ class _RelaxPageState extends State<RelaxPage> {
   @override
   Widget build(BuildContext context) {
     final safeBottom = MediaQuery.of(context).padding.bottom;
+    final playerPadding = _isPlayerExpanded ? 260.0 : 140.0;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Relax & Meditations')),
       body: Stack(
         children: [
           ListView(
-            padding: EdgeInsets.fromLTRB(16, 16, 16, 220 + safeBottom),
+            padding: EdgeInsets.fromLTRB(16, 16, 16, playerPadding + safeBottom),
             children: [
               _buildBreathingCard(context),
               const SizedBox(height: 12),
@@ -364,7 +366,7 @@ class _RelaxPageState extends State<RelaxPage> {
           Positioned(
             left: 16,
             right: 16,
-            bottom: 16 + safeBottom,
+            bottom: 12,
             child: _buildFloatingPlayer(),
           ),
         ],
@@ -571,63 +573,151 @@ class _RelaxPageState extends State<RelaxPage> {
       return const SizedBox.shrink();
     }
 
-    return Card(
-      color: Theme.of(context).colorScheme.surfaceContainerHighest,
-      elevation: 6,
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Floating player',
-                style: Theme.of(context).textTheme.titleMedium,
+    return StreamBuilder<PlayerState>(
+      stream: _ambientPlayer.playerStateStream,
+      builder: (context, ambientSnapshot) {
+        return StreamBuilder<PlayerState>(
+          stream: _guidedPlayer.playerStateStream,
+          builder: (context, guidedSnapshot) {
+            final ambientState = ambientSnapshot.data;
+            final guidedState = guidedSnapshot.data;
+
+            final collapsedTitle = [
+              if (showAmbient) 'Ambient: ${_currentAmbientTrack!.title}',
+              if (showGuided) 'Guided: ${_currentGuidedTrack!.title}',
+            ].join('  •  ');
+
+            return SafeArea(
+              child: Card(
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                elevation: 6,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            _isPlayerExpanded
+                                ? Icons.keyboard_arrow_down
+                                : Icons.keyboard_arrow_up,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Now playing',
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                          ),
+                          IconButton(
+                            tooltip: _isPlayerExpanded ? 'Minimize' : 'Expand',
+                            onPressed: () {
+                              setState(() {
+                                _isPlayerExpanded = !_isPlayerExpanded;
+                              });
+                            },
+                            icon: Icon(
+                              _isPlayerExpanded
+                                  ? Icons.close_fullscreen
+                                  : Icons.open_in_full,
+                            ),
+                          ),
+                        ],
+                      ),
+                      AnimatedCrossFade(
+                        duration: const Duration(milliseconds: 200),
+                        firstCurve: Curves.easeInOut,
+                        secondCurve: Curves.easeInOut,
+                        crossFadeState: _isPlayerExpanded
+                            ? CrossFadeState.showFirst
+                            : CrossFadeState.showSecond,
+                        firstChild: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (showAmbient)
+                              AmbientPlayerControls(
+                                title: _currentAmbientTrack!.title,
+                                isPlaying: ambientState?.playing ?? false,
+                                onPlayPause: () =>
+                                    _toggleAmbient(_currentAmbientTrack!),
+                                volume: _ambientVolume,
+                                onVolumeChanged: (value) {
+                                  setState(() => _ambientVolume = value);
+                                  _ambientPlayer.setVolume(value);
+                                },
+                              ),
+                            if (showGuided) ...[
+                              if (showAmbient) const SizedBox(height: 12),
+                              GuidedPlayerControls(
+                                title: _currentGuidedTrack!.title,
+                                isPlaying: guidedState?.playing ?? false,
+                                onPlayPause: () =>
+                                    _toggleGuided(_currentGuidedTrack!),
+                                onForward: () => _seekGuided(0.5),
+                                onBackward: () => _seekGuided(-0.5),
+                                volume: _guidedVolume,
+                                onVolumeChanged: (value) {
+                                  setState(() => _guidedVolume = value);
+                                  _guidedPlayer.setVolume(value);
+                                },
+                              ),
+                            ],
+                          ],
+                        ),
+                        secondChild: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              collapsedTitle,
+                              style: Theme.of(context).textTheme.bodyMedium,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 8),
+                            Wrap(
+                              spacing: 4,
+                              runSpacing: 4,
+                              alignment: WrapAlignment.end,
+                              children: [
+                                if (showAmbient)
+                                  IconButton.filledTonal(
+                                    tooltip: ambientState?.playing == true
+                                        ? 'Pause ambient'
+                                        : 'Play ambient',
+                                    icon: Icon(ambientState?.playing == true
+                                        ? Icons.pause
+                                        : Icons.play_arrow),
+                                    onPressed: () =>
+                                        _toggleAmbient(_currentAmbientTrack!),
+                                  ),
+                                if (showGuided)
+                                  IconButton.filledTonal(
+                                    tooltip: guidedState?.playing == true
+                                        ? 'Pause guided'
+                                        : 'Play guided',
+                                    icon: Icon(guidedState?.playing == true
+                                        ? Icons.pause
+                                        : Icons.play_arrow),
+                                    onPressed: () =>
+                                        _toggleGuided(_currentGuidedTrack!),
+                                  ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              const SizedBox(height: 8),
-              if (showAmbient)
-                StreamBuilder<PlayerState>(
-                  stream: _ambientPlayer.playerStateStream,
-                  builder: (context, snapshot) {
-                    final state = snapshot.data;
-                    final isPlaying = state?.playing ?? false;
-                    return AmbientPlayerControls(
-                      title: _currentAmbientTrack!.title,
-                      isPlaying: isPlaying,
-                      onPlayPause: () => _toggleAmbient(_currentAmbientTrack!),
-                      volume: _ambientVolume,
-                      onVolumeChanged: (value) {
-                        setState(() => _ambientVolume = value);
-                        _ambientPlayer.setVolume(value);
-                      },
-                    );
-                  },
-                ),
-              if (showGuided) ...[
-                if (showAmbient) const SizedBox(height: 12),
-                StreamBuilder<PlayerState>(
-                  stream: _guidedPlayer.playerStateStream,
-                  builder: (context, snapshot) {
-                    final state = snapshot.data;
-                    final isPlaying = state?.playing ?? false;
-                    return GuidedPlayerControls(
-                      title: _currentGuidedTrack!.title,
-                      isPlaying: isPlaying,
-                      onPlayPause: () => _toggleGuided(_currentGuidedTrack!),
-                      onForward: () => _seekGuided(0.5),
-                      onBackward: () => _seekGuided(-0.5),
-                      volume: _guidedVolume,
-                      onVolumeChanged: (value) {
-                        setState(() => _guidedVolume = value);
-                        _guidedPlayer.setVolume(value);
-                      },
-                    );
-                  },
-                ),
-              ],
-          ],
-        ),
-      ),
+            );
+          },
+        );
+      },
     );
   }
 }

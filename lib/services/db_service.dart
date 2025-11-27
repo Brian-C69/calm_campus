@@ -8,6 +8,7 @@ import '../models/journal_entry.dart';
 import '../models/mood_entry.dart';
 import '../models/period_cycle.dart';
 import '../models/sleep_entry.dart';
+import '../models/support_contact.dart';
 import '../models/task.dart';
 
 class DbService {
@@ -16,7 +17,7 @@ class DbService {
   static final DbService instance = DbService._();
 
   static const String _databaseName = 'calm_campus.db';
-  static const int _databaseVersion = 6;
+  static const int _databaseVersion = 7;
 
   static const String _moodsTable = 'moods';
   static const String _classesTable = 'classes';
@@ -24,6 +25,7 @@ class DbService {
   static const String _journalTable = 'journal_entries';
   static const String _sleepTable = 'sleep_entries';
   static const String _periodCyclesTable = 'period_cycles';
+  static const String _supportContactsTable = 'support_contacts';
 
   Database? _database;
 
@@ -41,6 +43,7 @@ class DbService {
       await _createJournalTable(db);
       await _createSleepTable(db);
       await _createPeriodCyclesTable(db);
+      await _createSupportContactsTable(db);
     }, onUpgrade: (Database db, int oldVersion, int newVersion) async {
       if (oldVersion < 2) {
         await db.execute(
@@ -67,6 +70,10 @@ class DbService {
 
       if (oldVersion < 6) {
         await _createPeriodCyclesTable(db);
+      }
+
+      if (oldVersion < 7) {
+        await _createSupportContactsTable(db);
       }
     });
 
@@ -146,6 +153,19 @@ class DbService {
         cycleEndDate TEXT NOT NULL,
         calculatedCycleLength INTEGER,
         periodDurationDays INTEGER NOT NULL
+      )
+    ''');
+  }
+
+  Future<void> _createSupportContactsTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE $_supportContactsTable (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        relationship TEXT NOT NULL,
+        contactType TEXT NOT NULL,
+        contactValue TEXT NOT NULL,
+        priority INTEGER NOT NULL
       )
     ''');
   }
@@ -495,5 +515,52 @@ class DbService {
 
     if (result.isEmpty) return null;
     return DateTime.parse(result.first['cycleStartDate'] as String);
+  }
+
+  Future<int> insertSupportContact(SupportContact contact) async {
+    final Database db = await database;
+    return db.insert(_supportContactsTable, contact.toMap());
+  }
+
+  Future<List<SupportContact>> getAllSupportContacts() async {
+    final Database db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      _supportContactsTable,
+      orderBy: 'priority ASC, name COLLATE NOCASE ASC',
+    );
+
+    return maps.map(SupportContact.fromMap).toList();
+  }
+
+  Future<List<SupportContact>> getTopPriorityContacts(int limit) async {
+    final Database db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      _supportContactsTable,
+      orderBy: 'priority ASC, name COLLATE NOCASE ASC',
+      limit: limit,
+    );
+
+    return maps.map(SupportContact.fromMap).toList();
+  }
+
+  Future<int> updateSupportContact(SupportContact contact) async {
+    if (contact.id == null) return 0;
+
+    final Database db = await database;
+    return db.update(
+      _supportContactsTable,
+      contact.toMap(),
+      where: 'id = ?',
+      whereArgs: [contact.id],
+    );
+  }
+
+  Future<int> deleteSupportContact(int id) async {
+    final Database db = await database;
+    return db.delete(
+      _supportContactsTable,
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 }

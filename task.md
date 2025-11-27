@@ -531,39 +531,39 @@ So the app can remember “my safe people” and show them quickly in rough time
 
 ### 14.1 Data Model
 
-- [ ] Define `SupportContact` model:
-    - [ ] `id`
-    - [ ] `name`
-    - [ ] `relationship` (friend, sibling, lecturer, etc.)
-    - [ ] `contactType` (phone, WhatsApp, email, etc.)
-    - [ ] `contactValue`
-    - [ ] `priority` (e.g. 1 = show on HelpNow first)
+- [x] Define `SupportContact` model:
+    - [x] `id`
+    - [x] `name`
+    - [x] `relationship` (friend, sibling, lecturer, etc.)
+    - [x] `contactType` (phone, WhatsApp, email, etc.)
+    - [x] `contactValue`
+    - [x] `priority` (e.g. 1 = show on HelpNow first)
 
-- [ ] Add `support_contacts` table in SQLite:
-    - [ ] `insertSupportContact(SupportContact contact)`
-    - [ ] `getAllSupportContacts()`
-    - [ ] `getTopPriorityContacts(int limit)`
-    - [ ] `updateSupportContact()`
-    - [ ] `deleteSupportContact(int id)`
+- [x] Add `support_contacts` table in SQLite:
+    - [x] `insertSupportContact(SupportContact contact)`
+    - [x] `getAllSupportContacts()`
+    - [x] `getTopPriorityContacts(int limit)`
+    - [x] `updateSupportContact()`
+    - [x] `deleteSupportContact(int id)`
 
 ### 14.2 UI – “My Safety & Support Plan”
 
-- [ ] Create `SupportPlanPage` (or section in HelpNow/MyPlan):
-    - [ ] List of saved support contacts
-    - [ ] Add / edit / delete contact
-    - [ ] Small explanation:
-        - [ ] “These are the people you can reach out to when things feel heavy.”
+- [x] Create `SupportPlanPage` (or section in HelpNow/MyPlan):
+    - [x] List of saved support contacts
+    - [x] Add / edit / delete contact
+    - [x] Small explanation:
+        - [x] “These are the people you can reach out to when things feel heavy.”
 
-- [ ] Mark priority contacts:
-    - [ ] Option like “Pin as first to call / text”
-    - [ ] Show priority ones at top
+- [x] Mark priority contacts:
+    - [x] Option like “Pin as first to call / text”
+    - [x] Show priority ones at top
 
 ### 14.3 HelpNow & Shortcuts
 
-- [ ] Integrate with `HelpNowPage`:
-    - [ ] Show top priority support contacts as quick actions:
-        - [ ] e.g. “Call best friend”, “Message sister”, etc.
-    - [ ] Tap to launch dialer / WhatsApp / email (where possible)
+- [x] Integrate with `HelpNowPage`:
+    - [x] Show top priority support contacts as quick actions:
+        - [x] e.g. “Call best friend”, “Message sister”, etc.
+    - [x] Tap to launch dialer / WhatsApp / email (where possible)
 
 ### 14.4 AI Buddy Integration (Opt-in)
 

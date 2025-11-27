@@ -14,6 +14,7 @@ import 'pages/relax_page.dart';
 import 'pages/period_tracker_page.dart';
 import 'pages/sleep_page.dart';
 import 'pages/settings_page.dart';
+import 'pages/support_plan_page.dart';
 import 'pages/tasks_page.dart';
 import 'pages/timetable_page.dart';
 
@@ -50,6 +51,7 @@ class MyApp extends StatelessWidget {
         '/challenges': (_) => const CommonChallengesPage(),
         '/sleep': (_) => const SleepPage(),
         '/period-tracker': (_) => const PeriodTrackerPage(),
+        '/support-plan': (_) => const SupportPlanPage(),
       },
     );
   }

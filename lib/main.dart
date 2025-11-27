@@ -10,6 +10,7 @@ import 'pages/home_page.dart';
 import 'pages/journal_page.dart';
 import 'pages/mood_page.dart';
 import 'pages/movement_page.dart';
+import 'pages/breathing_page.dart';
 import 'pages/period_tracker_page.dart';
 import 'pages/profile_page.dart';
 import 'pages/relax_page.dart';
@@ -48,6 +49,7 @@ class MyApp extends StatelessWidget {
         '/tasks': (_) => const TasksPage(),
         '/chat': (_) => const ChatPage(),
         '/relax': (_) => const RelaxPage(),
+        '/breathing': (_) => const BreathingPage(),
         '/profile': (_) => const ProfilePage(),
         '/settings': (_) => const SettingsPage(),
         '/help-now': (_) => const HelpNowPage(),

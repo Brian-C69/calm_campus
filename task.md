@@ -435,3 +435,90 @@ You can change `[ ]` to `[x]` as you complete items.
     - [ ] Using FCM triggered when a new announcement is created
     - [ ] Students tap notification → CalmCampus opens Announcement page
 
+---
+
+## 13. Period & Cycle Tracker (Opt-in, Private)
+
+### 13.1 Data Model & Storage
+
+- [ ] Define `PeriodCycle` model:
+    - [ ] `id`
+    - [ ] `cycleStartDate` (first day of bleeding)
+    - [ ] `cycleEndDate` (last day of bleeding)
+    - [ ] `calculatedCycleLength` (days between this start and previous start)
+    - [ ] `periodDurationDays`
+- [ ] Add `period_cycles` table in SQLite:
+    - [ ] Create migration in `DbService`
+    - [ ] CRUD methods:
+        - [ ] `insertPeriodCycle(PeriodCycle cycle)`
+        - [ ] `getRecentCycles({limit})`
+        - [ ] `getCyclesBetween(DateTime from, DateTime to)`
+        - [ ] `deleteCycle(int id)`
+        - [ ] (Optional) `updateCycle(PeriodCycle cycle)`
+
+### 13.2 Cycle Tracker UI & Flows
+
+- [ ] Create `PeriodTrackerPage` (or tab under a “Health” / “Body & Sleep” section)
+- [ ] Manual entry flow:
+    - [ ] Date pickers:
+        - [ ] “Period started” (start date)
+        - [ ] “Period ended” (end date)
+    - [ ] Quick actions:
+        - [ ] Button: **“Period started today”** → auto-fill start with today
+        - [ ] Button: **“Period ended today”** → auto-fill end with today for the active cycle
+    - [ ] Validate:
+        - [ ] End date not before start date
+        - [ ] Reasonable duration (e.g. 1–14 days, but not enforced too strictly)
+- [ ] Edit/delete past cycles:
+    - [ ] List recent periods with start / end / duration
+    - [ ] Option to correct wrong entries
+
+### 13.3 Cycle Statistics & Insights
+
+- [ ] Compute stats from last N cycles (e.g. last 6 cycles):
+    - [ ] Average cycle length (days between starts)
+    - [ ] Average period duration
+    - [ ] Shortest / longest cycle (optional)
+- [ ] Show simple summary UI:
+    - [ ] “Average cycle: ~X days”
+    - [ ] “Average period: ~Y days”
+    - [ ] “Last period: [start] – [end] (Z days)”
+- [ ] Add gentle explanatory text:
+    - [ ] Cycles are approximate and can vary
+    - [ ] Not for contraception or medical decisions
+
+### 13.4 Prediction & Ovulation Estimation
+
+- [ ] Implement helper functions:
+    - [ ] `DateTime? predictNextPeriodStart(List<PeriodCycle> recentCycles)`
+        - [ ] Use average cycle length from last N cycles
+    - [ ] `DateTimeRange? estimateOvulationWindow(DateTime predictedNextStart)`
+        - [ ] Approx: ovulation ~ 14 days before next period
+        - [ ] Window like: day -16 to day -12 (configurable)
+- [ ] UI for predictions:
+    - [ ] “Next period predicted in **X days** (approx. [date])”
+    - [ ] “Estimated ovulation window: [start] – [end] (approx.)”
+- [ ] Add home-level hint (if user opted in):
+    - [ ] Small chip/card: **“Your period may start in ~X days”**
+    - [ ] Or “Likely ovulation window this week” (no red alerts, just gentle info)
+
+### 13.5 Integration with Mood & Sleep
+
+- [ ] (Optional) Add cycle context to mood history:
+    - [ ] Indicator on calendar/list when user was on period
+    - [ ] Very simple observation text:
+        - [ ] e.g. “You often log ‘low energy’ during period days.”
+- [ ] (Optional) Let AI Buddy use cycle info:
+    - [ ] Only if user explicitly enables: “Allow buddy to consider my cycle when supporting me”
+    - [ ] Buddy responds more gently around predicted period or period days (fatigue, pain, emotions)
+
+### 13.6 Privacy, Consent & Copy
+
+- [ ] Opt-in toggle for Period Tracker:
+    - [ ] “Track my menstrual cycle in CalmCampus”
+    - [ ] Clarify: stored only on device (for now), not auto-shared
+- [ ] Explicit statement:
+    - [ ] “Cycle predictions are approximate and **not** for contraception or medical use.”
+- [ ] Ensure:
+    - [ ] No automatic sharing with DSA or admins (only via explicit reports the student chooses)
+    - [ ] Language is non-judgmental, body-neutral, and inclusive

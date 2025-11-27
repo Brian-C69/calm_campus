@@ -20,11 +20,16 @@ import 'pages/support_plan_page.dart';
 import 'pages/tasks_page.dart';
 import 'pages/timetable_page.dart';
 import 'services/notification_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 Future<void> main() async {
+  await Supabase.initialize(
+    url: 'https://sfkefyqyuhicwbjnsdes.supabase.co',
+    anonKey: 'sb_publishable_CQ9qwM0iWstuTJBrcH4eeQ_Th6W0TS4',
+  );
   WidgetsFlutterBinding.ensureInitialized();
   await NotificationService.instance.initialize();
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {

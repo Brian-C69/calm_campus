@@ -101,8 +101,6 @@ class _HelpNowPageState extends State<HelpNowPage> {
         break;
     }
 
-    if (uri == null) return;
-
     final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!launched && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(

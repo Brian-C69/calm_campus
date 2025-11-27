@@ -329,31 +329,33 @@ You can change `[ ]` to `[x]` as you complete items.
 ### 11.1 Sleep Data Model & Storage
 
 - [ ] Define `SleepEntry` model:
-    - [ ] `id`
-    - [ ] `date` (date of sleep / wake)
-    - [ ] `sleepStart` (DateTime or stored string)
-    - [ ] `sleepEnd`
-    - [ ] `durationHours`
-    - [ ] `restfulness` (1–5)
-- [ ] Add `sleep_entries` table in SQLite:
-    - [ ] Create migration in `DbService`
-    - [ ] CRUD methods:
-        - [ ] `insertSleepEntry(SleepEntry entry)`
-        - [ ] `getSleepEntries({from, to})`
-        - [ ] `deleteSleepEntry(id)`
+- [x] Define `SleepEntry` model:
+    - [x] `id`
+    - [x] `date` (date of sleep / wake)
+    - [x] `sleepStart` (DateTime or stored string)
+    - [x] `sleepEnd`
+    - [x] `durationHours`
+    - [x] `restfulness` (1–5)
+- [x] Add `sleep_entries` table in SQLite:
+    - [x] Create migration in `DbService`
+    - [x] CRUD methods:
+        - [x] `insertSleepEntry(SleepEntry entry)`
+        - [x] `getSleepEntries({from, to})`
+        - [x] `deleteSleepEntry(id)`
         - [ ] (Optional) `updateSleepEntry()`
 
 ### 11.2 Sleep UI (Manual & Simple Tracker)
 
 - [ ] Add Sleep section/page:
-    - [ ] Either standalone `SleepPage` or inside Mood/Relax
-- [ ] Manual sleep log:
-    - [ ] Time pickers for “Went to bed” and “Woke up”
-    - [ ] Slider / rating for “How rested do you feel?”
-    - [ ] Save to DB
-- [ ] Sleep history view:
-    - [ ] List / simple chart of last 7–14 days
-    - [ ] Show duration + restfulness per entry
+- [x] Add Sleep section/page:
+    - [x] Either standalone `SleepPage` or inside Mood/Relax
+- [x] Manual sleep log:
+    - [x] Time pickers for “Went to bed” and “Woke up”
+    - [x] Slider / rating for “How rested do you feel?”
+    - [x] Save to DB
+- [x] Sleep history view:
+    - [x] List / simple chart of last 7–14 days
+    - [x] Show duration + restfulness per entry
 - [ ] Simple in-app sleep session (optional):
     - [ ] “Start Sleep Session” button (stores start time)
     - [ ] “I’m awake” button (stores end time, calculates duration)
@@ -361,14 +363,14 @@ You can change `[ ]` to `[x]` as you complete items.
 
 ### 11.3 Sleep–Mood Insights
 
-- [ ] Add sleep info into Home or Mood History:
-    - [ ] Show “Last night: Xh Ym” on Home if data exists
-- [ ] Simple correlations:
-    - [ ] Compute average sleep duration on “good mood” vs “low mood” days
-    - [ ] Show small text: “You often feel low when sleep < 6 hours.”
-- [ ] Add gentle copy:
-    - [ ] Reminders that poor sleep can affect mood
-    - [ ] No shaming, only validation + tiny suggestions
+- [x] Add sleep info into Home or Mood History:
+    - [x] Show “Last night: Xh Ym” on Home if data exists
+- [x] Simple correlations:
+    - [x] Compute average sleep duration on “good mood” vs “low mood” days
+    - [x] Show small text: “You often feel low when sleep < 6 hours.”
+- [x] Add gentle copy:
+    - [x] Reminders that poor sleep can affect mood
+    - [x] No shaming, only validation + tiny suggestions
 
 ### 11.4 Future Work (for report only)
 

@@ -11,6 +11,7 @@ import 'pages/journal_page.dart';
 import 'pages/mood_page.dart';
 import 'pages/profile_page.dart';
 import 'pages/relax_page.dart';
+import 'pages/sleep_page.dart';
 import 'pages/settings_page.dart';
 import 'pages/tasks_page.dart';
 import 'pages/timetable_page.dart';
@@ -46,6 +47,7 @@ class MyApp extends StatelessWidget {
         '/help-now': (_) => const HelpNowPage(),
         '/dsa-summary': (_) => const DsaSummaryPage(),
         '/challenges': (_) => const CommonChallengesPage(),
+        '/sleep': (_) => const SleepPage(),
       },
     );
   }

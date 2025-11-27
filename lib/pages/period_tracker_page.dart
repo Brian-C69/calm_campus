@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:table_calendar/table_calendar.dart';
 
 import '../models/period_cycle.dart';
 import '../services/db_service.dart';
@@ -18,6 +19,8 @@ class _PeriodTrackerPageState extends State<PeriodTrackerPage> {
   int? _editingId;
   bool _isSaving = false;
   bool _isDeleting = false;
+  DateTime _focusedDay = DateTime.now();
+  DateTime? _selectedDay;
 
   @override
   void initState() {
@@ -67,6 +70,226 @@ class _PeriodTrackerPageState extends State<PeriodTrackerPage> {
 
   int _calculateDurationDays(DateTime start, DateTime end) {
     return end.difference(start).inDays + 1;
+  }
+
+  String _monthLabel(DateTime date) {
+    const List<String> monthLabels = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return monthLabels[date.month - 1];
+  }
+
+  ({Set<DateTime> allDays, Set<DateTime> ongoingDays})
+      _generatePeriodDaySets(List<PeriodCycle> cycles) {
+    final Set<DateTime> allDays = {};
+    final Set<DateTime> ongoingDays = {};
+    final DateTime today = DateUtils.dateOnly(DateTime.now());
+
+    for (final PeriodCycle cycle in cycles) {
+      final DateTime start = DateUtils.dateOnly(cycle.cycleStartDate);
+      final DateTime end = DateUtils.dateOnly(cycle.cycleEndDate);
+      final bool isOngoing = !today.isBefore(start) && !today.isAfter(end);
+
+      for (int i = 0; i <= end.difference(start).inDays; i++) {
+        final DateTime day = start.add(Duration(days: i));
+        allDays.add(day);
+        if (isOngoing) {
+          ongoingDays.add(day);
+        }
+      }
+    }
+
+    return (allDays: allDays, ongoingDays: ongoingDays);
+  }
+
+  Widget _buildDayCell(
+    BuildContext context,
+    DateTime day,
+    Set<DateTime> periodDays,
+    Set<DateTime> ongoingDays, {
+    bool isToday = false,
+    bool isSelected = false,
+  }) {
+    final DateTime dateOnly = DateUtils.dateOnly(day);
+    final ThemeData theme = Theme.of(context);
+    final bool isPeriodDay = periodDays.contains(dateOnly);
+    final bool isOngoingDay = ongoingDays.contains(dateOnly);
+
+    Color? backgroundColor;
+    Color? textColor;
+
+    if (isSelected) {
+      backgroundColor = theme.colorScheme.primary;
+      textColor = theme.colorScheme.onPrimary;
+    } else if (isPeriodDay) {
+      backgroundColor = isOngoingDay
+          ? theme.colorScheme.errorContainer
+          : theme.colorScheme.secondaryContainer;
+      textColor = isOngoingDay
+          ? theme.colorScheme.onErrorContainer
+          : theme.colorScheme.onSecondaryContainer;
+    } else if (isToday) {
+      backgroundColor = theme.colorScheme.primaryContainer;
+      textColor = theme.colorScheme.onPrimaryContainer;
+    }
+
+    return Container(
+      margin: const EdgeInsets.all(6),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        '${day.day}',
+        style: TextStyle(
+          color: textColor,
+          fontWeight: isOngoingDay ? FontWeight.w700 : FontWeight.normal,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLegendChip({required Color color, required String label}) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 14,
+          height: 14,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(7),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(label),
+      ],
+    );
+  }
+
+  Widget _buildCalendar(List<PeriodCycle> cycles) {
+    if (cycles.isEmpty) {
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Calendar view',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Add a period to see it highlighted on your calendar.',
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final ({Set<DateTime> allDays, Set<DateTime> ongoingDays}) periodSets =
+        _generatePeriodDaySets(cycles);
+    final DateTime today = DateUtils.dateOnly(DateTime.now());
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Calendar view',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                Text(
+                  '${_monthLabel(_focusedDay)} ${_focusedDay.year}',
+                  style: Theme.of(context).textTheme.labelLarge,
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            TableCalendar<void>(
+              firstDay: DateTime(today.year - 1, 1, 1),
+              lastDay: DateTime(today.year + 1, 12, 31),
+              focusedDay: _focusedDay,
+              availableCalendarFormats: const {CalendarFormat.month: 'Month'},
+              calendarFormat: CalendarFormat.month,
+              selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+              onDaySelected: (selectedDay, focusedDay) {
+                setState(() {
+                  _selectedDay = selectedDay;
+                  _focusedDay = focusedDay;
+                });
+              },
+              headerStyle: const HeaderStyle(
+                formatButtonVisible: false,
+                titleCentered: true,
+              ),
+              calendarStyle: const CalendarStyle(
+                outsideDaysVisible: false,
+                isTodayHighlighted: false,
+              ),
+              calendarBuilders: CalendarBuilders(
+                defaultBuilder: (context, day, focusedDay) => _buildDayCell(
+                  context,
+                  day,
+                  periodSets.allDays,
+                  periodSets.ongoingDays,
+                  isToday: isSameDay(day, today),
+                ),
+                todayBuilder: (context, day, focusedDay) => _buildDayCell(
+                  context,
+                  day,
+                  periodSets.allDays,
+                  periodSets.ongoingDays,
+                  isToday: true,
+                ),
+                selectedBuilder: (context, day, focusedDay) => _buildDayCell(
+                  context,
+                  day,
+                  periodSets.allDays,
+                  periodSets.ongoingDays,
+                  isSelected: true,
+                  isToday: isSameDay(day, today),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 16,
+              runSpacing: 8,
+              children: [
+                _buildLegendChip(
+                  color: Theme.of(context).colorScheme.secondaryContainer,
+                  label: 'Past period days',
+                ),
+                _buildLegendChip(
+                  color: Theme.of(context).colorScheme.errorContainer,
+                  label: 'Ongoing period',
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   bool _validateDates(BuildContext context) {
@@ -364,6 +587,8 @@ class _PeriodTrackerPageState extends State<PeriodTrackerPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                _buildCalendar(cycles),
+                const SizedBox(height: 12),
                 Card(
                   child: Padding(
                     padding: const EdgeInsets.all(16),

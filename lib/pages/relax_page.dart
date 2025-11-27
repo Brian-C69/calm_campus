@@ -139,6 +139,41 @@ class _RelaxPageState extends State<RelaxPage> {
       category: 'Focus',
     ),
     RelaxTrack(
+      title: 'Stress Relief Day 1',
+      assetPath: 'assets/audio/guided/stress_day1.mp3',
+      category: 'Stress Relief',
+    ),
+    RelaxTrack(
+      title: 'Stress Relief Day 2',
+      assetPath: 'assets/audio/guided/stress_day2.mp3',
+      category: 'Stress Relief',
+    ),
+    RelaxTrack(
+      title: 'Stress Relief Day 3',
+      assetPath: 'assets/audio/guided/stress_day3.mp3',
+      category: 'Stress Relief',
+    ),
+    RelaxTrack(
+      title: 'Stress Relief Day 4',
+      assetPath: 'assets/audio/guided/stress_day4.mp3',
+      category: 'Stress Relief',
+    ),
+    RelaxTrack(
+      title: 'Stress Relief Day 5',
+      assetPath: 'assets/audio/guided/stress_day5.mp3',
+      category: 'Stress Relief',
+    ),
+    RelaxTrack(
+      title: 'Stress Relief Day 6',
+      assetPath: 'assets/audio/guided/stress_day6.mp3',
+      category: 'Stress Relief',
+    ),
+    RelaxTrack(
+      title: 'Stress Relief Day 7',
+      assetPath: 'assets/audio/guided/stress_day7.mp3',
+      category: 'Stress Relief',
+    ),
+    RelaxTrack(
       title: 'Relax at Night',
       assetPath: 'assets/audio/guided/Relax_at_Night.mp3',
       category: 'Sleep',
@@ -313,7 +348,7 @@ class _RelaxPageState extends State<RelaxPage> {
                   return _buildSection(
                     title: 'Guided series',
                     description:
-                        'Pick a Focus or Sleep session to match how you want to feel.',
+                        'Pick a Focus, Stress Relief, or Sleep session to match how you want to feel.',
                     tracks: _guidedTracks,
                     playerState: guidedState,
                     isAmbient: false,

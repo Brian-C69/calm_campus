@@ -150,8 +150,8 @@ You can change `[ ]` to `[x]` as you complete items.
 ### 3.3 Timetable & Tasks
 
 - [ ] `TimetablePage`:
-    - [ ] Add/edit/delete class entries
-    - [ ] View by day or simple list
+    - [x] Add/edit/delete class entries
+    - [x] View by day or simple list
     - [ ] Helper: highlight upcoming class
 - [ ] `TasksPage`:
     - [ ] Add/edit/delete tasks
@@ -171,23 +171,15 @@ You can change `[ ]` to `[x]` as you complete items.
 
 ### 4.2 RelaxPage UI
 
-- [ ] `RelaxPage` with tabs:
-    - [ ] Music
-    - [ ] Meditations
-- [ ] Music tab:
-    - [ ] List of `RelaxTrack` items (title + play button)
-    - [ ] Basic single-track playback
-    - [ ] (Stretch) Remember last used track
-- [ ] Meditations tab:
-    - [ ] List of `MeditationSession` cards
-    - [ ] `MeditationDetailPage`:
-        - [ ] Show title + description + steps
-        - [ ] Optional: play guided voice + ambient
-- [ ] Multi-audio session page:
-    - [ ] Two players: ambient + voice
-    - [ ] Slider for ambient volume
-    - [ ] Slider for voice volume
-    - [ ] Start/Stop session button
+- [x] `RelaxPage` with sections:
+    - [x] Ambient soundscapes
+    - [x] Guided focus / meditation series
+- [x] Music / audio:
+    - [x] List of `RelaxTrack` items (title + play button)
+    - [x] Dual-player support (ambient + guided together)
+    - [x] Volume sliders for ambient & guided
+    - [x] Floating player with basic controls
+- [ ] (Nice-to-have) Remember last used track / combo
 
 ---
 
@@ -329,4 +321,115 @@ You can change `[ ]` to `[x]` as you complete items.
     - [ ] Implementation
     - [ ] Ethical considerations
     - [ ] Limitations & future work
+
+---
+
+## 11. Sleep Tracking & Insights
+
+### 11.1 Sleep Data Model & Storage
+
+- [ ] Define `SleepEntry` model:
+    - [ ] `id`
+    - [ ] `date` (date of sleep / wake)
+    - [ ] `sleepStart` (DateTime or stored string)
+    - [ ] `sleepEnd`
+    - [ ] `durationHours`
+    - [ ] `restfulness` (1–5)
+- [ ] Add `sleep_entries` table in SQLite:
+    - [ ] Create migration in `DbService`
+    - [ ] CRUD methods:
+        - [ ] `insertSleepEntry(SleepEntry entry)`
+        - [ ] `getSleepEntries({from, to})`
+        - [ ] `deleteSleepEntry(id)`
+        - [ ] (Optional) `updateSleepEntry()`
+
+### 11.2 Sleep UI (Manual & Simple Tracker)
+
+- [ ] Add Sleep section/page:
+    - [ ] Either standalone `SleepPage` or inside Mood/Relax
+- [ ] Manual sleep log:
+    - [ ] Time pickers for “Went to bed” and “Woke up”
+    - [ ] Slider / rating for “How rested do you feel?”
+    - [ ] Save to DB
+- [ ] Sleep history view:
+    - [ ] List / simple chart of last 7–14 days
+    - [ ] Show duration + restfulness per entry
+- [ ] Simple in-app sleep session (optional):
+    - [ ] “Start Sleep Session” button (stores start time)
+    - [ ] “I’m awake” button (stores end time, calculates duration)
+    - [ ] Prompt for restfulness after session
+
+### 11.3 Sleep–Mood Insights
+
+- [ ] Add sleep info into Home or Mood History:
+    - [ ] Show “Last night: Xh Ym” on Home if data exists
+- [ ] Simple correlations:
+    - [ ] Compute average sleep duration on “good mood” vs “low mood” days
+    - [ ] Show small text: “You often feel low when sleep < 6 hours.”
+- [ ] Add gentle copy:
+    - [ ] Reminders that poor sleep can affect mood
+    - [ ] No shaming, only validation + tiny suggestions
+
+### 11.4 Future Work (for report only)
+
+- [ ] Document potential integration with:
+    - [ ] Android Health Connect / Google Fit for sleep data
+    - [ ] Apple HealthKit (if iOS version)
+- [ ] Note consent & privacy:
+    - [ ] Explicit toggle: “Allow CalmCampus to use my sleep data.”
+    - [ ] Clarify that sleep data is not auto-shared with DSA without consent
+
+---
+
+## 12. Backend & PHP Admin (API + Web Panel)
+
+### 12.1 Server-Side Setup (PHP + MySQL)
+
+- [ ] Create MySQL database `calm_campus`
+- [ ] Design server tables (minimal for prototype):
+    - [ ] `moods` (id, user_id, mood, main_theme, note, created_at)
+    - [ ] `classes` (if syncing timetable)
+    - [ ] `announcements` (id, title, body, created_at, author)
+- [ ] Set up XAMPP/Apache virtual host or folder for `calm_campus_api/`
+
+### 12.2 PHP REST API Endpoints
+
+- [ ] Implement `moods.php`:
+    - [ ] `POST /moods` to create mood entry (JSON body)
+    - [ ] `GET /moods` to list moods (for admin/testing)
+- [ ] Implement `announcements.php`:
+    - [ ] `POST /announcements` to create announcement
+    - [ ] `GET /announcements` to list announcements for app
+- [ ] (Optional) Implement `classes.php` if timetable sync is needed
+- [ ] Add basic validation and JSON error responses
+
+### 12.3 Flutter Integration with PHP API
+
+- [ ] Create `ApiService` in Flutter:
+    - [ ] Base URL (e.g. `http://10.0.2.2/calm_campus_api`)
+    - [ ] `submitMood(...)` → POST to `moods.php`
+    - [ ] `fetchAnnouncements()` → GET from `announcements.php`
+- [ ] Decide strategy:
+    - [ ] Use server DB as main source for moods (and/or)
+    - [ ] Keep local SQLite as cache and sync periodically (conceptual for report)
+
+### 12.4 PHP Admin Web Panel
+
+- [ ] Create simple admin login (even if hard-coded for prototype)
+- [ ] Admin page: “All Mood Check-ins”
+    - [ ] Table view: user, mood, tags, created_at
+    - [ ] Filter by date range (optional)
+- [ ] Admin page: “Announcements”
+    - [ ] Form to create new announcement (title + body)
+    - [ ] List existing announcements with created_at
+- [ ] (Nice-to-have) Basic styling using simple CSS/Bootstrap
+
+### 12.5 Future Enhancements (for report)
+
+- [ ] Describe potential DSA dashboard:
+    - [ ] Aggregated statistics (no names)
+    - [ ] Filters by time range and theme (stress, sleep, social, etc.)
+- [ ] Mention possibility of integrating push notifications:
+    - [ ] Using FCM triggered when a new announcement is created
+    - [ ] Students tap notification → CalmCampus opens Announcement page
 

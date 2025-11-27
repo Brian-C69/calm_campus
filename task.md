@@ -356,10 +356,10 @@ You can change `[ ]` to `[x]` as you complete items.
 - [x] Sleep history view:
     - [x] List / simple chart of last 7–14 days
     - [x] Show duration + restfulness per entry
-- [ ] Simple in-app sleep session (optional):
-    - [ ] “Start Sleep Session” button (stores start time)
-    - [ ] “I’m awake” button (stores end time, calculates duration)
-    - [ ] Prompt for restfulness after session
+- [x] Simple in-app sleep session (optional):
+    - [x] “Start Sleep Session” button (stores start time)
+    - [x] “I’m awake” button (stores end time, calculates duration)
+    - [x] Prompt for restfulness after session
 
 ### 11.3 Sleep–Mood Insights
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/mood_entry.dart';
 import '../models/sleep_entry.dart';
@@ -12,6 +13,8 @@ class SleepPage extends StatefulWidget {
 }
 
 class _SleepPageState extends State<SleepPage> {
+  static const String _sleepSessionKey = 'sleepSessionStart';
+
   late Future<List<SleepEntry>> _entriesFuture;
   late Future<String> _insightsFuture;
 
@@ -20,6 +23,9 @@ class _SleepPageState extends State<SleepPage> {
   late TimeOfDay _sleepEnd;
   double _restfulness = 3;
   bool _isSaving = false;
+  bool _isStartingSession = false;
+  bool _isEndingSession = false;
+  DateTime? _sessionStartTime;
 
   @override
   void initState() {
@@ -30,6 +36,7 @@ class _SleepPageState extends State<SleepPage> {
     _sleepEnd = TimeOfDay.fromDateTime(now);
     _entriesFuture = _loadEntries();
     _insightsFuture = _buildInsights();
+    _restoreSessionStart();
   }
 
   Future<List<SleepEntry>> _loadEntries() {
@@ -80,6 +87,152 @@ class _SleepPageState extends State<SleepPage> {
     }
 
     return buffer.toString();
+  }
+
+  Future<void> _restoreSessionStart() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final String? rawStart = prefs.getString(_sleepSessionKey);
+    if (rawStart == null) return;
+
+    final DateTime? storedStart = DateTime.tryParse(rawStart);
+    if (storedStart == null) {
+      await prefs.remove(_sleepSessionKey);
+      return;
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _sessionStartTime = storedStart;
+    });
+  }
+
+  Future<void> _startSleepSession() async {
+    setState(() {
+      _isStartingSession = true;
+    });
+
+    final DateTime start = DateTime.now();
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_sleepSessionKey, start.toIso8601String());
+
+    if (!mounted) return;
+    setState(() {
+      _sessionStartTime = start;
+      _isStartingSession = false;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Sleep session started. Sweet dreams!'),
+      ),
+    );
+  }
+
+  Future<void> _cancelSleepSession() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_sleepSessionKey);
+    if (!mounted) return;
+    setState(() {
+      _sessionStartTime = null;
+    });
+  }
+
+  Future<int?> _promptRestfulnessRating() async {
+    double sliderValue = 3;
+
+    return showDialog<int>(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('How rested do you feel?'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('1 = exhausted, 5 = deeply rested'),
+                  Slider(
+                    value: sliderValue,
+                    divisions: 4,
+                    min: 1,
+                    max: 5,
+                    label: sliderValue.toStringAsFixed(0),
+                    onChanged: (double value) {
+                      setState(() {
+                        sliderValue = value;
+                      });
+                    },
+                  ),
+                  Text('Restfulness: ${sliderValue.toStringAsFixed(0)}/5'),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Keep sleeping'),
+                ),
+                ElevatedButton(
+                  onPressed: () =>
+                      Navigator.pop<int>(context, sliderValue.round()),
+                  child: const Text('Save session'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _endSleepSession() async {
+    if (_sessionStartTime == null) return;
+
+    setState(() {
+      _isEndingSession = true;
+    });
+
+    final int? restfulness = await _promptRestfulnessRating();
+    if (!mounted) return;
+
+    if (restfulness == null) {
+      setState(() {
+        _isEndingSession = false;
+      });
+      return;
+    }
+
+    final DateTime start = _sessionStartTime!;
+    final DateTime end = DateTime.now();
+    final Duration duration = end.difference(start);
+    final double durationHours = duration.inMinutes / 60;
+
+    final SleepEntry entry = SleepEntry(
+      date: _asDateKey(end),
+      sleepStart: start,
+      sleepEnd: end,
+      durationHours: durationHours,
+      restfulness: restfulness,
+    );
+
+    await DbService.instance.insertSleepEntry(entry);
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_sleepSessionKey);
+
+    if (!mounted) return;
+    setState(() {
+      _sessionStartTime = null;
+      _entriesFuture = _loadEntries();
+      _insightsFuture = _buildInsights();
+      _isEndingSession = false;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Logged ${_formatDuration(durationHours)} of sleep. Restfulness $restfulness/5.',
+        ),
+      ),
+    );
   }
 
   bool _isBrighterMood(MoodLevel level) {
@@ -201,6 +354,11 @@ class _SleepPageState extends State<SleepPage> {
     );
   }
 
+  Duration? _currentSessionDuration() {
+    if (_sessionStartTime == null) return null;
+    return DateTime.now().difference(_sessionStartTime!);
+  }
+
   DateTime _combineDateTime(DateTime date, TimeOfDay time) {
     return DateTime(date.year, date.month, date.day, time.hour, time.minute);
   }
@@ -264,6 +422,121 @@ class _SleepPageState extends State<SleepPage> {
               ),
               const SizedBox(height: 12),
               _SleepInsightCard(insightsFuture: _insightsFuture),
+              const SizedBox(height: 16),
+              Card(
+                elevation: 0,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Simple sleep session',
+                        style: textTheme.titleLarge,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Start a session when you tuck in. Tap “I\'m awake” to log automatically.',
+                        style: textTheme.bodyMedium,
+                      ),
+                      const SizedBox(height: 12),
+                      if (_sessionStartTime == null)
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: _isStartingSession
+                                ? null
+                                : _startSleepSession,
+                            icon: _isStartingSession
+                                ? const SizedBox(
+                                    height: 18,
+                                    width: 18,
+                                    child:
+                                        CircularProgressIndicator(strokeWidth: 2),
+                                  )
+                                : const Icon(Icons.bedtime_outlined),
+                            label: Text(
+                              _isStartingSession
+                                  ? 'Starting session...'
+                                  : 'Start sleep session',
+                            ),
+                          ),
+                        )
+                      else ...[
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('Session running'),
+                                Text(
+                                  'Started at ${_formatTime(_sessionStartTime!)}',
+                                  style: textTheme.bodyMedium,
+                                ),
+                              ],
+                            ),
+                            StreamBuilder<Duration?>(
+                              stream: Stream<Duration?>.periodic(
+                                const Duration(seconds: 1),
+                                (_) => _currentSessionDuration(),
+                              ),
+                              initialData: _currentSessionDuration(),
+                              builder: (context, snapshot) {
+                                final Duration? elapsed = snapshot.data;
+                                final String elapsedText = elapsed == null
+                                    ? '--'
+                                    : _formatDuration(
+                                        elapsed.inMinutes / 60,
+                                      );
+                                return Text(
+                                  'Elapsed: $elapsedText',
+                                  style: textTheme.titleMedium,
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed:
+                                    _isEndingSession ? null : _endSleepSession,
+                                icon: _isEndingSession
+                                    ? const SizedBox(
+                                        height: 18,
+                                        width: 18,
+                                        child: CircularProgressIndicator(
+                                            strokeWidth: 2),
+                                      )
+                                    : const Icon(Icons.wb_sunny_outlined),
+                                label: Text(
+                                  _isEndingSession
+                                      ? 'Saving...'
+                                      : 'I\'m awake',
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            OutlinedButton(
+                              onPressed:
+                                  _isEndingSession ? null : _cancelSleepSession,
+                              child: const Text('Cancel'),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'We\'ll ask how rested you feel before saving your entry.',
+                          style: textTheme.bodySmall,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
               const SizedBox(height: 16),
               Card(
                 elevation: 0,

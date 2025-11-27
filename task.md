@@ -575,3 +575,33 @@ So the app can remember “my safe people” and show them quickly in rough time
 - [ ] Buddy can:
     - [ ] Show a list of 1–3 contacts as chips/buttons
     - [ ] When tapped → open the corresponding contact action (call/text)
+
+---
+
+### 15 Movement & Energy (Fitness-lite, non-diet)
+
+- [ ] Add `MovementEntry` model
+    - [ ] `id`
+    - [ ] `date`
+    - [ ] `minutes`
+    - [ ] `type` (enum: walk, stretch, sport, etc.)
+    - [ ] `intensity` (enum: light, moderate, vigorous)
+    - [ ] `energyBefore` (1–5)
+    - [ ] `energyAfter` (1–5)
+    - [ ] `note` (optional)
+
+- [ ] DB: `movement_entries` table + CRUD
+    - [ ] `insertMovementEntry(MovementEntry entry)`
+    - [ ] `getMovementEntries({from, to})`
+    - [ ] `deleteMovementEntry(id)`
+
+- [ ] `MovementPage` UI
+    - [ ] “Today’s movement” quick log (minutes + type + intensity)
+    - [ ] Optional energy before/after sliders
+    - [ ] “Movement ideas for study days” cards (2–3 preset suggestions)
+    - [ ] Recent week summary (total active days + avg minutes)
+
+- [ ] Insights linking movement ↔ mood/sleep
+    - [ ] Helper: compute average movement on “brighter” vs “tougher” mood days
+    - [ ] Helper: compare movement on days with better restfulness
+    - [ ] Show 1–2 gentle, non-judgy statements in Movement or Sleep insights

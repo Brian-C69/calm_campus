@@ -522,3 +522,56 @@ You can change `[ ]` to `[x]` as you complete items.
 - [x] Ensure:
     - [x] No automatic sharing with DSA or admins (only via explicit reports the student chooses)
     - [x] Language is non-judgmental, body-neutral, and inclusive
+
+---
+
+## 14. Support & Safety Contacts
+
+So the app can remember “my safe people” and show them quickly in rough times.
+
+### 14.1 Data Model
+
+- [ ] Define `SupportContact` model:
+    - [ ] `id`
+    - [ ] `name`
+    - [ ] `relationship` (friend, sibling, lecturer, etc.)
+    - [ ] `contactType` (phone, WhatsApp, email, etc.)
+    - [ ] `contactValue`
+    - [ ] `priority` (e.g. 1 = show on HelpNow first)
+
+- [ ] Add `support_contacts` table in SQLite:
+    - [ ] `insertSupportContact(SupportContact contact)`
+    - [ ] `getAllSupportContacts()`
+    - [ ] `getTopPriorityContacts(int limit)`
+    - [ ] `updateSupportContact()`
+    - [ ] `deleteSupportContact(int id)`
+
+### 14.2 UI – “My Safety & Support Plan”
+
+- [ ] Create `SupportPlanPage` (or section in HelpNow/MyPlan):
+    - [ ] List of saved support contacts
+    - [ ] Add / edit / delete contact
+    - [ ] Small explanation:
+        - [ ] “These are the people you can reach out to when things feel heavy.”
+
+- [ ] Mark priority contacts:
+    - [ ] Option like “Pin as first to call / text”
+    - [ ] Show priority ones at top
+
+### 14.3 HelpNow & Shortcuts
+
+- [ ] Integrate with `HelpNowPage`:
+    - [ ] Show top priority support contacts as quick actions:
+        - [ ] e.g. “Call best friend”, “Message sister”, etc.
+    - [ ] Tap to launch dialer / WhatsApp / email (where possible)
+
+### 14.4 AI Buddy Integration (Opt-in)
+
+- [ ] Allow AI buddy to *suggest* support contacts gently:
+    - [ ] Example: “You sound really weighed down. Do you want to call your best friend to talk to her?”
+- [ ] Conditions:
+    - [ ] Only if user has support contacts saved
+    - [ ] Only if user enabled: “Let Buddy remind me of my safe people”
+- [ ] Buddy can:
+    - [ ] Show a list of 1–3 contacts as chips/buttons
+    - [ ] When tapped → open the corresponding contact action (call/text)

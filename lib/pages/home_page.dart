@@ -84,17 +84,25 @@ class _HomePageState extends State<HomePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            FutureBuilder<String?>(
-              future: _nicknameFuture,
-              builder: (context, snapshot) {
-                final nickname = snapshot.data;
-                final greeting = nickname != null
-                    ? 'Welcome back, $nickname'
-                    : 'Welcome back';
+            FutureBuilder<bool>(
+              future: _isLoggedInFuture,
+              builder: (context, loginSnapshot) {
+                final isLoggedIn = loginSnapshot.data ?? false;
 
-                return Text(
-                  greeting,
-                  style: Theme.of(context).textTheme.titleLarge,
+                return FutureBuilder<String?>(
+                  future: _nicknameFuture,
+                  builder: (context, snapshot) {
+                    final nickname = snapshot.data;
+                    final greeting =
+                        isLoggedIn && nickname != null && nickname.isNotEmpty
+                            ? 'Welcome back, $nickname'
+                            : 'Welcome back';
+
+                    return Text(
+                      greeting,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    );
+                  },
                 );
               },
             ),

@@ -41,6 +41,7 @@ class _HomePageState extends State<HomePage> {
       _HomeRouteInfo('AI Buddy', Icons.chat, '/chat'),
       _HomeRouteInfo('Relax & Meditate', Icons.spa, '/relax'),
       _HomeRouteInfo('Sleep tracking', Icons.nights_stay, '/sleep'),
+      _HomeRouteInfo('Movement & Energy', Icons.directions_walk, '/movement'),
       _HomeRouteInfo('Period & Cycle tracker', Icons.calendar_today, '/period-tracker'),
       _HomeRouteInfo('Support contacts', Icons.emoji_people, '/support-plan'),
       _HomeRouteInfo('Help Now', Icons.volunteer_activism, '/help-now'),

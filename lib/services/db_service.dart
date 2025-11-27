@@ -6,6 +6,7 @@ import 'package:sqflite/sqflite.dart';
 import '../models/class_entry.dart';
 import '../models/journal_entry.dart';
 import '../models/mood_entry.dart';
+import '../models/movement_entry.dart';
 import '../models/period_cycle.dart';
 import '../models/sleep_entry.dart';
 import '../models/support_contact.dart';
@@ -17,7 +18,7 @@ class DbService {
   static final DbService instance = DbService._();
 
   static const String _databaseName = 'calm_campus.db';
-  static const int _databaseVersion = 7;
+  static const int _databaseVersion = 8;
 
   static const String _moodsTable = 'moods';
   static const String _classesTable = 'classes';
@@ -26,6 +27,7 @@ class DbService {
   static const String _sleepTable = 'sleep_entries';
   static const String _periodCyclesTable = 'period_cycles';
   static const String _supportContactsTable = 'support_contacts';
+  static const String _movementEntriesTable = 'movement_entries';
 
   Database? _database;
 
@@ -44,6 +46,7 @@ class DbService {
       await _createSleepTable(db);
       await _createPeriodCyclesTable(db);
       await _createSupportContactsTable(db);
+      await _createMovementEntriesTable(db);
     }, onUpgrade: (Database db, int oldVersion, int newVersion) async {
       if (oldVersion < 2) {
         await db.execute(
@@ -74,6 +77,10 @@ class DbService {
 
       if (oldVersion < 7) {
         await _createSupportContactsTable(db);
+      }
+
+      if (oldVersion < 8) {
+        await _createMovementEntriesTable(db);
       }
     });
 
@@ -166,6 +173,21 @@ class DbService {
         contactType TEXT NOT NULL,
         contactValue TEXT NOT NULL,
         priority INTEGER NOT NULL
+      )
+    ''');
+  }
+
+  Future<void> _createMovementEntriesTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE $_movementEntriesTable (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        date TEXT NOT NULL,
+        minutes INTEGER NOT NULL,
+        type TEXT NOT NULL,
+        intensity TEXT NOT NULL,
+        energyBefore INTEGER,
+        energyAfter INTEGER,
+        note TEXT
       )
     ''');
   }
@@ -559,6 +581,50 @@ class DbService {
     final Database db = await database;
     return db.delete(
       _supportContactsTable,
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<int> insertMovementEntry(MovementEntry entry) async {
+    final Database db = await database;
+    return db.insert(_movementEntriesTable, entry.toMap());
+  }
+
+  Future<List<MovementEntry>> getMovementEntries({
+    DateTime? from,
+    DateTime? to,
+    int? limit,
+  }) async {
+    final Database db = await database;
+    final List<String> whereClauses = [];
+    final List<Object?> whereArgs = [];
+
+    if (from != null) {
+      whereClauses.add('date >= ?');
+      whereArgs.add(DateTime(from.year, from.month, from.day).toIso8601String());
+    }
+
+    if (to != null) {
+      whereClauses.add('date <= ?');
+      whereArgs.add(DateTime(to.year, to.month, to.day).toIso8601String());
+    }
+
+    final List<Map<String, dynamic>> maps = await db.query(
+      _movementEntriesTable,
+      where: whereClauses.isNotEmpty ? whereClauses.join(' AND ') : null,
+      whereArgs: whereArgs.isNotEmpty ? whereArgs : null,
+      orderBy: 'date DESC',
+      limit: limit,
+    );
+
+    return maps.map(MovementEntry.fromMap).toList();
+  }
+
+  Future<int> deleteMovementEntry(int id) async {
+    final Database db = await database;
+    return db.delete(
+      _movementEntriesTable,
       where: 'id = ?',
       whereArgs: [id],
     );

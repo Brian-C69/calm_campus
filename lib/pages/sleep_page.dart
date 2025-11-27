@@ -819,7 +819,7 @@ class _SleepField extends StatelessWidget {
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
-          color: Theme.of(context).colorScheme.surfaceVariant,
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

@@ -685,7 +685,7 @@ class _PeriodTrackerPageState extends State<PeriodTrackerPage> {
                 ),
                 const SizedBox(height: 12),
                 Card(
-                  color: Theme.of(context).colorScheme.surfaceVariant,
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(

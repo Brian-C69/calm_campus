@@ -208,8 +208,6 @@ class _SupportPlanPageState extends State<SupportPlanPage> {
         break;
     }
 
-    if (uri == null) return;
-
     final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!launched && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -269,7 +267,7 @@ class _ContactCard extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
-                    color: colorScheme.surfaceVariant,
+                    color: colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Text(priorityLabel,

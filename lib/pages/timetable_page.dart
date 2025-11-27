@@ -4,6 +4,7 @@ import '../models/class_entry.dart';
 import '../services/db_service.dart';
 import '../services/login_nudge_service.dart';
 import '../services/user_profile_service.dart';
+import '../services/notification_service.dart';
 
 class TimetablePage extends StatefulWidget {
   const TimetablePage({super.key});
@@ -58,6 +59,14 @@ class _TimetablePageState extends State<TimetablePage> {
       _remindersEnabled = true;
       _isLoggedIn = refreshedLogin;
     });
+
+    await NotificationService.instance.scheduleClassRemindersForWeek(_classes);
+    await NotificationService.instance
+        .scheduleNightlyCheckIn(const TimeOfDay(hour: 21, minute: 0));
+    await NotificationService.instance.scheduleSleepPlanReminder(
+      const TimeOfDay(hour: 23, minute: 30),
+      plannedBedtimeLabel: '12:00am',
+    );
   }
 
   Future<void> _loadState() async {
@@ -251,6 +260,10 @@ class _TimetablePageState extends State<TimetablePage> {
                               if (!mounted) return;
                               Navigator.of(context).pop();
                               await _loadClasses();
+                              if (_remindersEnabled) {
+                                await NotificationService.instance
+                                    .scheduleWeeklyClassReminder(newEntry);
+                              }
                               if (!mounted) return;
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(content: Text('Class added to your timetable.')),

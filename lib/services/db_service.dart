@@ -6,6 +6,7 @@ import 'package:sqflite/sqflite.dart';
 import '../models/class_entry.dart';
 import '../models/journal_entry.dart';
 import '../models/mood_entry.dart';
+import '../models/sleep_entry.dart';
 import '../models/task.dart';
 
 class DbService {
@@ -14,12 +15,13 @@ class DbService {
   static final DbService instance = DbService._();
 
   static const String _databaseName = 'calm_campus.db';
-  static const int _databaseVersion = 4;
+  static const int _databaseVersion = 5;
 
   static const String _moodsTable = 'moods';
   static const String _classesTable = 'classes';
   static const String _tasksTable = 'tasks';
   static const String _journalTable = 'journal_entries';
+  static const String _sleepTable = 'sleep_entries';
 
   Database? _database;
 
@@ -35,6 +37,7 @@ class DbService {
       await _createClassesTable(db);
       await _createTasksTable(db);
       await _createJournalTable(db);
+      await _createSleepTable(db);
     }, onUpgrade: (Database db, int oldVersion, int newVersion) async {
       if (oldVersion < 2) {
         await db.execute(
@@ -53,6 +56,10 @@ class DbService {
         await db.execute(
           'ALTER TABLE $_tasksTable ADD COLUMN createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP',
         );
+      }
+
+      if (oldVersion < 5) {
+        await _createSleepTable(db);
       }
     });
 
@@ -107,6 +114,19 @@ class DbService {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         content TEXT NOT NULL,
         createdAt TEXT NOT NULL
+      )
+    ''');
+  }
+
+  Future<void> _createSleepTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE $_sleepTable (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        date TEXT NOT NULL,
+        sleepStart TEXT NOT NULL,
+        sleepEnd TEXT NOT NULL,
+        durationHours REAL NOT NULL,
+        restfulness INTEGER NOT NULL
       )
     ''');
   }
@@ -300,5 +320,54 @@ class DbService {
       orderBy: 'createdAt DESC',
     );
     return maps.map(JournalEntry.fromMap).toList();
+  }
+
+  Future<int> insertSleepEntry(SleepEntry entry) async {
+    final Database db = await database;
+    return db.insert(_sleepTable, entry.toMap());
+  }
+
+  Future<List<SleepEntry>> getSleepEntries({
+    DateTime? from,
+    DateTime? to,
+    int? limit,
+  }) async {
+    final Database db = await database;
+    final List<String> whereClauses = [];
+    final List<Object?> whereArgs = [];
+
+    if (from != null) {
+      whereClauses.add('date >= ?');
+      whereArgs.add(DateTime(from.year, from.month, from.day).toIso8601String());
+    }
+
+    if (to != null) {
+      whereClauses.add('date <= ?');
+      whereArgs.add(DateTime(to.year, to.month, to.day).toIso8601String());
+    }
+
+    final List<Map<String, dynamic>> maps = await db.query(
+      _sleepTable,
+      where: whereClauses.isNotEmpty ? whereClauses.join(' AND ') : null,
+      whereArgs: whereArgs.isNotEmpty ? whereArgs : null,
+      orderBy: 'sleepEnd DESC',
+      limit: limit,
+    );
+
+    return maps.map(SleepEntry.fromMap).toList();
+  }
+
+  Future<SleepEntry?> getLatestSleepEntry() async {
+    final List<SleepEntry> entries = await getSleepEntries(limit: 1);
+    return entries.isNotEmpty ? entries.first : null;
+  }
+
+  Future<int> deleteSleepEntry(int id) async {
+    final Database db = await database;
+    return db.delete(
+      _sleepTable,
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 }

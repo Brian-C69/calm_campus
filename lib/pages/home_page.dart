@@ -15,7 +15,6 @@ class _HomePageState extends State<HomePage> {
   late Future<String?> _nicknameFuture;
   late Future<bool> _isLoggedInFuture;
   late Future<SleepEntry?> _latestSleepFuture;
-  bool _showCheckInReminder = true;
 
   @override
   void initState() {
@@ -101,11 +100,6 @@ class _HomePageState extends State<HomePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (_showCheckInReminder)
-              _CheckInReminder(
-                onDismiss: () => setState(() => _showCheckInReminder = false),
-              ),
-            if (_showCheckInReminder) const SizedBox(height: 12),
             FutureBuilder<String?>(
               future: _nicknameFuture,
               builder: (context, snapshot) {
@@ -225,71 +219,6 @@ class _HomePageState extends State<HomePage> {
                   );
                 },
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _CheckInReminder extends StatelessWidget {
-  const _CheckInReminder({required this.onDismiss});
-
-  final VoidCallback onDismiss;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      color: Theme.of(context).colorScheme.primaryContainer,
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          children: [
-            Icon(Icons.notifications_active,
-                color: Theme.of(context).colorScheme.onPrimaryContainer),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'It’s time for a quick mood check-in',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color:
-                              Theme.of(context).colorScheme.onPrimaryContainer,
-                        ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Share how you feel today so we can support you better.',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color:
-                              Theme.of(context).colorScheme.onPrimaryContainer,
-                        ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-            Column(
-              children: [
-                IconButton(
-                  icon: Icon(
-                    Icons.close,
-                    color: Theme.of(context).colorScheme.onPrimaryContainer,
-                  ),
-                  onPressed: onDismiss,
-                ),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
-                    foregroundColor: Theme.of(context).colorScheme.primaryContainer,
-                  ),
-                  onPressed: () => Navigator.pushNamed(context, '/mood'),
-                  child: const Text('Check in'),
-                ),
-              ],
             ),
           ],
         ),

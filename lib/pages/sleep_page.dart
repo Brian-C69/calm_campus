@@ -699,7 +699,7 @@ class _SleepPageState extends State<SleepPage> {
                               subtitle: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text('${_formatDate(entry.date)}'),
+                                  Text(_formatDate(entry.date)),
                                   const SizedBox(height: 4),
                                   Text(
                                     'Bed ${_formatTime(entry.sleepStart)} → Wake ${_formatTime(entry.sleepEnd)}',

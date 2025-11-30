@@ -264,7 +264,7 @@ class _MovementPageState extends State<MovementPage> {
                             (entry) => Dismissible(
                               key: ValueKey(entry.id ?? entry.date.toIso8601String()),
                               background: Container(
-                                color: Colors.red.withOpacity(0.1),
+                                color: Colors.red,
                                 alignment: Alignment.centerLeft,
                                 padding: const EdgeInsets.symmetric(horizontal: 12),
                                 child: const Icon(Icons.delete, color: Colors.red),

@@ -50,7 +50,7 @@ class BreathingPage extends StatelessWidget {
       return '~${seconds}s';
     }
     final minutes = (seconds / 60).ceil();
-    return '~${minutes} min';
+    return '~$minutes min';
   }
 
   @override

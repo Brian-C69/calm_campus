@@ -567,13 +567,18 @@ class _CampusMapPageState extends State<CampusMapPage> {
           permission == LocationPermission.denied) {
         setState(() {
           _locationError =
-              'We don\'t have permission to see your location. You can still view the campus map without it.';
+          'We don\'t have permission to see your location. You can still view the campus map without it.';
         });
         return;
       }
 
+      const locationSettings = LocationSettings(
+        accuracy: LocationAccuracy.high, // same behaviour as before
+        distanceFilter: 0,               // report all movements
+      );
+
       final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
+        locationSettings: locationSettings,
       );
 
       setState(() {
@@ -582,7 +587,7 @@ class _CampusMapPageState extends State<CampusMapPage> {
     } catch (e) {
       setState(() {
         _locationError =
-            'We could not get your current location right now. You can still explore the map.';
+        'We could not get your current location right now. You can still explore the map.';
       });
     } finally {
       if (mounted) {
@@ -593,6 +598,7 @@ class _CampusMapPageState extends State<CampusMapPage> {
     }
   }
 
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -602,19 +608,18 @@ class _CampusMapPageState extends State<CampusMapPage> {
     final markers = <Marker>[
       // Campus locations with known coordinates
       for (final location in _campusLocations)
-        if (location.latitude != null && location.longitude != null)
-          Marker(
-            width: 40,
-            height: 40,
-            point: LatLng(location.latitude!, location.longitude!),
-            child: Icon(
-              Icons.location_on,
-              color: location.id == _selectedLocation?.id
-                  ? theme.colorScheme.primary
-                  : theme.colorScheme.secondary,
-              size: 32,
-            ),
+        Marker(
+          width: 40,
+          height: 40,
+          point: LatLng(location.latitude, location.longitude),
+          child: Icon(
+            Icons.location_on,
+            color: location.id == _selectedLocation?.id
+                ? theme.colorScheme.primary
+                : theme.colorScheme.secondary,
+            size: 32,
           ),
+        ),
       // Current user location
       if (_currentPosition != null)
         Marker(
@@ -631,19 +636,17 @@ class _CampusMapPageState extends State<CampusMapPage> {
 
     final polylines = <Polyline>[
       if (_currentPosition != null &&
-          _selectedLocation != null &&
-          _selectedLocation!.latitude != null &&
-          _selectedLocation!.longitude != null)
+          _selectedLocation != null)
         Polyline(
           points: [
             _currentPosition!,
             LatLng(
-              _selectedLocation!.latitude!,
-              _selectedLocation!.longitude!,
+              _selectedLocation!.latitude,
+              _selectedLocation!.longitude,
             ),
           ],
           strokeWidth: 4,
-          color: theme.colorScheme.primary.withOpacity(0.7),
+          color: theme.colorScheme.primary,
         ),
     ];
 

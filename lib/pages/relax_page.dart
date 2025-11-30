@@ -233,82 +233,98 @@ class _RelaxPageState extends State<RelaxPage> {
 
   Future<void> _toggleAmbient(RelaxTrack track) async {
     final isCurrent = _currentAmbientTrack?.assetPath == track.assetPath;
-    setState(() {
-      _isLoadingAmbient = true;
-      if (!isCurrent) {
+    if (!isCurrent) {
+      setState(() {
+        _isLoadingAmbient = true;
         _currentAmbientTrack = track;
-      }
-    });
+      });
 
-    try {
-      if (!isCurrent) {
+      try {
         await _ambientPlayer.stop();
-        await _ambientPlayer.setAudioSource(AudioSource.asset(track.assetPath));
+        await _ambientPlayer
+            .setAudioSource(AudioSource.asset(track.assetPath));
         await _ambientPlayer.setLoopMode(LoopMode.all);
-        await _ambientPlayer.play();
-      } else {
-        final state = _ambientPlayer.playerState;
-        final isCompleted = state.processingState == ProcessingState.completed;
+        // Start playback but don't await the full track duration.
+        _ambientPlayer.play();
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Could not start ambient audio: $e')),
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() => _isLoadingAmbient = false);
+        }
+      }
+    } else {
+      final state = _ambientPlayer.playerState;
+      final isCompleted = state.processingState == ProcessingState.completed;
 
+      try {
         if (isCompleted) {
           await _ambientPlayer.seek(Duration.zero);
-          await _ambientPlayer.play();
+          _ambientPlayer.play();
         } else if (_ambientPlayer.playing) {
           await _ambientPlayer.pause();
         } else {
-          await _ambientPlayer.play();
+          _ambientPlayer.play();
         }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not start ambient audio: $e')),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoadingAmbient = false);
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Could not update ambient audio: $e')),
+          );
+        }
       }
     }
   }
 
   Future<void> _toggleGuided(RelaxTrack track) async {
     final isCurrent = _currentGuidedTrack?.assetPath == track.assetPath;
-    setState(() {
-      _isLoadingGuided = true;
-      if (!isCurrent) {
+    if (!isCurrent) {
+      setState(() {
+        _isLoadingGuided = true;
         _currentGuidedTrack = track;
-      }
-    });
+      });
 
-    try {
-      if (!isCurrent) {
+      try {
         await _guidedPlayer.stop();
-        await _guidedPlayer.setAudioSource(AudioSource.asset(track.assetPath));
+        await _guidedPlayer
+            .setAudioSource(AudioSource.asset(track.assetPath));
         await _guidedPlayer.setLoopMode(LoopMode.off);
-        await _guidedPlayer.play();
-      } else {
-        final state = _guidedPlayer.playerState;
-        final isCompleted = state.processingState == ProcessingState.completed;
+        // Start playback but don't await the full track duration.
+        _guidedPlayer.play();
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Could not start guided audio: $e')),
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() => _isLoadingGuided = false);
+        }
+      }
+    } else {
+      final state = _guidedPlayer.playerState;
+      final isCompleted = state.processingState == ProcessingState.completed;
 
+      try {
         if (isCompleted) {
           await _guidedPlayer.seek(Duration.zero);
-          await _guidedPlayer.play();
+          _guidedPlayer.play();
         } else if (_guidedPlayer.playing) {
           await _guidedPlayer.pause();
         } else {
-          await _guidedPlayer.play();
+          _guidedPlayer.play();
         }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not start guided audio: $e')),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoadingGuided = false);
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Could not update guided audio: $e')),
+          );
+        }
       }
     }
   }
@@ -517,6 +533,7 @@ class _RelaxPageState extends State<RelaxPage> {
     final isCurrent = currentTrack?.assetPath == track.assetPath;
     final isPlayingCurrent = isCurrent && (playerState?.playing ?? false);
     final isBuffering = isCurrent &&
+        !(playerState?.playing ?? false) &&
         ((playerState?.processingState == ProcessingState.loading) ||
             (playerState?.processingState == ProcessingState.buffering));
 

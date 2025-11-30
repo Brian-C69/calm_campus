@@ -20,6 +20,7 @@ import 'pages/support_plan_page.dart';
 import 'pages/tasks_page.dart';
 import 'pages/timetable_page.dart';
 import 'pages/campus_map_page.dart';
+import 'pages/weather_page.dart';
 import 'services/notification_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -66,6 +67,7 @@ class MyApp extends StatelessWidget {
         '/support-plan': (_) => const SupportPlanPage(),
         '/movement': (_) => const MovementPage(),
         '/campus-map': (_) => const CampusMapPage(),
+        '/weather': (_) => const WeatherPage(),
       },
     );
   }

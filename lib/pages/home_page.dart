@@ -53,6 +53,7 @@ class _HomePageState extends State<HomePage> {
     final routes = <_HomeRouteInfo>[
       _HomeRouteInfo('Mood Check-in', Icons.favorite, '/mood'),
       _HomeRouteInfo('Campus map', Icons.map, '/campus-map'),
+      _HomeRouteInfo('Weather & planning', Icons.cloud, '/weather'),
       _HomeRouteInfo('Journal', Icons.menu_book, '/journal'),
       _HomeRouteInfo('My Profile', Icons.person, '/profile'),
       _HomeRouteInfo('Timetable', Icons.schedule, '/timetable'),

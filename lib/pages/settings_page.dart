@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../services/user_profile_service.dart';
+import '../services/supabase_sync_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -80,6 +82,40 @@ class _SettingsPageState extends State<SettingsPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Settings saved')), 
     );
+  }
+
+  Future<void> _backupToSupabase() async {
+    final client = Supabase.instance.client;
+    if (client.auth.currentUser == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Please sign in on the Auth page before backing up your data.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    try {
+      await SupabaseSyncService.instance.uploadAllData();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Your data has been backed up to the cloud.'),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'We could not back up your data right now. Please check your connection and try again.\nDetails: $e',
+          ),
+        ),
+      );
+    }
   }
 
   @override
@@ -193,6 +229,30 @@ class _SettingsPageState extends State<SettingsPage> {
                           onPressed: () => setState(() => _reminderTime = null),
                         ),
                       ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Card(
+              elevation: 0,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Cloud backup', style: theme.textTheme.titleMedium),
+                    const SizedBox(height: 8),
+                    Text(
+                      'If you sign in with your CalmCampus account, you can back up your mood, sleep, tasks, and other logs to Supabase so they are available if you switch devices.',
+                      style: theme.textTheme.bodySmall,
+                    ),
+                    const SizedBox(height: 12),
+                    FilledButton.icon(
+                      onPressed: _backupToSupabase,
+                      icon: const Icon(Icons.cloud_upload_outlined),
+                      label: const Text('Back up my data now'),
                     ),
                   ],
                 ),

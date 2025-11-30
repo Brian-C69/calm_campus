@@ -20,6 +20,25 @@ class _HomePageState extends State<HomePage> {
     _isLoggedInFuture = _loadLoginState();
   }
 
+  void _refreshUserState() {
+    setState(() {
+      _nicknameFuture = _loadNickname();
+      _isLoggedInFuture = _loadLoginState();
+    });
+  }
+
+  Future<void> _openProfile() async {
+    await Navigator.pushNamed(context, '/profile');
+    if (!mounted) return;
+    _refreshUserState();
+  }
+
+  Future<void> _openAuth() async {
+    await Navigator.pushNamed(context, '/auth');
+    if (!mounted) return;
+    _refreshUserState();
+  }
+
   Future<String?> _loadNickname() async {
     final nickname = await UserProfileService.instance.getNickname();
     return nickname == null || nickname.trim().isEmpty ? null : nickname.trim();
@@ -33,7 +52,7 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     final routes = <_HomeRouteInfo>[
       _HomeRouteInfo('Mood Check-in', Icons.favorite, '/mood'),
-      _HomeRouteInfo('Mood History', Icons.timeline, '/history'),
+      _HomeRouteInfo('Campus map', Icons.map, '/campus-map'),
       _HomeRouteInfo('Journal', Icons.menu_book, '/journal'),
       _HomeRouteInfo('My Profile', Icons.person, '/profile'),
       _HomeRouteInfo('Timetable', Icons.schedule, '/timetable'),
@@ -60,14 +79,18 @@ class _HomePageState extends State<HomePage> {
 
               if (isLoggedIn) {
                 return IconButton(
-                  onPressed: () => Navigator.pushNamed(context, '/profile'),
+                  onPressed: () {
+                    _openProfile();
+                  },
                   tooltip: 'View profile',
                   icon: const Icon(Icons.verified_user),
                 );
               }
 
               return TextButton.icon(
-                onPressed: () => Navigator.pushNamed(context, '/auth'),
+                onPressed: () {
+                  _openAuth();
+                },
                 icon: const Icon(Icons.login),
                 label: const Text('Log in'),
               );

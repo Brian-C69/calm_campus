@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/user_profile_service.dart';
+import '../services/supabase_sync_service.dart';
 
 class AuthPage extends StatefulWidget {
   const AuthPage({super.key});
@@ -40,18 +42,62 @@ class _AuthPageState extends State<AuthPage> {
     if (!isValid) return;
 
     final friendlyAction = _isLogin ? 'signed in' : 'signed up';
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+    final client = Supabase.instance.client;
 
-    if (!_isLogin) {
-      await UserProfileService.instance.saveNickname(_nameController.text);
+    try {
+      if (_isLogin) {
+        await client.auth.signInWithPassword(
+          email: email,
+          password: password,
+        );
+      } else {
+        await client.auth.signUp(
+          email: email,
+          password: password,
+          data: {
+            'preferred_name': _nameController.text.trim(),
+          },
+        );
+      }
+
+      if (!_isLogin) {
+        await UserProfileService.instance.saveNickname(_nameController.text);
+      }
+      await UserProfileService.instance.setLoggedIn(true);
+
+      await SupabaseSyncService.instance.uploadAllData();
+    } on AuthException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            e.message.isNotEmpty
+                ? e.message
+                : 'We could not ${_isLogin ? 'log you in' : 'create your account'} right now. Please try again.',
+          ),
+        ),
+      );
+      return;
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Something went wrong while contacting the server. Your local data is still safe on this device.\nDetails: $e',
+          ),
+        ),
+      );
+      return;
     }
-    await UserProfileService.instance.setLoggedIn(true);
 
     if (!mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          'You\'re $friendlyAction. Remember, this space is here to support you.',
+          'You\'re $friendlyAction. Your data will stay on this device and is now also backed up to your account.',
         ),
       ),
     );

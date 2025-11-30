@@ -54,12 +54,31 @@ class _ProfilePageState extends State<ProfilePage> {
 
     if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('You have been logged out.')),
-    );
-
-    setState(() {
-      _profileFuture = _loadProfile();
+    showDialog<void>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('You are now logged out'),
+          content: const Text(
+            'Your past check-ins, timetable, and tasks are still saved on this phone, even after logging out. '
+            'From now on, anything you add will stay on this device only and will not sync to other devices. '
+            'If you ever want to remove your local data, you can delete the app from your phone.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    ).then((_) {
+      if (!mounted) return;
+      setState(() {
+        _profileFuture = _loadProfile();
+      });
     });
   }
 

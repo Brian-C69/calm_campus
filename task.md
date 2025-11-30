@@ -309,6 +309,7 @@ You can change `[ ]` to `[x]` as you complete items.
 - [ ] Fix layout issues (different screen sizes)
 - [x] Fix timetable add-class refresh error
 - [x] Hide login button on Home after successful sign-in
+- [x] Keep Home login indicator in sync after logout
 - [ ] Prepare screenshots for slides
 - [ ] Prepare demo script:
     - [ ] Scenario: stressed student before exams

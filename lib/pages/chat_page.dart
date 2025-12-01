@@ -4,8 +4,17 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../l10n/app_localizations.dart';
+import '../models/class_entry.dart';
+import '../models/mood_entry.dart';
+import '../models/movement_entry.dart';
+import '../models/period_cycle.dart';
+import '../models/sleep_entry.dart';
+import '../models/support_contact.dart';
+import '../models/task.dart';
 import '../services/chat_service.dart';
+import '../services/db_service.dart';
 import '../services/login_nudge_service.dart';
+import '../services/user_profile_service.dart';
 
 class ChatPage extends StatefulWidget {
   const ChatPage({super.key});
@@ -25,6 +34,11 @@ class _ChatPageState extends State<ChatPage> {
   final List<_ChatTurn> _turns = [];
   bool _isSending = false;
   List<String> _suggestedActions = [];
+  bool _showSuggestions = true;
+  bool _shareAllData = false;
+  bool _loadingContext = false;
+  ConsentFlags _consent = const ConsentFlags();
+  ChatContext _context = const ChatContext();
   String? _error;
 
   Future<void> _openCustomization() async {
@@ -79,6 +93,12 @@ class _ChatPageState extends State<ChatPage> {
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ),
+          SwitchListTile(
+            title: Text(strings.t('chat.share_all')),
+            subtitle: Text(strings.t('chat.share_all.desc')),
+            value: _shareAllData,
+            onChanged: (value) => _toggleDataShare(value, strings),
+          ),
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.all(16),
@@ -100,19 +120,29 @@ class _ChatPageState extends State<ChatPage> {
                     strings.t('chat.suggested'),
                     style: Theme.of(context).textTheme.labelLarge,
                   ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: _suggestedActions
-                        .map(
-                          (action) => ActionChip(
-                            label: Text(action),
-                            onPressed: _isSending ? null : () => _sendMessage(action),
-                          ),
-                        )
-                        .toList(),
+                  Row(
+                    children: [
+                      TextButton(
+                        onPressed: () => setState(() => _showSuggestions = !_showSuggestions),
+                        child: Text(_showSuggestions ? strings.t('chat.suggested.hide') : strings.t('chat.suggested.show')),
+                      ),
+                    ],
                   ),
+                  if (_showSuggestions) ...[
+                    const SizedBox(height: 4),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: _suggestedActions
+                          .map(
+                            (action) => ActionChip(
+                              label: Text(action),
+                              onPressed: _isSending ? null : () => _sendMessage(action),
+                            ),
+                          )
+                          .toList(),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -206,6 +236,10 @@ class _ChatPageState extends State<ChatPage> {
     final strings = AppLocalizations.of(context);
     final text = (quickAction ?? _controller.text).trim();
     if (text.isEmpty || _isSending) return;
+    if (_shareAllData && !_loadingContext && _consent.isEmpty && _turns.isEmpty) {
+      // Ensure context is prepared on first send after toggle.
+      await _buildContextAndConsent(strings);
+    }
     FocusScope.of(context).unfocus();
     setState(() {
       _turns.add(_ChatTurn(content: text, isUser: true));
@@ -221,8 +255,8 @@ class _ChatPageState extends State<ChatPage> {
       final reply = await _chatService.sendMessage(
         message: text,
         history: _history,
-        consent: const ConsentFlags(), // Wire real user consents here.
-        context: const ChatContext(),
+        consent: _consent,
+        context: _context,
       );
       if (!mounted) return;
       final assistantMessage = _combineAssistantMessage(reply);
@@ -267,6 +301,213 @@ class _ChatPageState extends State<ChatPage> {
     _controller.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  Future<void> _toggleDataShare(bool value, AppLocalizations strings) async {
+    setState(() {
+      _shareAllData = value;
+      _loadingContext = value;
+      _error = null;
+    });
+    if (!value) {
+      setState(() {
+        _consent = const ConsentFlags();
+        _context = const ChatContext();
+      });
+      return;
+    }
+    await _buildContextAndConsent(strings);
+    if (!mounted) return;
+    setState(() => _loadingContext = false);
+  }
+
+  Future<void> _buildContextAndConsent(AppLocalizations strings) async {
+    try {
+      final profile = await _buildProfile();
+      final mood = await _buildMoodSummary();
+      final timetable = await _buildTimetableSummary();
+      final tasks = await _buildTasksSummary();
+      final sleep = await _buildSleepSummary();
+      final period = await _buildPeriodSummary();
+      final movement = await _buildMovementSummary();
+      final contacts = await _buildContactsSummary();
+
+      setState(() {
+        _consent = const ConsentFlags(
+          profile: true,
+          mood: true,
+          timetable: true,
+          tasks: true,
+          sleep: true,
+          period: true,
+          movement: true,
+          contacts: true,
+        );
+        _context = ChatContext(
+          profile: profile,
+          mood: mood,
+          timetable: timetable,
+          tasks: tasks,
+          sleep: sleep,
+          period: period,
+          movement: movement,
+          contacts: contacts,
+        );
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = strings.t('chat.unavailable');
+        _shareAllData = false;
+        _consent = const ConsentFlags();
+        _context = const ChatContext();
+      });
+    }
+  }
+
+  Future<Map<String, dynamic>?> _buildProfile() async {
+    final nickname = await UserProfileService.instance.getNickname();
+    final course = await UserProfileService.instance.getCourse();
+    final year = await UserProfileService.instance.getYearOfStudy();
+    if ((nickname ?? '').isEmpty && (course ?? '').isEmpty && year == null) return null;
+    return {
+      if (nickname != null && nickname.isNotEmpty) 'nickname': nickname,
+      if (course != null && course.isNotEmpty) 'course': course,
+      if (year != null) 'year': year.toString(),
+    };
+  }
+
+  Future<Map<String, dynamic>?> _buildMoodSummary() async {
+    final now = DateTime.now();
+    final from = now.subtract(const Duration(days: 7));
+    final entries = await DbService.instance.getMoodEntries(from: from, to: now);
+    if (entries.isEmpty) return null;
+    final Map<String, int> counts = {};
+    final List<String> notes = [];
+    for (final entry in entries) {
+      counts.update(entry.overallMood.name, (v) => v + 1, ifAbsent: () => 1);
+      final note = entry.note ?? '';
+      if (note.isNotEmpty) notes.add(note);
+    }
+    final topMoods = counts.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final summary = 'Last 7 days: ${entries.length} entries; top moods: ${topMoods.map((e) => '${e.key} (${e.value})').take(3).join(', ')}';
+    return {
+      'summary': summary,
+      if (notes.isNotEmpty) 'recentNotes': notes.take(3).toList(),
+    };
+  }
+
+  Future<Map<String, dynamic>?> _buildTimetableSummary() async {
+    final now = DateTime.now();
+    final today = await DbService.instance.getClassesForDay(now.weekday);
+    final all = await DbService.instance.getAllClasses();
+    ClassEntry? nextClass;
+    for (final c in all) {
+      final start = DateTime.tryParse(c.startTime);
+      if (start != null && start.isAfter(now)) {
+        nextClass = c;
+        break;
+      }
+    }
+    return {
+      if (today.isNotEmpty) 'today': today.map((c) => _formatClass(c)).toList(),
+      if (nextClass != null) 'next': [_formatClass(nextClass)],
+    }.isEmpty
+        ? null
+        : {
+            if (today.isNotEmpty) 'today': today.map((c) => _formatClass(c)).toList(),
+            if (nextClass != null) 'next': [_formatClass(nextClass)],
+          };
+  }
+
+  Map<String, dynamic> _formatClass(ClassEntry c) {
+    return {
+      'title': c.subject,
+      'time': c.startTime,
+      'location': c.location,
+    };
+  }
+
+  Future<Map<String, dynamic>?> _buildTasksSummary() async {
+    final tasks = await DbService.instance.getPendingTasks();
+    if (tasks.isEmpty) return null;
+    final pending = tasks.take(5).map((t) {
+      final dueLabel = _dueLabel(t.dueDate);
+      return {
+        'title': t.title,
+        'due': dueLabel,
+        'priority': t.priority.name,
+      };
+    }).toList();
+    return {'pending': pending};
+  }
+
+  String _dueLabel(DateTime due) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final dueDay = DateTime(due.year, due.month, due.day);
+    final diff = dueDay.difference(today).inDays;
+    if (diff == 0) return 'today';
+    if (diff == 1) return 'tomorrow';
+    if (diff < 0) return 'overdue ${diff.abs()}d';
+    return 'in ${diff}d';
+  }
+
+  Future<Map<String, dynamic>?> _buildSleepSummary() async {
+    final entries = await DbService.instance.getSleepEntries(limit: 5);
+    if (entries.isEmpty) return null;
+    final avg = entries.map((e) => e.durationHours).reduce((a, b) => a + b) / entries.length;
+    final last = entries.first;
+    return {
+      'recentAverage': '${avg.toStringAsFixed(1)}h',
+      'lastNight': '${last.durationHours.toStringAsFixed(1)}h (restfulness ${last.restfulness}/5)',
+    };
+  }
+
+  Future<Map<String, dynamic>?> _buildPeriodSummary() async {
+    final cycles = await DbService.instance.getRecentCycles(limit: 3);
+    if (cycles.isEmpty) return null;
+    final lengths = cycles.where((c) => c.calculatedCycleLength != null).map((c) => c.calculatedCycleLength!).toList();
+    final avgLen = lengths.isNotEmpty ? (lengths.reduce((a, b) => a + b) / lengths.length).round() : null;
+    final last = cycles.first;
+    return {
+      if (avgLen != null) 'summary': 'Avg cycle ~${avgLen}d',
+      'nextPeriodHint': 'Last period ended ${_formatShortDate(last.cycleEndDate.toLocal())}',
+      'ovulationWindow': 'Approx mid-cycle window based on recent averages',
+    };
+  }
+
+  Future<Map<String, dynamic>?> _buildMovementSummary() async {
+    final from = DateTime.now().subtract(const Duration(days: 7));
+    final moves = await DbService.instance.getMovementEntries(from: from, to: DateTime.now());
+    if (moves.isEmpty) return null;
+    final days = moves.map((m) => DateTime(m.date.year, m.date.month, m.date.day)).toSet().length;
+    final avgMins = moves.map((m) => m.minutes).reduce((a, b) => a + b) / moves.length;
+    return {
+      'recentSummary': 'Active on $days day(s) last 7d, ~${avgMins.toStringAsFixed(0)} mins avg',
+      'energyNotes': 'Common types: ${moves.map((m) => m.type.name).toSet().take(3).join(', ')}',
+    };
+  }
+
+  Future<Map<String, dynamic>?> _buildContactsSummary() async {
+    final contacts = await DbService.instance.getTopPriorityContacts(3);
+    if (contacts.isEmpty) return null;
+    return {
+      'top': contacts.map((c) => _formatContact(c)).toList(),
+    };
+  }
+
+  Map<String, dynamic> _formatContact(SupportContact c) {
+    return {
+      'name': c.name,
+      'relationship': c.relationship,
+      'contactType': c.contactType,
+    };
+  }
+
+  String _formatShortDate(DateTime date) {
+    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
   }
 }
 

@@ -1,4 +1,4 @@
-{
+﻿{
   "app.title": "CalmCampus",
   "nav.home": "Laman utama",
   "nav.mood": "Mood",
@@ -29,6 +29,8 @@
   "chat.hint": "Taip mesej",
   "chat.send": "Hantar",
   "chat.suggested": "Tindakan dicadangkan",
+  "chat.suggested.show": "Tunjukkan cadangan",
+  "chat.suggested.hide": "Sembunyikan cadangan",
   "chat.unavailable": "Rakan tidak tersedia sekarang. Cuba lagi sebentar nanti.",
   "chat.customize": "Sesuaikan rakan AI",
   "chat.customize.title": "Sesuaikan rakan AI anda",
@@ -38,6 +40,8 @@
   "chat.tone.gentle": "Lembut",
   "chat.tone.direct": "Terus terang",
   "chat.tone.practical": "Praktikal",
+  "chat.share_all": "Kongsi semua data dengan Rakan",
+  "chat.share_all.desc": "Termasuk mood, jadual, tugas, tidur, pergerakan, kitaran, dan kontak sokongan (di peranti sahaja)."
   "timetable.title": "Jadual kelas",
   "timetable.cta": "Tambah kelas",
   "timetable.empty.title": "Belum ada kelas",
@@ -503,3 +507,5 @@
   "sleep.entry.delete": "Padam catatan",
   "sleep.footer": "Ingat: tidur kurang bukan salah anda. Langkah kecil?seperti senarai main menenangkan atau bilik lebih gelap?boleh membantu."
 }
+
+

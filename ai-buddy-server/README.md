@@ -73,3 +73,4 @@ Returns JSON:
 Context packing
 - Only domains with `consentFlags` true are included.
 - Profile, mood, timetable, tasks, sleep, period tracker, movement, and support contacts are all optional; send short summaries (not raw logs) to stay within context limits.
+- `suggested_actions` can include up to 6 short items; crisis mode ensures at least one help action.

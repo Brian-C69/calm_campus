@@ -29,6 +29,8 @@
   "chat.hint": "输入消息",
   "chat.send": "发送",
   "chat.suggested": "建议的动作",
+  "chat.suggested.show": "显示建议",
+  "chat.suggested.hide": "隐藏建议",
   "chat.unavailable": "伙伴暂时不可用，请稍后再试。",
   "chat.customize": "自定义 AI 伙伴",
   "chat.customize.title": "自定义你的 AI 伙伴",
@@ -38,6 +40,8 @@
   "chat.tone.gentle": "温和",
   "chat.tone.direct": "直接",
   "chat.tone.practical": "务实",
+  "chat.share_all": "与伙伴共享全部数据",
+  "chat.share_all.desc": "包含情绪、课表、任务、睡眠、活动、周期和支持联系人（仅在本机）。"
   "timetable.title": "è¯¾è¡¨",
   "timetable.cta": "æ–°å¢žè¯¾ç¨‹",
   "timetable.empty.title": "è¿˜æ²¡æœ‰è¯¾ç¨‹",
@@ -503,4 +507,6 @@
   "sleep.entry.delete": "Delete entry",
   "sleep.footer": "Remember: poor sleep is never your fault. Small steps?like a wind-down playlist or a darker room?can help."
 }
+
+
 

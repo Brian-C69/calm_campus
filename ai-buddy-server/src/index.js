@@ -4,8 +4,8 @@ import express from 'express';
 const app = express();
 const port = Number(process.env.PORT || 3001);
 const ollamaUrl = process.env.OLLAMA_URL || 'http://127.0.0.1:11434';
-const primaryModel = process.env.LLM_MODEL || 'gemma2:9b';
-const fallbackModel = process.env.LLM_MODEL_FALLBACK || '';
+const primaryModel = process.env.LLM_MODEL || 'gemma3:4b';
+const fallbackModel = process.env.LLM_MODEL_FALLBACK || 'gemma3:1b';
 const temperature = Number(process.env.LLM_TEMP || 0.5);
 const timeoutMs = Number(process.env.LLM_TIMEOUT_MS || 40000);
 
@@ -132,7 +132,7 @@ function buildSystemPrompt({ crisis }) {
     'You are not a doctor. Do not provide diagnosis, medication, or diet/weight advice. Use body-neutral language.',
     'Safety first: if the user hints at crisis, stay calm, urge contacting real humans or hotlines, and keep responses short and kind.',
     'No hidden alerts or secret reporting. If data domains are not consented, ignore them.',
-    'Respond in JSON only with keys: mode (check_in | support | study_planner), message_for_user, follow_up_question, suggested_actions (max 4 strings).',
+    'Respond in JSON only with keys: mode (check_in | support | study_planner), message_for_user, follow_up_question, suggested_actions (up to 6 short strings).',
     crisis ? 'Crisis flag true: prioritize safety, include at least one action to contact help.' : 'Keep tone warm and practical; 3-5 sentences max.'
   ].join(' ');
 }

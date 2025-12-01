@@ -103,6 +103,9 @@ class ConsentFlags {
   final bool movement;
   final bool contacts;
 
+  bool get isEmpty =>
+      !profile && !mood && !timetable && !tasks && !sleep && !period && !movement && !contacts;
+
   Map<String, dynamic> toMap() => {
         'profile': profile,
         'mood': mood,

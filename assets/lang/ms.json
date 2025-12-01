@@ -41,7 +41,7 @@
   "chat.tone.direct": "Terus terang",
   "chat.tone.practical": "Praktikal",
   "chat.share_all": "Kongsi semua data dengan Rakan",
-  "chat.share_all.desc": "Termasuk mood, jadual, tugas, tidur, pergerakan, kitaran, dan kontak sokongan (di peranti sahaja)."
+  "chat.share_all.desc": "Termasuk mood, jadual, tugas, tidur, pergerakan, kitaran, dan kontak sokongan (di peranti sahaja).",
   "timetable.title": "Jadual kelas",
   "timetable.cta": "Tambah kelas",
   "timetable.empty.title": "Belum ada kelas",
@@ -505,8 +505,8 @@
   "sleep.entry.rest": "Rehat {rest}",
   "sleep.entry.bed": "Tidur {bed} ? Bangun {wake}",
   "sleep.entry.delete": "Padam catatan",
-  "sleep.footer": "Ingat: tidur kurang bukan salah anda. Langkah kecil?seperti senarai main menenangkan atau bilik lebih gelap?boleh membantu."
+  "sleep.footer": "Ingat: tidur kurang bukan salah anda. Langkah kecil?seperti senarai main menenangkan atau bilik lebih gelap?boleh membantu.",
+  "settings.aiBuddy": "Rakan AI",
+  "settings.aiBuddy.shareAll": "Kongsi semua data dengan Rakan",
+  "settings.aiBuddy.shareAll.helper": "Termasuk mood, jadual, tugas, tidur, pergerakan, kitaran, dan kontak sokongan (di peranti sahaja)."
 }
-
-
-\n  "settings.aiBuddy": "Rakan AI",\n  "settings.aiBuddy.shareAll": "Kongsi semua data dengan Rakan",\n  "settings.aiBuddy.shareAll.helper": "Termasuk mood, jadual, tugas, tidur, pergerakan, kitaran, dan kontak sokongan (di peranti sahaja)."\n}\n}

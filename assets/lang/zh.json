@@ -36,13 +36,13 @@
   "chat.customize.title": "自定义你的 AI 伙伴",
   "chat.customize.desc": "选择你喜欢的语气和创意程度。除非你选择同步，否则保持访客模式。",
   "chat.customize.creativity": "创意程度",
-  "chat.customize.save": "保存偏好（访客友好）",\n  "chat.share_all": "与伙伴共享全部数据",\n  "chat.share_all.desc": "包含情绪、课表、任务、睡眠、活动、周期和支持联系人（仅在本机）。"
+  "chat.customize.save": "保存偏好（访客友好）",
   "chat.tone.gentle": "温和",
   "chat.tone.direct": "直接",
   "chat.note.dismiss": "知道了",
   "chat.tone.practical": "务实",
   "chat.share_all": "与伙伴共享全部数据",
-  "chat.share_all.desc": "包含情绪、课表、任务、睡眠、活动、周期和支持联系人（仅在本机）。"
+  "chat.share_all.desc": "包含情绪、课表、任务、睡眠、活动、周期和支持联系人（仅在本机）。",
   "timetable.title": "è¯¾è¡¨",
   "timetable.cta": "æ–°å¢žè¯¾ç¨‹",
   "timetable.empty.title": "è¿˜æ²¡æœ‰è¯¾ç¨‹",
@@ -506,9 +506,12 @@
   "sleep.entry.rest": "Restfulness {rest}",
   "sleep.entry.bed": "Bed {bed} ? Wake {wake}",
   "sleep.entry.delete": "Delete entry",
-  "sleep.footer": "Remember: poor sleep is never your fault. Small steps?like a wind-down playlist or a darker room?can help."
+  "sleep.footer": "Remember: poor sleep is never your fault. Small steps?like a wind-down playlist or a darker room?can help.",
+  "settings.aiBuddy": "AI 伙伴",
+  "settings.aiBuddy.shareAll": "共享全部数据",
+  "settings.aiBuddy.shareAll.helper": "包含情绪、课表、任务、睡眠、活动、周期和支持联系人（仅在本机）。"
 }
 
 
 
-\n  "settings.aiBuddy": "AI 伙伴",\n  "settings.aiBuddy.shareAll": "共享全部数据",\n  "settings.aiBuddy.shareAll.helper": "包含情绪、课表、任务、睡眠、活动、周期和支持联系人（仅在本机）。"\n}\n}
+

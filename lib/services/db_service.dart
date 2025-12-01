@@ -18,6 +18,8 @@ class DbService {
 
   static final DbService instance = DbService._();
 
+  Future<void> Function()? _onChange;
+
   static const String _databaseName = 'calm_campus.db';
   static const int _databaseVersion = 9;
 
@@ -32,6 +34,17 @@ class DbService {
   static const String _announcementsTable = 'announcements';
 
   Database? _database;
+
+  void setOnChangeHandler(Future<void> Function()? handler) {
+    _onChange = handler;
+  }
+
+  Future<void> _notifyChange() async {
+    final handler = _onChange;
+    if (handler != null) {
+      await handler();
+    }
+  }
 
   Future<Database> get database async {
     if (_database != null) return _database!;
@@ -217,7 +230,9 @@ class DbService {
     final Database db = await database;
     final Map<String, dynamic> data = entry.toMap();
     data['extraTags'] = jsonEncode(entry.extraTags.map((tag) => tag.name).toList());
-    return db.insert(_moodsTable, data);
+    final int id = await db.insert(_moodsTable, data);
+    await _notifyChange();
+    return id;
   }
 
   Future<List<MoodEntry>> getMoodEntries({DateTime? from, DateTime? to}) async {
@@ -266,26 +281,32 @@ class DbService {
     final Map<String, dynamic> data = entry.toMap();
     data['extraTags'] = jsonEncode(entry.extraTags.map((tag) => tag.name).toList());
 
-    return db.update(
+    final int updated = await db.update(
       _moodsTable,
       data,
       where: 'id = ?',
       whereArgs: [entry.id],
     );
+    await _notifyChange();
+    return updated;
   }
 
   Future<int> deleteMoodEntry(int id) async {
     final Database db = await database;
-    return db.delete(
+    final int deleted = await db.delete(
       _moodsTable,
       where: 'id = ?',
       whereArgs: [id],
     );
+    await _notifyChange();
+    return deleted;
   }
 
   Future<int> insertClass(ClassEntry entry) async {
     final Database db = await database;
-    return db.insert(_classesTable, entry.toMap());
+    final int id = await db.insert(_classesTable, entry.toMap());
+    await _notifyChange();
+    return id;
   }
 
   Future<List<ClassEntry>> getClassesForDay(int weekday) async {
@@ -313,26 +334,32 @@ class DbService {
     if (entry.id == null) return 0;
 
     final Database db = await database;
-    return db.update(
+    final int updated = await db.update(
       _classesTable,
       entry.toMap(),
       where: 'id = ?',
       whereArgs: [entry.id],
     );
+    await _notifyChange();
+    return updated;
   }
 
   Future<int> deleteClassEntry(int id) async {
     final Database db = await database;
-    return db.delete(
+    final int deleted = await db.delete(
       _classesTable,
       where: 'id = ?',
       whereArgs: [id],
     );
+    await _notifyChange();
+    return deleted;
   }
 
   Future<int> insertTask(Task task) async {
     final Database db = await database;
-    return db.insert(_tasksTable, task.toMap());
+    final int id = await db.insert(_tasksTable, task.toMap());
+    await _notifyChange();
+    return id;
   }
 
   Future<List<Task>> getPendingTasks() async {
@@ -373,26 +400,32 @@ class DbService {
 
   Future<int> updateTaskStatus(int id, TaskStatus status) async {
     final Database db = await database;
-    return db.update(
+    final int updated = await db.update(
       _tasksTable,
       {'status': status.name},
       where: 'id = ?',
       whereArgs: [id],
     );
+    await _notifyChange();
+    return updated;
   }
 
   Future<int> deleteTask(int id) async {
     final Database db = await database;
-    return db.delete(
+    final int deleted = await db.delete(
       _tasksTable,
       where: 'id = ?',
       whereArgs: [id],
     );
+    await _notifyChange();
+    return deleted;
   }
 
   Future<int> insertJournalEntry(JournalEntry entry) async {
     final Database db = await database;
-    return db.insert(_journalTable, entry.toMap());
+    final int id = await db.insert(_journalTable, entry.toMap());
+    await _notifyChange();
+    return id;
   }
 
   Future<List<JournalEntry>> getJournalEntries() async {
@@ -406,7 +439,9 @@ class DbService {
 
   Future<int> insertSleepEntry(SleepEntry entry) async {
     final Database db = await database;
-    return db.insert(_sleepTable, entry.toMap());
+    final int id = await db.insert(_sleepTable, entry.toMap());
+    await _notifyChange();
+    return id;
   }
 
   Future<List<SleepEntry>> getSleepEntries({
@@ -446,11 +481,13 @@ class DbService {
 
   Future<int> deleteSleepEntry(int id) async {
     final Database db = await database;
-    return db.delete(
+    final int deleted = await db.delete(
       _sleepTable,
       where: 'id = ?',
       whereArgs: [id],
     );
+    await _notifyChange();
+    return deleted;
   }
 
   Future<int> insertPeriodCycle(PeriodCycle cycle) async {
@@ -471,7 +508,9 @@ class DbService {
       periodDurationDays: cycle.periodDurationDays,
     );
 
-    return db.insert(_periodCyclesTable, toSave.toMap());
+    final int id = await db.insert(_periodCyclesTable, toSave.toMap());
+    await _notifyChange();
+    return id;
   }
 
   Future<List<PeriodCycle>> getRecentCycles({int? limit}) async {
@@ -518,21 +557,25 @@ class DbService {
           .inDays;
     }
 
-    return db.update(
+    final int updated = await db.update(
       _periodCyclesTable,
       cycle.copyWith(calculatedCycleLength: calculatedCycleLength).toMap(),
       where: 'id = ?',
       whereArgs: [cycle.id],
     );
+    await _notifyChange();
+    return updated;
   }
 
   Future<int> deletePeriodCycle(int id) async {
     final Database db = await database;
-    return db.delete(
+    final int deleted = await db.delete(
       _periodCyclesTable,
       where: 'id = ?',
       whereArgs: [id],
     );
+    await _notifyChange();
+    return deleted;
   }
 
   Future<DateTime?> _findPreviousCycleStart(DateTime start,
@@ -562,7 +605,9 @@ class DbService {
 
   Future<int> insertSupportContact(SupportContact contact) async {
     final Database db = await database;
-    return db.insert(_supportContactsTable, contact.toMap());
+    final int id = await db.insert(_supportContactsTable, contact.toMap());
+    await _notifyChange();
+    return id;
   }
 
   Future<List<SupportContact>> getAllSupportContacts() async {
@@ -590,26 +635,32 @@ class DbService {
     if (contact.id == null) return 0;
 
     final Database db = await database;
-    return db.update(
+    final int updated = await db.update(
       _supportContactsTable,
       contact.toMap(),
       where: 'id = ?',
       whereArgs: [contact.id],
     );
+    await _notifyChange();
+    return updated;
   }
 
   Future<int> deleteSupportContact(int id) async {
     final Database db = await database;
-    return db.delete(
+    final int deleted = await db.delete(
       _supportContactsTable,
       where: 'id = ?',
       whereArgs: [id],
     );
+    await _notifyChange();
+    return deleted;
   }
 
   Future<int> insertMovementEntry(MovementEntry entry) async {
     final Database db = await database;
-    return db.insert(_movementEntriesTable, entry.toMap());
+    final int id = await db.insert(_movementEntriesTable, entry.toMap());
+    await _notifyChange();
+    return id;
   }
 
   Future<List<MovementEntry>> getMovementEntries({
@@ -644,16 +695,135 @@ class DbService {
 
   Future<int> deleteMovementEntry(int id) async {
     final Database db = await database;
-    return db.delete(
+    final int deleted = await db.delete(
       _movementEntriesTable,
       where: 'id = ?',
       whereArgs: [id],
     );
+    await _notifyChange();
+    return deleted;
+  }
+
+  Future<void> replaceMoods(List<MoodEntry> entries) async {
+    final Database db = await database;
+    await db.transaction((txn) async {
+      await txn.delete(_moodsTable);
+      for (final MoodEntry entry in entries) {
+        final Map<String, dynamic> data = entry.toMap();
+        data['extraTags'] =
+            jsonEncode(entry.extraTags.map((tag) => tag.name).toList());
+        await txn.insert(
+          _moodsTable,
+          data,
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+    });
+  }
+
+  Future<void> replaceClasses(List<ClassEntry> entries) async {
+    final Database db = await database;
+    await db.transaction((txn) async {
+      await txn.delete(_classesTable);
+      for (final ClassEntry entry in entries) {
+        await txn.insert(
+          _classesTable,
+          entry.toMap(),
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+    });
+  }
+
+  Future<void> replaceTasks(List<Task> tasks) async {
+    final Database db = await database;
+    await db.transaction((txn) async {
+      await txn.delete(_tasksTable);
+      for (final Task task in tasks) {
+        await txn.insert(
+          _tasksTable,
+          task.toMap(),
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+    });
+  }
+
+  Future<void> replaceJournalEntries(List<JournalEntry> entries) async {
+    final Database db = await database;
+    await db.transaction((txn) async {
+      await txn.delete(_journalTable);
+      for (final JournalEntry entry in entries) {
+        await txn.insert(
+          _journalTable,
+          entry.toMap(),
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+    });
+  }
+
+  Future<void> replaceSleepEntries(List<SleepEntry> entries) async {
+    final Database db = await database;
+    await db.transaction((txn) async {
+      await txn.delete(_sleepTable);
+      for (final SleepEntry entry in entries) {
+        await txn.insert(
+          _sleepTable,
+          entry.toMap(),
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+    });
+  }
+
+  Future<void> replacePeriodCycles(List<PeriodCycle> cycles) async {
+    final Database db = await database;
+    await db.transaction((txn) async {
+      await txn.delete(_periodCyclesTable);
+      for (final PeriodCycle cycle in cycles) {
+        await txn.insert(
+          _periodCyclesTable,
+          cycle.toMap(),
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+    });
+  }
+
+  Future<void> replaceSupportContacts(List<SupportContact> contacts) async {
+    final Database db = await database;
+    await db.transaction((txn) async {
+      await txn.delete(_supportContactsTable);
+      for (final SupportContact contact in contacts) {
+        await txn.insert(
+          _supportContactsTable,
+          contact.toMap(),
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+    });
+  }
+
+  Future<void> replaceMovementEntries(List<MovementEntry> entries) async {
+    final Database db = await database;
+    await db.transaction((txn) async {
+      await txn.delete(_movementEntriesTable);
+      for (final MovementEntry entry in entries) {
+        await txn.insert(
+          _movementEntriesTable,
+          entry.toMap(),
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+    });
   }
 
   Future<int> insertAnnouncement(Announcement announcement) async {
     final Database db = await database;
-    return db.insert(_announcementsTable, announcement.toMap());
+    final int id = await db.insert(_announcementsTable, announcement.toMap());
+    await _notifyChange();
+    return id;
   }
 
   Future<void> replaceAnnouncements(List<Announcement> announcements) async {
@@ -679,10 +849,12 @@ class DbService {
 
   Future<int> deleteAnnouncement(int id) async {
     final Database db = await database;
-    return db.delete(
+    final int deleted = await db.delete(
       _announcementsTable,
       where: 'id = ?',
       whereArgs: [id],
     );
+    await _notifyChange();
+    return deleted;
   }
 }

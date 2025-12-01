@@ -18,6 +18,7 @@ class _TimetablePageState extends State<TimetablePage> {
   bool _isLoading = true;
   bool _isLoggedIn = false;
   List<ClassEntry> _classes = [];
+  List<String> _courseCodeSuggestions = [];
 
   static const List<String> _dayNames = [
     'Monday',
@@ -72,19 +73,23 @@ class _TimetablePageState extends State<TimetablePage> {
   Future<void> _loadState() async {
     final classes = await DbService.instance.getAllClasses();
     final bool loggedIn = await UserProfileService.instance.isLoggedIn();
+    final suggestions = _courseCodeHints(classes);
     if (!mounted) return;
     setState(() {
       _classes = classes;
       _isLoading = false;
       _isLoggedIn = loggedIn;
+      _courseCodeSuggestions = suggestions;
     });
   }
 
   Future<void> _loadClasses() async {
     final classes = await DbService.instance.getAllClasses();
+    final suggestions = _courseCodeHints(classes);
     if (!mounted) return;
     setState(() {
       _classes = classes;
+      _courseCodeSuggestions = suggestions;
     });
   }
 
@@ -96,16 +101,49 @@ class _TimetablePageState extends State<TimetablePage> {
     return localizations.formatTimeOfDay(time, alwaysUse24HourFormat: false);
   }
 
-  Future<void> _showAddClassSheet() async {
-    final GlobalKey<FormState> formKey = GlobalKey<FormState>();
-    final TextEditingController courseCodeController = TextEditingController();
-    final TextEditingController venueController = TextEditingController();
-    final TextEditingController lecturerController = TextEditingController();
+  TimeOfDay? _parseTimeString(String raw) {
+    final RegExp pattern = RegExp(r'^(\d{1,2}):(\d{2})\s*(am|pm)?$', caseSensitive: false);
+    final Match? match = pattern.firstMatch(raw.trim());
+    if (match == null) return null;
 
-    int selectedDay = DateTime.monday;
-    String classType = 'Lecture (L)';
-    TimeOfDay? startTime;
-    TimeOfDay? endTime;
+    int hour = int.parse(match.group(1)!);
+    final int minute = int.parse(match.group(2)!);
+    final String? meridiem = match.group(3)?.toLowerCase();
+
+    if (meridiem != null) {
+      if (meridiem == 'pm' && hour < 12) hour += 12;
+      if (meridiem == 'am' && hour == 12) hour = 0;
+    }
+
+    if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return null;
+    return TimeOfDay(hour: hour, minute: minute);
+  }
+
+  List<String> _courseCodeHints(List<ClassEntry> entries) {
+    final Set<String> unique = {
+      for (final entry in entries)
+        if (entry.subject.trim().isNotEmpty) entry.subject.trim()
+    };
+    return unique.take(6).toList();
+  }
+
+  Future<void> _openClassForm({ClassEntry? existing}) async {
+    final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+    final bool isEditing = existing != null;
+    const List<String> classTypes = ['Lecture (L)', 'Practical (P)', 'Tutorial (T)'];
+    final TextEditingController courseCodeController =
+        TextEditingController(text: existing?.subject ?? '');
+    final TextEditingController venueController =
+        TextEditingController(text: existing?.location ?? '');
+    final TextEditingController lecturerController =
+        TextEditingController(text: existing?.lecturer ?? '');
+
+    int selectedDay = existing?.dayOfWeek ?? DateTime.monday;
+    String classType = classTypes.contains(existing?.classType ?? '')
+        ? existing!.classType
+        : classTypes.first;
+    TimeOfDay? startTime = existing != null ? _parseTimeString(existing.startTime) : null;
+    TimeOfDay? endTime = existing != null ? _parseTimeString(existing.endTime) : null;
     bool timeError = false;
 
     await showModalBottomSheet<void>(
@@ -152,7 +190,7 @@ class _TimetablePageState extends State<TimetablePage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Add a class to your timetable',
+                          isEditing ? 'Edit class' : 'Add a class to your timetable',
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                         const SizedBox(height: 12),
@@ -165,6 +203,30 @@ class _TimetablePageState extends State<TimetablePage> {
                           validator: (value) =>
                               value == null || value.trim().isEmpty ? 'Enter a course code' : null,
                         ),
+                        if (_courseCodeSuggestions.isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            'Pick a recent code to save typing:',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                          const SizedBox(height: 4),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 6,
+                            children: _courseCodeSuggestions
+                                .map(
+                                  (code) => ActionChip(
+                                    label: Text(code),
+                                    onPressed: () {
+                                      setSheetState(() {
+                                        courseCodeController.text = code;
+                                      });
+                                    },
+                                  ),
+                                )
+                                .toList(),
+                          ),
+                        ],
                         const SizedBox(height: 12),
                         DropdownButtonFormField<int>(
                           value: selectedDay,
@@ -183,12 +245,11 @@ class _TimetablePageState extends State<TimetablePage> {
                         DropdownButtonFormField<String>(
                           value: classType,
                           decoration: const InputDecoration(labelText: 'Type'),
-                          items: const [
-                            DropdownMenuItem(value: 'Lecture (L)', child: Text('Lecture (L)')),
-                            DropdownMenuItem(value: 'Practical (P)', child: Text('Practical (P)')),
-                            DropdownMenuItem(value: 'Tutorial (T)', child: Text('Tutorial (T)')),
-                          ],
-                          onChanged: (value) => setSheetState(() => classType = value ?? 'Lecture (L)'),
+                          items: classTypes
+                              .map((type) => DropdownMenuItem(value: type, child: Text(type)))
+                              .toList(),
+                          onChanged: (value) =>
+                              setSheetState(() => classType = value ?? classTypes.first),
                         ),
                         const SizedBox(height: 12),
                         TextFormField(
@@ -247,6 +308,7 @@ class _TimetablePageState extends State<TimetablePage> {
                               }
 
                               final ClassEntry newEntry = ClassEntry(
+                                id: existing?.id,
                                 subject: courseCodeController.text.trim(),
                                 dayOfWeek: selectedDay,
                                 startTime: _formatTimeOfDay(startTime!),
@@ -256,20 +318,27 @@ class _TimetablePageState extends State<TimetablePage> {
                                 lecturer: lecturerController.text.trim(),
                               );
 
-                              await DbService.instance.insertClass(newEntry);
+                              if (isEditing && newEntry.id != null) {
+                                await DbService.instance.updateClassEntry(newEntry);
+                              } else {
+                                await DbService.instance.insertClass(newEntry);
+                              }
                               if (!mounted) return;
                               Navigator.of(context).pop();
                               await _loadClasses();
                               if (_remindersEnabled) {
                                 await NotificationService.instance
-                                    .scheduleWeeklyClassReminder(newEntry);
+                                    .scheduleClassRemindersForWeek(_classes);
                               }
                               if (!mounted) return;
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Class added to your timetable.')),
+                                SnackBar(
+                                  content: Text(
+                                      isEditing ? 'Class updated in your timetable.' : 'Class added to your timetable.'),
+                                ),
                               );
                             },
-                            child: const Text('Save class'),
+                            child: Text(isEditing ? 'Save changes' : 'Save class'),
                           ),
                         ),
                       ],
@@ -282,10 +351,79 @@ class _TimetablePageState extends State<TimetablePage> {
         );
       },
     );
+  }
 
-    //courseCodeController.dispose();
-    //venueController.dispose();
-    //lecturerController.dispose();
+  Future<void> _showClassActions(ClassEntry entry) async {
+    final String? action = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.edit),
+              title: const Text('Edit class'),
+              onTap: () => Navigator.of(context).pop('edit'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete_outline),
+              title: const Text('Delete class'),
+              onTap: () => Navigator.of(context).pop('delete'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.close),
+              title: const Text('Cancel'),
+              onTap: () => Navigator.of(context).pop(),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (action == 'edit') {
+      await _openClassForm(existing: entry);
+    } else if (action == 'delete') {
+      await _confirmDelete(entry);
+    }
+  }
+
+  Future<void> _confirmDelete(ClassEntry entry) async {
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Remove this class?'),
+        content: Text('Delete ${entry.subject} (${entry.classType}) from your timetable?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    if (entry.id != null) {
+      await DbService.instance.deleteClassEntry(entry.id!);
+    } else {
+      _classes.remove(entry);
+    }
+
+    if (!mounted) return;
+    await _loadClasses();
+    if (_remindersEnabled) {
+      await NotificationService.instance.scheduleClassRemindersForWeek(_classes);
+    }
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Class removed.')),
+    );
   }
 
   List<Widget> _buildClassSections() {
@@ -330,8 +468,12 @@ class _TimetablePageState extends State<TimetablePage> {
               style: Theme.of(context).textTheme.titleMedium,
             ),
           ),
-          ...entries.map((entry) => Card(
-                elevation: 0,
+          ...entries.map(
+            (entry) => Card(
+              elevation: 0,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onLongPress: () => _showClassActions(entry),
                 child: Padding(
                   padding: const EdgeInsets.all(12.0),
                   child: Column(
@@ -377,7 +519,9 @@ class _TimetablePageState extends State<TimetablePage> {
                     ],
                   ),
                 ),
-              )),
+              ),
+            ),
+          ),
         ];
       }),
     ];
@@ -388,7 +532,7 @@ class _TimetablePageState extends State<TimetablePage> {
     return Scaffold(
       appBar: AppBar(title: const Text('Timetable')),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: _showAddClassSheet,
+        onPressed: () => _openClassForm(),
         icon: const Icon(Icons.add),
         label: const Text('Add class'),
       ),

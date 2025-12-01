@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../services/user_profile_service.dart';
 import '../services/supabase_sync_service.dart';
+import '../services/theme_controller.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -50,10 +51,6 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
-  Future<void> _saveTheme() async {
-    await UserProfileService.instance.saveTheme(_themeMode);
-  }
-
   Future<void> _saveReminder() async {
     if (_reminderTime == null) {
       await UserProfileService.instance.clearDailyReminderTime();
@@ -76,7 +73,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _saveAll() async {
     await _saveProfile();
-    await _saveTheme();
+    await ThemeController.instance.updateTheme(_themeMode);
     await _saveReminder();
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -193,6 +190,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         onChanged: (value) {
                           if (value == null) return;
                           setState(() => _themeMode = value);
+                          ThemeController.instance.updateTheme(value);
                         },
                       ),
                     ),

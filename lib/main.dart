@@ -23,16 +23,25 @@ import 'pages/timetable_page.dart';
 import 'pages/campus_map_page.dart';
 import 'pages/weather_page.dart';
 import 'services/notification_service.dart';
+import 'services/theme_controller.dart';
+import 'services/supabase_sync_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   await Supabase.initialize(
     url: 'https://sfkefyqyuhicwbjnsdes.supabase.co',
     anonKey: 'sb_publishable_CQ9qwM0iWstuTJBrcH4eeQ_Th6W0TS4',
   );
-  WidgetsFlutterBinding.ensureInitialized();
   await NotificationService.instance.initialize();
-  runApp(MyApp());
+  await ThemeController.instance.loadSavedTheme();
+  SupabaseSyncService.instance.startAutoUploadWatcher();
+  try {
+    await SupabaseSyncService.instance.restoreFromSupabaseIfSignedIn();
+  } catch (_) {
+    // If offline at launch, the user can manually retry from Settings or on next start.
+  }
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -40,36 +49,48 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'CalmCampus',
-      theme: ThemeData(
-        colorSchemeSeed: Colors.teal,
-        useMaterial3: true,
-      ),
-      initialRoute: '/home',
-      routes: {
-        '/auth': (_) => const AuthPage(),
-        '/home': (_) => const MainNavigation(),
-        '/mood': (_) => const MoodPage(),
-        '/history': (_) => const HistoryPage(),
-        '/journal': (_) => const JournalPage(),
-        '/timetable': (_) => const TimetablePage(),
-        '/tasks': (_) => const TasksPage(),
-        '/chat': (_) => const ChatPage(),
-        '/relax': (_) => const RelaxPage(),
-        '/breathing': (_) => const BreathingPage(),
-        '/profile': (_) => const ProfilePage(),
-        '/settings': (_) => const SettingsPage(),
-        '/help-now': (_) => const HelpNowPage(),
-        '/dsa-summary': (_) => const DsaSummaryPage(),
-        '/challenges': (_) => const CommonChallengesPage(),
-        '/sleep': (_) => const SleepPage(),
-        '/period-tracker': (_) => const PeriodTrackerPage(),
-        '/support-plan': (_) => const SupportPlanPage(),
-        '/movement': (_) => const MovementPage(),
-        '/campus-map': (_) => const CampusMapPage(),
-        '/weather': (_) => const WeatherPage(),
-        '/announcements': (_) => const AnnouncementsPage(),
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: ThemeController.instance.themeModeNotifier,
+      builder: (context, mode, _) {
+        return MaterialApp(
+          title: 'CalmCampus',
+          themeMode: mode,
+          theme: ThemeData(
+            colorSchemeSeed: Colors.teal,
+            useMaterial3: true,
+            brightness: Brightness.light,
+          ),
+          darkTheme: ThemeData(
+            colorSchemeSeed: Colors.teal,
+            useMaterial3: true,
+            brightness: Brightness.dark,
+          ),
+          initialRoute: '/home',
+          routes: {
+            '/auth': (_) => const AuthPage(),
+            '/home': (_) => const MainNavigation(),
+            '/mood': (_) => const MoodPage(),
+            '/history': (_) => const HistoryPage(),
+            '/journal': (_) => const JournalPage(),
+            '/timetable': (_) => const TimetablePage(),
+            '/tasks': (_) => const TasksPage(),
+            '/chat': (_) => const ChatPage(),
+            '/relax': (_) => const RelaxPage(),
+            '/breathing': (_) => const BreathingPage(),
+            '/profile': (_) => const ProfilePage(),
+            '/settings': (_) => const SettingsPage(),
+            '/help-now': (_) => const HelpNowPage(),
+            '/dsa-summary': (_) => const DsaSummaryPage(),
+            '/challenges': (_) => const CommonChallengesPage(),
+            '/sleep': (_) => const SleepPage(),
+            '/period-tracker': (_) => const PeriodTrackerPage(),
+            '/support-plan': (_) => const SupportPlanPage(),
+            '/movement': (_) => const MovementPage(),
+            '/campus-map': (_) => const CampusMapPage(),
+            '/weather': (_) => const WeatherPage(),
+            '/announcements': (_) => const AnnouncementsPage(),
+          },
+        );
       },
     );
   }

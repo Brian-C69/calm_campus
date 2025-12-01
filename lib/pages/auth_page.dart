@@ -68,6 +68,19 @@ class _AuthPageState extends State<AuthPage> {
       await UserProfileService.instance.setLoggedIn(true);
 
       await SupabaseSyncService.instance.uploadAllData();
+      try {
+        await SupabaseSyncService.instance.downloadAllData();
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'You are signed in, but we could not pull your cloud data yet. Please check your connection and try again later.\nDetails: $e',
+              ),
+            ),
+          );
+        }
+      }
     } on AuthException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

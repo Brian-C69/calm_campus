@@ -2,11 +2,13 @@
 
 ## 0. Assumptions & Goal
 
-- [ ] Goal: **If user is logged in, all data lives in a cloud database**, so logging in on any device pulls the same data.
-- [ ] Guests still use **local-only** storage on that device.
-- [ ] Logged-in users:
-    - [ ] Read/write to **remote DB**
-    - [ ] (Optional but nice) Also cache locally for offline use
+- [x] Goal: **If user is logged in, all data lives in a cloud database**, so logging in on any device pulls the same data.
+- [x] Guests still use **local-only** storage on that device.
+- [x] Logged-in users:
+    - [x] Read/write to **remote DB**
+    - [x] (Optional but nice) Also cache locally for offline use
+
+_Update 2025-12-01:_ Supabase backup + restore is live. After sign-in we upload local data, then pull the user’s cloud records back into SQLite. On app launch, if a Supabase session exists, we silently restore the latest cloud copy.
 
 ---
 
@@ -14,7 +16,7 @@
 
 - [ ] Decide backend option:
     - [ ] Option A: Firebase (Auth + Firestore)
-    - [ ] Option B: Supabase (Postgres + Auth)
+    - [x] Option B: Supabase (Postgres + Auth)
     - [ ] Option C: Your own backend (PHP/Laravel/Node/Python + REST API + DB)
 - [ ] Decide UX behaviour when offline:
     - [ ] Simple: show “needs internet to sync, data may be out of date”

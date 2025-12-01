@@ -214,23 +214,84 @@ class ForecastList extends StatelessWidget {
                   ),
                 ],
                 const SizedBox(height: 6),
-                Text(
-                  'Morning: ${forecast.morningForecast}',
-                  style: theme.textTheme.bodySmall,
-                ),
-                Text(
-                  'Afternoon: ${forecast.afternoonForecast}',
-                  style: theme.textTheme.bodySmall,
-                ),
-                Text(
-                  'Night: ${forecast.nightForecast}',
-                  style: theme.textTheme.bodySmall,
+                Row(
+                  children: [
+                    Expanded(
+                      child: _ForecastPeriodTile(
+                        label: 'Morning',
+                        description: forecast.morningForecast,
+                      ),
+                    ),
+                    Expanded(
+                      child: _ForecastPeriodTile(
+                        label: 'Afternoon',
+                        description: forecast.afternoonForecast,
+                      ),
+                    ),
+                    Expanded(
+                      child: _ForecastPeriodTile(
+                        label: 'Night',
+                        description: forecast.nightForecast,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
         );
       },
+    );
+  }
+}
+
+class _ForecastPeriodTile extends StatelessWidget {
+  const _ForecastPeriodTile({
+    required this.label,
+    required this.description,
+  });
+
+  final String label;
+  final String description;
+
+  IconData _iconForDescription() {
+    final lower = description.toLowerCase();
+    if (lower.contains('ribut petir')) {
+      return Icons.thunderstorm;
+    }
+    if (lower.contains('hujan')) {
+      return Icons.umbrella;
+    }
+    if (lower.contains('berjerebu')) {
+      return Icons.blur_on;
+    }
+    if (lower.contains('tiada hujan') || lower.contains('cerah')) {
+      return Icons.wb_sunny;
+    }
+    return Icons.cloud;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          label,
+          style: theme.textTheme.bodySmall,
+        ),
+        const SizedBox(height: 4),
+        Tooltip(
+          message: description,
+          child: Icon(
+            _iconForDescription(),
+            size: 24,
+            color: theme.colorScheme.primary,
+          ),
+        ),
+      ],
     );
   }
 }

@@ -22,6 +22,7 @@ class _SettingsPageState extends State<SettingsPage> {
   AppThemeMode _themeMode = AppThemeMode.system;
   AppLanguage _language = AppLanguage.englishUK;
   TimeOfDay? _reminderTime;
+  bool _chatShareAll = false;
 
   @override
   void initState() {
@@ -36,6 +37,7 @@ class _SettingsPageState extends State<SettingsPage> {
     final theme = await UserProfileService.instance.getTheme();
     final language = await UserProfileService.instance.getLanguage();
     final reminder = await UserProfileService.instance.getDailyReminderTime();
+    final shareAll = await UserProfileService.instance.getChatShareAll();
 
     setState(() {
       _nicknameController.text = nickname ?? '';
@@ -44,6 +46,7 @@ class _SettingsPageState extends State<SettingsPage> {
       _themeMode = theme;
       _language = language;
       _reminderTime = reminder;
+      _chatShareAll = shareAll;
     });
   }
 
@@ -81,6 +84,7 @@ class _SettingsPageState extends State<SettingsPage> {
     await ThemeController.instance.updateTheme(_themeMode);
     await LanguageController.instance.updateLanguage(_language);
     await _saveReminder();
+    await UserProfileService.instance.setChatShareAll(_chatShareAll);
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(AppLocalizations.of(context).t('settings.saved'))), 
@@ -141,6 +145,30 @@ class _SettingsPageState extends State<SettingsPage> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
+            Card(
+              elevation: 0,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(strings.t('settings.aiBuddy'), style: theme.textTheme.titleMedium),
+                    const SizedBox(height: 8),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(strings.t('settings.aiBuddy.shareAll')),
+                      subtitle: Text(strings.t('settings.aiBuddy.shareAll.helper')),
+                      value: _chatShareAll,
+                      onChanged: (value) async {
+                        setState(() => _chatShareAll = value);
+                        await UserProfileService.instance.setChatShareAll(value);
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
             Card(
               elevation: 0,
               child: Padding(

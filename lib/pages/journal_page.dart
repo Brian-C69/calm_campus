@@ -33,30 +33,41 @@ class _JournalPageState extends State<JournalPage> {
   }
 
   Future<void> _saveEntry() async {
-    final String text = _controller.text.trim();
+    final text = _controller.text.trim();
+
     if (text.isEmpty) {
-      _showMessage(AppLocalizations.of(context).t('journal.error.empty'));
+
+      final strings = AppLocalizations.of(context);
+      _showMessage(strings.t('journal.error.empty'));
       return;
     }
 
-    final bool hasAccess = await _ensureLoggedInForSaving();
+    final hasAccess = await _ensureLoggedInForSaving();
     if (!hasAccess) {
       return;
     }
 
+    if (!mounted) return;
+
     setState(() => _isSaving = true);
-    final JournalEntry entry = JournalEntry(
+
+    final entry = JournalEntry(
       content: text,
       createdAt: DateTime.now(),
     );
-    final int id = await DbService.instance.insertJournalEntry(entry);
+
+    final id = await DbService.instance.insertJournalEntry(entry);
+
+    if (!mounted) return;
+
     setState(() {
       _entries.insert(0, entry.copyWith(id: id));
       _controller.clear();
       _isSaving = false;
     });
 
-    _showMessage(AppLocalizations.of(context).t('journal.saved'));
+    final strings = AppLocalizations.of(context);
+    _showMessage(strings.t('journal.saved'));
   }
 
   Future<void> _loadInitialState() async {
@@ -77,27 +88,37 @@ class _JournalPageState extends State<JournalPage> {
   Future<bool> _ensureLoggedInForSaving() async {
     if (_isLoggedIn) return true;
 
-    final LoginNudgeAction action = await LoginNudgeService.instance
+    final action = await LoginNudgeService.instance
         .maybePrompt(context, LoginNudgeTrigger.journalSave);
 
     if (!mounted) return false;
+
     if (action == LoginNudgeAction.loginSelected) {
       await Navigator.pushNamed(context, '/auth');
+
       if (!mounted) return _isLoggedIn;
-      final bool refreshedLogin =
-          await UserProfileService.instance.isLoggedIn();
+
+      final refreshedLogin = await UserProfileService.instance.isLoggedIn();
+
+      if (!mounted) return refreshedLogin;
+
       setState(() => _isLoggedIn = refreshedLogin);
+
       if (refreshedLogin) {
         await _loadEntries();
+
+        if (!mounted) return true;
       }
     }
 
     if (!_isLoggedIn) {
-      _showMessage(AppLocalizations.of(context).t('journal.nudge'));
+      final strings = AppLocalizations.of(context);
+      _showMessage(strings.t('journal.nudge'));
     }
 
     return _isLoggedIn;
   }
+
 
   void _showMessage(String message) {
     ScaffoldMessenger.of(

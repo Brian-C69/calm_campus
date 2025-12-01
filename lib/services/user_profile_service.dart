@@ -17,6 +17,8 @@ class UserProfileService {
   final String _themeKey = 'app_theme';
   final String _languageKey = 'app_language';
   final String _reminderTimeKey = 'daily_reminder_time';
+  final String _chatShareAllKey = 'chat_share_all';
+  final String _chatNoteSeenKey = 'chat_note_seen';
 
   Future<bool> isLoggedIn() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -114,5 +116,26 @@ class UserProfileService {
   Future<void> clearDailyReminderTime() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.remove(_reminderTimeKey);
+  }
+
+  Future<bool> getChatShareAll() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_chatShareAllKey) ?? false;
+    // controls whether the AI Buddy can use all local data domains
+  }
+
+  Future<void> setChatShareAll(bool value) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_chatShareAllKey, value);
+  }
+
+  Future<bool> isChatNoteSeen() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_chatNoteSeenKey) ?? false;
+  }
+
+  Future<void> setChatNoteSeen() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_chatNoteSeenKey, true);
   }
 }

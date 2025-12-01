@@ -5,12 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../l10n/app_localizations.dart';
 import '../models/class_entry.dart';
-import '../models/mood_entry.dart';
-import '../models/movement_entry.dart';
 import '../models/period_cycle.dart';
-import '../models/sleep_entry.dart';
 import '../models/support_contact.dart';
-import '../models/task.dart';
 import '../services/chat_service.dart';
 import '../services/db_service.dart';
 import '../services/login_nudge_service.dart';
@@ -39,6 +35,7 @@ class _ChatPageState extends State<ChatPage> {
   bool _loadingContext = false;
   ConsentFlags _consent = const ConsentFlags();
   ChatContext _context = const ChatContext();
+  bool _showGuestNote = true;
   String? _error;
 
   Future<void> _openCustomization() async {
@@ -68,6 +65,13 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    _loadHistory();
+    _loadChatPrefs();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context);
 
@@ -84,21 +88,31 @@ class _ChatPageState extends State<ChatPage> {
       ),
       body: Column(
         children: [
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            child: Text(
-              strings.t('chat.note'),
-              style: Theme.of(context).textTheme.bodySmall,
+          if (_showGuestNote)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      strings.t('chat.note'),
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: strings.t('chat.note.dismiss'),
+                    icon: const Icon(Icons.close),
+                    onPressed: () async {
+                      setState(() => _showGuestNote = false);
+                      await UserProfileService.instance.setChatNoteSeen();
+                    },
+                  ),
+                ],
+              ),
             ),
-          ),
-          SwitchListTile(
-            title: Text(strings.t('chat.share_all')),
-            subtitle: Text(strings.t('chat.share_all.desc')),
-            value: _shareAllData,
-            onChanged: (value) => _toggleDataShare(value, strings),
-          ),
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.all(16),
@@ -196,12 +210,6 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _loadHistory();
-  }
-
   Future<void> _loadHistory() async {
     final prefs = await SharedPreferences.getInstance();
     final saved = prefs.getString(_storageKey);
@@ -226,6 +234,23 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
+  Future<void> _loadChatPrefs() async {
+    final shareAll = await UserProfileService.instance.getChatShareAll();
+    final noteSeen = await UserProfileService.instance.isChatNoteSeen();
+    if (!mounted) return;
+    setState(() {
+      _shareAllData = shareAll;
+      _showGuestNote = !noteSeen;
+      _loadingContext = shareAll;
+    });
+    if (_shareAllData) {
+      await _buildContextAndConsent(AppLocalizations.of(context));
+      if (mounted) {
+        setState(() => _loadingContext = false);
+      }
+    }
+  }
+
   Future<void> _saveHistory() async {
     final prefs = await SharedPreferences.getInstance();
     final encoded = jsonEncode(_history.map((m) => m.toMap()).toList());
@@ -236,11 +261,11 @@ class _ChatPageState extends State<ChatPage> {
     final strings = AppLocalizations.of(context);
     final text = (quickAction ?? _controller.text).trim();
     if (text.isEmpty || _isSending) return;
+    FocusScope.of(context).unfocus();
     if (_shareAllData && !_loadingContext && _consent.isEmpty && _turns.isEmpty) {
       // Ensure context is prepared on first send after toggle.
       await _buildContextAndConsent(strings);
     }
-    FocusScope.of(context).unfocus();
     setState(() {
       _turns.add(_ChatTurn(content: text, isUser: true));
       _history.add(ChatMessage(role: 'user', content: text));
@@ -274,9 +299,10 @@ class _ChatPageState extends State<ChatPage> {
       });
       await _saveHistory();
     } finally {
-      if (!mounted) return;
+      if (!mounted){
       setState(() => _isSending = false);
       _scrollToEnd();
+      }
     }
   }
 
@@ -301,24 +327,6 @@ class _ChatPageState extends State<ChatPage> {
     _controller.dispose();
     _scrollController.dispose();
     super.dispose();
-  }
-
-  Future<void> _toggleDataShare(bool value, AppLocalizations strings) async {
-    setState(() {
-      _shareAllData = value;
-      _loadingContext = value;
-      _error = null;
-    });
-    if (!value) {
-      setState(() {
-        _consent = const ConsentFlags();
-        _context = const ChatContext();
-      });
-      return;
-    }
-    await _buildContextAndConsent(strings);
-    if (!mounted) return;
-    setState(() => _loadingContext = false);
   }
 
   Future<void> _buildContextAndConsent(AppLocalizations strings) async {
@@ -471,10 +479,13 @@ class _ChatPageState extends State<ChatPage> {
     final lengths = cycles.where((c) => c.calculatedCycleLength != null).map((c) => c.calculatedCycleLength!).toList();
     final avgLen = lengths.isNotEmpty ? (lengths.reduce((a, b) => a + b) / lengths.length).round() : null;
     final last = cycles.first;
+    final predicted = _predictNextPeriodStartFromCycles(cycles);
+    final DateTimeRange? window = predicted == null ? null : _estimateOvulationWindowFromPrediction(predicted);
     return {
       if (avgLen != null) 'summary': 'Avg cycle ~${avgLen}d',
       'nextPeriodHint': 'Last period ended ${_formatShortDate(last.cycleEndDate.toLocal())}',
-      'ovulationWindow': 'Approx mid-cycle window based on recent averages',
+      if (predicted != null) 'predictedNext': _formatShortDate(predicted),
+      if (window != null) 'ovulationWindow': '${_formatShortDate(window.start)} to ${_formatShortDate(window.end)}',
     };
   }
 
@@ -508,6 +519,27 @@ class _ChatPageState extends State<ChatPage> {
 
   String _formatShortDate(DateTime date) {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  }
+
+  DateTime? _predictNextPeriodStartFromCycles(List<PeriodCycle> cycles) {
+    if (cycles.length < 2) return null;
+    final List<PeriodCycle> sorted = List.of(cycles)..sort((a, b) => b.cycleStartDate.compareTo(a.cycleStartDate));
+    final List<int> cycleLengths = [];
+    for (int i = 0; i < sorted.length - 1; i++) {
+      final DateTime currentStart = sorted[i].cycleStartDate;
+      final DateTime previousStart = sorted[i + 1].cycleStartDate;
+      final int diff = currentStart.difference(DateTime(previousStart.year, previousStart.month, previousStart.day)).inDays;
+      cycleLengths.add(diff);
+    }
+    if (cycleLengths.isEmpty) return null;
+    final double average = cycleLengths.reduce((a, b) => a + b) / cycleLengths.length;
+    return sorted.first.cycleStartDate.add(Duration(days: average.round()));
+  }
+
+  DateTimeRange? _estimateOvulationWindowFromPrediction(DateTime predictedNextStart) {
+    final DateTime windowStart = predictedNextStart.subtract(const Duration(days: 16));
+    final DateTime windowEnd = predictedNextStart.subtract(const Duration(days: 12));
+    return DateTimeRange(start: windowStart, end: windowEnd);
   }
 }
 

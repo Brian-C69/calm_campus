@@ -1,4 +1,4 @@
-# CalmCampus Buddy Server (Ollama)
+﻿# CalmCampus Buddy Server (Ollama)
 
 Small Express service that fronts Ollama for the CalmCampus AI Buddy with safety guardrails.
 
@@ -74,3 +74,8 @@ Context packing
 - Only domains with `consentFlags` true are included.
 - Profile, mood, timetable, tasks, sleep, period tracker, movement, and support contacts are all optional; send short summaries (not raw logs) to stay within context limits.
 - `suggested_actions` can include up to 6 short items; crisis mode ensures at least one help action.
+- Academic scope: Buddy does not provide homework/assignment answers. It should redirect users to tutors/lecturers/resources and focus on wellbeing/study planning support.
+- Health scope: No diagnosis/medication/diet advice; period/cycle info is allowed in gentle, non-clinical wording (no contraception/medical claims).
+- Identity: Buddy should state it is “Bernard's Well Being LLM” when asked what model/AI it is.
+  - When asked about its origin/provider, it should reply that it runs locally for CalmCampus and must not claim to be from Google/OpenAI/etc.
+

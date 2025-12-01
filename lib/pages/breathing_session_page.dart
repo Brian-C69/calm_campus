@@ -2,15 +2,13 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
 import '../models/breathing_exercise.dart';
 
 enum _BreathingPhase { inhale, hold, exhale, finished }
 
 class BreathingSessionPage extends StatefulWidget {
-  const BreathingSessionPage({
-    super.key,
-    required this.exercise,
-  });
+  const BreathingSessionPage({super.key, required this.exercise});
 
   final BreathingExercise exercise;
 
@@ -107,16 +105,16 @@ class _BreathingSessionPageState extends State<BreathingSessionPage> {
     }
   }
 
-  String get _phaseLabel {
+  String _phaseLabel(AppLocalizations strings) {
     switch (_phase) {
       case _BreathingPhase.inhale:
-        return 'Breathe in';
+        return strings.t('breathing.phase.inhale');
       case _BreathingPhase.hold:
-        return 'Hold';
+        return strings.t('breathing.phase.hold');
       case _BreathingPhase.exhale:
-        return 'Breathe out';
+        return strings.t('breathing.phase.exhale');
       case _BreathingPhase.finished:
-        return 'Session complete';
+        return strings.t('breathing.phase.done');
     }
   }
 
@@ -142,6 +140,8 @@ class _BreathingSessionPageState extends State<BreathingSessionPage> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context);
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(title: Text(widget.exercise.name)),
       body: LayoutBuilder(
@@ -155,11 +155,16 @@ class _BreathingSessionPageState extends State<BreathingSessionPage> {
               children: [
                 Text(
                   widget.exercise.description,
-                  style: Theme.of(context).textTheme.bodyMedium,
+                  style: theme.textTheme.bodyMedium,
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 16),
-                Text('Cycle $_currentCycle of ${widget.exercise.cycles}'),
+                Text(
+                  strings
+                      .t('breathing.cycleCount')
+                      .replaceFirst('{current}', '$_currentCycle')
+                      .replaceFirst('{total}', '${widget.exercise.cycles}'),
+                ),
                 const SizedBox(height: 12),
                 AnimatedContainer(
                   duration: const Duration(milliseconds: 700),
@@ -175,16 +180,21 @@ class _BreathingSessionPageState extends State<BreathingSessionPage> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        _phaseLabel,
-                        style: Theme.of(context).textTheme.titleLarge,
+                        _phaseLabel(strings),
+                        style: theme.textTheme.titleLarge,
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 6),
                       Text(
                         _phase == _BreathingPhase.finished
-                            ? 'Nice work. Notice if your shoulders feel softer now.'
-                            : '$_secondsRemaining s',
-                        style: Theme.of(context).textTheme.bodyLarge,
+                            ? strings.t('breathing.finished.note')
+                            : strings
+                                .t('breathing.seconds')
+                                .replaceFirst(
+                                  '{seconds}',
+                                  '$_secondsRemaining',
+                                ),
+                        style: theme.textTheme.bodyLarge,
                         textAlign: TextAlign.center,
                       ),
                     ],
@@ -197,7 +207,12 @@ class _BreathingSessionPageState extends State<BreathingSessionPage> {
                       LinearProgressIndicator(value: 1 - _phaseProgress),
                       const SizedBox(height: 8),
                       Text(
-                        'Follow the prompts to complete ${widget.exercise.cycles} cycles.',
+                        strings
+                            .t('breathing.instructions')
+                            .replaceFirst(
+                              '{cycles}',
+                              '${widget.exercise.cycles}',
+                            ),
                         textAlign: TextAlign.center,
                       ),
                     ],
@@ -205,8 +220,8 @@ class _BreathingSessionPageState extends State<BreathingSessionPage> {
                 if (_phase == _BreathingPhase.finished) ...[
                   const SizedBox(height: 12),
                   Text(
-                    'Want to go again?',
-                    style: Theme.of(context).textTheme.titleMedium,
+                    strings.t('breathing.repeatPrompt'),
+                    style: theme.textTheme.titleMedium,
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 8),
@@ -217,11 +232,11 @@ class _BreathingSessionPageState extends State<BreathingSessionPage> {
                     children: [
                       FilledButton(
                         onPressed: _startSession,
-                        child: const Text('Repeat exercise'),
+                        child: Text(strings.t('breathing.repeat')),
                       ),
                       OutlinedButton(
                         onPressed: () => Navigator.of(context).pop(),
-                        child: const Text('Back to list'),
+                        child: Text(strings.t('breathing.back')),
                       ),
                     ],
                   ),
@@ -234,7 +249,7 @@ class _BreathingSessionPageState extends State<BreathingSessionPage> {
                       _timer?.cancel();
                       _startPhase(_BreathingPhase.finished);
                     },
-                    label: const Text('End session'),
+                    label: Text(strings.t('breathing.end')),
                   ),
                 ],
               ],

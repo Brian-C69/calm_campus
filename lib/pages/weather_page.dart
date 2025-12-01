@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 
+import '../l10n/app_localizations.dart';
 import '../models/forecast.dart';
 
 class WeatherPage extends StatefulWidget {
@@ -60,11 +61,10 @@ class _WeatherPageState extends State<WeatherPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final strings = AppLocalizations.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Weather & Planning'),
-      ),
+      appBar: AppBar(title: Text(strings.t('weather.title'))),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(12),
@@ -72,18 +72,18 @@ class _WeatherPageState extends State<WeatherPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Check the weather before heading to campus.',
+                strings.t('weather.intro.title'),
                 style: theme.textTheme.titleMedium,
               ),
               const SizedBox(height: 4),
               Text(
-                'Knowing if it will be very hot or rainy can help you plan your journey and arrive a bit calmer.',
+                strings.t('weather.intro.desc'),
                 style: theme.textTheme.bodyMedium,
               ),
               const SizedBox(height: 12),
               DropdownButton<String>(
                 isExpanded: true,
-                hint: const Text('Select your state'),
+                hint: Text(strings.t('weather.state.hint')),
                 value: _selectedState,
                 icon: const Icon(Icons.arrow_drop_down),
                 onChanged: (String? newValue) {
@@ -93,59 +93,61 @@ class _WeatherPageState extends State<WeatherPage> {
                     _forecastData = _fetchForecastData(newValue);
                   });
                 },
-                items: _states.entries
-                    .map(
-                      (entry) => DropdownMenuItem<String>(
-                        value: entry.key,
-                        child: Text(entry.value),
-                      ),
-                    )
-                    .toList(),
+                items:
+                    _states.entries
+                        .map(
+                          (entry) => DropdownMenuItem<String>(
+                            value: entry.key,
+                            child: Text(entry.value),
+                          ),
+                        )
+                        .toList(),
               ),
               const SizedBox(height: 12),
               Expanded(
-                child: _forecastData == null
-                    ? Center(
-                        child: Text(
-                          'Select a state to see the latest forecast.',
-                          style: theme.textTheme.bodyMedium,
-                          textAlign: TextAlign.center,
-                        ),
-                      )
-                    : FutureBuilder<List<Forecast>>(
-                        future: _forecastData,
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState ==
-                                  ConnectionState.waiting &&
-                              _forecastData != null) {
-                            return const Center(
-                              child: CircularProgressIndicator(),
-                            );
-                          } else if (snapshot.hasError) {
-                            return Center(
-                              child: Text(
-                                'We could not load the forecast right now.\n${snapshot.error}',
-                                style: theme.textTheme.bodyMedium,
-                                textAlign: TextAlign.center,
-                              ),
-                            );
-                          } else if (!snapshot.hasData ||
-                              snapshot.data!.isEmpty) {
-                            return Center(
-                              child: Text(
-                                'No forecast data available.',
-                                style: theme.textTheme.bodyMedium,
-                              ),
-                            );
-                          }
+                child:
+                    _forecastData == null
+                        ? Center(
+                          child: Text(
+                            strings.t('weather.empty'),
+                            style: theme.textTheme.bodyMedium,
+                            textAlign: TextAlign.center,
+                          ),
+                        )
+                        : FutureBuilder<List<Forecast>>(
+                          future: _forecastData,
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState ==
+                                    ConnectionState.waiting &&
+                                _forecastData != null) {
+                              return const Center(
+                                child: CircularProgressIndicator(),
+                              );
+                            } else if (snapshot.hasError) {
+                              return Center(
+                                child: Text(
+                                  '${strings.t('weather.error')}\n${snapshot.error}',
+                                  style: theme.textTheme.bodyMedium,
+                                  textAlign: TextAlign.center,
+                                ),
+                              );
+                            } else if (!snapshot.hasData ||
+                                snapshot.data!.isEmpty) {
+                              return Center(
+                                child: Text(
+                                  strings.t('weather.none'),
+                                  style: theme.textTheme.bodyMedium,
+                                ),
+                              );
+                            }
 
-                          return ForecastList(forecastData: snapshot.data!);
-                        },
-                      ),
+                            return ForecastList(forecastData: snapshot.data!);
+                          },
+                        ),
               ),
               const SizedBox(height: 8),
               Text(
-                'Data source: Malaysian Meteorological Department (via data.gov.my).',
+                strings.t('weather.source'),
                 style: theme.textTheme.bodySmall,
                 textAlign: TextAlign.center,
               ),
@@ -165,6 +167,7 @@ class ForecastList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final strings = AppLocalizations.of(context);
     final dateFormat = DateFormat('yyyy-MM-dd');
 
     return ListView.separated(
@@ -172,13 +175,15 @@ class ForecastList extends StatelessWidget {
       separatorBuilder: (_, __) => const SizedBox(height: 8),
       itemBuilder: (context, index) {
         final forecast = forecastData[index];
-        final parsedDate = forecast.date.isNotEmpty
-            ? dateFormat.parse(forecast.date, true).toLocal()
-            : null;
+        final parsedDate =
+            forecast.date.isNotEmpty
+                ? dateFormat.parse(forecast.date, true).toLocal()
+                : null;
 
-        final dateLabel = parsedDate != null
-            ? DateFormat('EEE, d MMM').format(parsedDate)
-            : forecast.date;
+        final dateLabel =
+            parsedDate != null
+                ? DateFormat('EEE, d MMM').format(parsedDate)
+                : forecast.date;
 
         return Card(
           elevation: 0,
@@ -191,12 +196,12 @@ class ForecastList extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
+                    Text(dateLabel, style: theme.textTheme.titleMedium),
                     Text(
-                      dateLabel,
-                      style: theme.textTheme.titleMedium,
-                    ),
-                    Text(
-                      '${forecast.minTemp}°C – ${forecast.maxTemp}°C',
+                      strings
+                          .t('weather.temperatureRange')
+                          .replaceFirst('{min}', '${forecast.minTemp}')
+                          .replaceFirst('{max}', '${forecast.maxTemp}'),
                       style: theme.textTheme.titleMedium,
                     ),
                   ],
@@ -208,29 +213,26 @@ class ForecastList extends StatelessWidget {
                 ),
                 if (forecast.summaryWhen.isNotEmpty) ...[
                   const SizedBox(height: 2),
-                  Text(
-                    forecast.summaryWhen,
-                    style: theme.textTheme.bodySmall,
-                  ),
+                  Text(forecast.summaryWhen, style: theme.textTheme.bodySmall),
                 ],
                 const SizedBox(height: 6),
                 Row(
                   children: [
                     Expanded(
                       child: _ForecastPeriodTile(
-                        label: 'Morning',
+                        label: strings.t('weather.period.morning'),
                         description: forecast.morningForecast,
                       ),
                     ),
                     Expanded(
                       child: _ForecastPeriodTile(
-                        label: 'Afternoon',
+                        label: strings.t('weather.period.afternoon'),
                         description: forecast.afternoonForecast,
                       ),
                     ),
                     Expanded(
                       child: _ForecastPeriodTile(
-                        label: 'Night',
+                        label: strings.t('weather.period.night'),
                         description: forecast.nightForecast,
                       ),
                     ),
@@ -246,10 +248,7 @@ class ForecastList extends StatelessWidget {
 }
 
 class _ForecastPeriodTile extends StatelessWidget {
-  const _ForecastPeriodTile({
-    required this.label,
-    required this.description,
-  });
+  const _ForecastPeriodTile({required this.label, required this.description});
 
   final String label;
   final String description;
@@ -278,10 +277,7 @@ class _ForecastPeriodTile extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          label,
-          style: theme.textTheme.bodySmall,
-        ),
+        Text(label, style: theme.textTheme.bodySmall),
         const SizedBox(height: 4),
         Tooltip(
           message: description,
@@ -295,4 +291,3 @@ class _ForecastPeriodTile extends StatelessWidget {
     );
   }
 }
-

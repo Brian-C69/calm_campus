@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../l10n/app_localizations.dart';
 import '../models/mood_entry.dart';
 import '../models/sleep_entry.dart';
 import '../services/db_service.dart';
@@ -16,7 +17,7 @@ class _SleepPageState extends State<SleepPage> {
   static const String _sleepSessionKey = 'sleepSessionStart';
 
   late Future<List<SleepEntry>> _entriesFuture;
-  late Future<String> _insightsFuture;
+  Future<String>? _insightsFuture;
 
   DateTime _selectedDate = DateTime.now();
   late TimeOfDay _sleepStart;
@@ -35,18 +36,23 @@ class _SleepPageState extends State<SleepPage> {
     _sleepStart = TimeOfDay.fromDateTime(defaultStart);
     _sleepEnd = TimeOfDay.fromDateTime(now);
     _entriesFuture = _loadEntries();
-    _insightsFuture = _buildInsights();
     _restoreSessionStart();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _insightsFuture ??= _buildInsights(AppLocalizations.of(context));
   }
 
   Future<List<SleepEntry>> _loadEntries() {
     return DbService.instance.getSleepEntries();
   }
 
-  Future<String> _buildInsights() async {
+  Future<String> _buildInsights(AppLocalizations strings) async {
     final List<SleepEntry> entries = await DbService.instance.getSleepEntries();
     if (entries.isEmpty) {
-      return 'Log a few nights of sleep to unlock personalised insights.';
+      return strings.t('sleep.insights.empty');
     }
 
     final List<SleepEntry> recentEntries = entries.take(7).toList();
@@ -75,15 +81,24 @@ class _SleepPageState extends State<SleepPage> {
 
     final StringBuffer buffer = StringBuffer();
     buffer.writeln(
-        'Past week: average sleep ${_formatDuration(averageDuration)} · restfulness ${averageRestfulness.toStringAsFixed(1)}/5');
+      strings
+          .t('sleep.insights.pastWeek')
+          .replaceFirst('{duration}', _formatDuration(averageDuration))
+          .replaceFirst('{rest}', averageRestfulness.toStringAsFixed(1)),
+    );
 
     if (brighterSleep.isNotEmpty && lowerSleep.isNotEmpty) {
       buffer.writeln(
-        'On brighter mood days you averaged ${_formatDuration(_average(brighterSleep))} of sleep, compared to ${_formatDuration(_average(lowerSleep))} on tougher days.',
+        strings
+            .t('sleep.insights.compare')
+            .replaceFirst(
+              '{brighter}',
+              _formatDuration(_average(brighterSleep)),
+            )
+            .replaceFirst('{lower}', _formatDuration(_average(lowerSleep))),
       );
     } else {
-      buffer.writeln(
-          'As you add more moods and sleep logs, we\'ll look for patterns to help you find balance.');
+      buffer.writeln(strings.t('sleep.insights.moreData'));
     }
 
     return buffer.toString();
@@ -106,7 +121,7 @@ class _SleepPageState extends State<SleepPage> {
     });
   }
 
-  Future<void> _startSleepSession() async {
+  Future<void> _startSleepSession(AppLocalizations strings) async {
     setState(() {
       _isStartingSession = true;
     });
@@ -121,11 +136,9 @@ class _SleepPageState extends State<SleepPage> {
       _isStartingSession = false;
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Sleep session started. Sweet dreams!'),
-      ),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(strings.t('sleep.session.started'))));
   }
 
   Future<void> _cancelSleepSession() async {
@@ -137,7 +150,7 @@ class _SleepPageState extends State<SleepPage> {
     });
   }
 
-  Future<int?> _promptRestfulnessRating() async {
+  Future<int?> _promptRestfulnessRating(AppLocalizations strings) async {
     double sliderValue = 3;
 
     return showDialog<int>(
@@ -146,11 +159,11 @@ class _SleepPageState extends State<SleepPage> {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
-              title: const Text('How rested do you feel?'),
+              title: Text(strings.t('sleep.rest.prompt')),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text('1 = exhausted, 5 = deeply rested'),
+                  Text(strings.t('sleep.rest.scale')),
                   Slider(
                     value: sliderValue,
                     divisions: 4,
@@ -163,18 +176,25 @@ class _SleepPageState extends State<SleepPage> {
                       });
                     },
                   ),
-                  Text('Restfulness: ${sliderValue.toStringAsFixed(0)}/5'),
+                  Text(
+                    strings
+                        .t('sleep.rest.value')
+                        .replaceFirst(
+                          '{value}',
+                          sliderValue.toStringAsFixed(0),
+                        ),
+                  ),
                 ],
               ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Keep sleeping'),
+                  child: Text(strings.t('sleep.rest.keep')),
                 ),
                 ElevatedButton(
-                  onPressed: () =>
-                      Navigator.pop<int>(context, sliderValue.round()),
-                  child: const Text('Save session'),
+                  onPressed:
+                      () => Navigator.pop<int>(context, sliderValue.round()),
+                  child: Text(strings.t('sleep.rest.save')),
                 ),
               ],
             );
@@ -184,14 +204,14 @@ class _SleepPageState extends State<SleepPage> {
     );
   }
 
-  Future<void> _endSleepSession() async {
+  Future<void> _endSleepSession(AppLocalizations strings) async {
     if (_sessionStartTime == null) return;
 
     setState(() {
       _isEndingSession = true;
     });
 
-    final int? restfulness = await _promptRestfulnessRating();
+    final int? restfulness = await _promptRestfulnessRating(strings);
     if (!mounted) return;
 
     if (restfulness == null) {
@@ -222,14 +242,17 @@ class _SleepPageState extends State<SleepPage> {
     setState(() {
       _sessionStartTime = null;
       _entriesFuture = _loadEntries();
-      _insightsFuture = _buildInsights();
+      _insightsFuture = _buildInsights(strings);
       _isEndingSession = false;
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          'Logged ${_formatDuration(durationHours)} of sleep. Restfulness $restfulness/5.',
+          strings
+              .t('sleep.logged')
+              .replaceFirst('{duration}', _formatDuration(durationHours))
+              .replaceFirst('{rest}', '$restfulness'),
         ),
       ),
     );
@@ -265,9 +288,7 @@ class _SleepPageState extends State<SleepPage> {
 
   double _averageDurationHours(List<SleepEntry> entries) {
     if (entries.isEmpty) return 0;
-    return entries
-            .map((entry) => entry.durationHours)
-            .reduce((a, b) => a + b) /
+    return entries.map((entry) => entry.durationHours).reduce((a, b) => a + b) /
         entries.length;
   }
 
@@ -300,11 +321,13 @@ class _SleepPageState extends State<SleepPage> {
   }
 
   Future<void> _pickTime({required bool isStart}) async {
+    final strings = AppLocalizations.of(context);
     final TimeOfDay initialTime = isStart ? _sleepStart : _sleepEnd;
     final TimeOfDay? picked = await showTimePicker(
       context: context,
       initialTime: initialTime,
-      helpText: isStart ? 'When did you go to bed?' : 'When did you wake up?',
+      helpText:
+          isStart ? strings.t('sleep.log.start') : strings.t('sleep.log.end'),
     );
 
     if (picked != null) {
@@ -318,7 +341,7 @@ class _SleepPageState extends State<SleepPage> {
     }
   }
 
-  Future<void> _saveEntry() async {
+  Future<void> _saveEntry(AppLocalizations strings) async {
     setState(() {
       _isSaving = true;
     });
@@ -345,13 +368,13 @@ class _SleepPageState extends State<SleepPage> {
     if (!mounted) return;
     setState(() {
       _entriesFuture = _loadEntries();
-      _insightsFuture = _buildInsights();
+      _insightsFuture = _buildInsights(strings);
       _isSaving = false;
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Sleep entry saved. Rest well!')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(strings.t('sleep.saved'))));
   }
 
   Duration? _currentSessionDuration() {
@@ -389,39 +412,37 @@ class _SleepPageState extends State<SleepPage> {
     if (!mounted) return;
     setState(() {
       _entriesFuture = _loadEntries();
-      _insightsFuture = _buildInsights();
+      _insightsFuture = _buildInsights(AppLocalizations.of(context));
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context);
     final TextTheme textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Sleep tracking'),
-      ),
+      appBar: AppBar(title: Text(strings.t('sleep.title'))),
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () async {
             setState(() {
               _entriesFuture = _loadEntries();
-              _insightsFuture = _buildInsights();
+              _insightsFuture = _buildInsights(strings);
             });
             await Future.wait([
               _entriesFuture,
-              _insightsFuture,
+              _insightsFuture ?? Future.value(''),
             ]);
           },
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              Text(
-                'Log your sleep and notice how it shapes your mood.',
-                style: textTheme.bodyLarge,
-              ),
+              Text(strings.t('sleep.intro'), style: textTheme.bodyLarge),
               const SizedBox(height: 12),
-              _SleepInsightCard(insightsFuture: _insightsFuture),
+              _SleepInsightCard(
+                insightsFuture: _insightsFuture ?? _buildInsights(strings),
+              ),
               const SizedBox(height: 16),
               Card(
                 elevation: 0,
@@ -431,12 +452,12 @@ class _SleepPageState extends State<SleepPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Simple sleep session',
+                        strings.t('sleep.session.title'),
                         style: textTheme.titleLarge,
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Start a session when you tuck in. Tap “I\'m awake” to log automatically.',
+                        strings.t('sleep.session.desc'),
                         style: textTheme.bodyMedium,
                       ),
                       const SizedBox(height: 12),
@@ -444,21 +465,24 @@ class _SleepPageState extends State<SleepPage> {
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton.icon(
-                            onPressed: _isStartingSession
-                                ? null
-                                : _startSleepSession,
-                            icon: _isStartingSession
-                                ? const SizedBox(
-                                    height: 18,
-                                    width: 18,
-                                    child:
-                                        CircularProgressIndicator(strokeWidth: 2),
-                                  )
-                                : const Icon(Icons.bedtime_outlined),
+                            onPressed:
+                                _isStartingSession
+                                    ? null
+                                    : () => _startSleepSession(strings),
+                            icon:
+                                _isStartingSession
+                                    ? const SizedBox(
+                                      height: 18,
+                                      width: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                    : const Icon(Icons.bedtime_outlined),
                             label: Text(
                               _isStartingSession
-                                  ? 'Starting session...'
-                                  : 'Start sleep session',
+                                  ? strings.t('sleep.session.starting')
+                                  : strings.t('sleep.session.start'),
                             ),
                           ),
                         )
@@ -469,9 +493,14 @@ class _SleepPageState extends State<SleepPage> {
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text('Session running'),
+                                Text(strings.t('sleep.session.running')),
                                 Text(
-                                  'Started at ${_formatTime(_sessionStartTime!)}',
+                                  strings
+                                      .t('sleep.session.startedAt')
+                                      .replaceFirst(
+                                        '{time}',
+                                        _formatTime(_sessionStartTime!),
+                                      ),
                                   style: textTheme.bodyMedium,
                                 ),
                               ],
@@ -484,13 +513,16 @@ class _SleepPageState extends State<SleepPage> {
                               initialData: _currentSessionDuration(),
                               builder: (context, snapshot) {
                                 final Duration? elapsed = snapshot.data;
-                                final String elapsedText = elapsed == null
-                                    ? '--'
-                                    : _formatDuration(
-                                        elapsed.inMinutes / 60,
-                                      );
+                                final String elapsedText =
+                                    elapsed == null
+                                        ? '--'
+                                        : _formatDuration(
+                                          elapsed.inMinutes / 60,
+                                        );
                                 return Text(
-                                  'Elapsed: $elapsedText',
+                                  strings
+                                      .t('sleep.session.elapsed')
+                                      .replaceFirst('{duration}', elapsedText),
                                   style: textTheme.titleMedium,
                                 );
                               },
@@ -503,19 +535,23 @@ class _SleepPageState extends State<SleepPage> {
                             Expanded(
                               child: ElevatedButton.icon(
                                 onPressed:
-                                    _isEndingSession ? null : _endSleepSession,
-                                icon: _isEndingSession
-                                    ? const SizedBox(
-                                        height: 18,
-                                        width: 18,
-                                        child: CircularProgressIndicator(
-                                            strokeWidth: 2),
-                                      )
-                                    : const Icon(Icons.wb_sunny_outlined),
+                                    _isEndingSession
+                                        ? null
+                                        : () => _endSleepSession(strings),
+                                icon:
+                                    _isEndingSession
+                                        ? const SizedBox(
+                                          height: 18,
+                                          width: 18,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
+                                        )
+                                        : const Icon(Icons.wb_sunny_outlined),
                                 label: Text(
                                   _isEndingSession
-                                      ? 'Saving...'
-                                      : 'I\'m awake',
+                                      ? strings.t('sleep.session.ending')
+                                      : strings.t('sleep.session.end'),
                                 ),
                               ),
                             ),
@@ -523,13 +559,13 @@ class _SleepPageState extends State<SleepPage> {
                             OutlinedButton(
                               onPressed:
                                   _isEndingSession ? null : _cancelSleepSession,
-                              child: const Text('Cancel'),
+                              child: Text(strings.t('sleep.session.cancel')),
                             ),
                           ],
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'We\'ll ask how rested you feel before saving your entry.',
+                          strings.t('sleep.session.note'),
                           style: textTheme.bodySmall,
                         ),
                       ],
@@ -546,16 +582,18 @@ class _SleepPageState extends State<SleepPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Manual sleep log',
+                        strings.t('sleep.log.manual'),
                         style: textTheme.titleLarge,
                       ),
                       const SizedBox(height: 12),
                       LayoutBuilder(
                         builder: (context, constraints) {
-                          final bool useTwoColumns = constraints.maxWidth >= 520;
-                          final double fieldWidth = useTwoColumns
-                              ? (constraints.maxWidth - 12) / 2
-                              : constraints.maxWidth;
+                          final bool useTwoColumns =
+                              constraints.maxWidth >= 520;
+                          final double fieldWidth =
+                              useTwoColumns
+                                  ? (constraints.maxWidth - 12) / 2
+                                  : constraints.maxWidth;
 
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -567,7 +605,7 @@ class _SleepPageState extends State<SleepPage> {
                                   SizedBox(
                                     width: fieldWidth,
                                     child: _SleepField(
-                                      label: 'Date',
+                                      label: strings.t('sleep.log.date'),
                                       value: _formatDate(_selectedDate),
                                       icon: Icons.calendar_today,
                                       onTap: _pickDate,
@@ -576,7 +614,7 @@ class _SleepPageState extends State<SleepPage> {
                                   SizedBox(
                                     width: fieldWidth,
                                     child: _SleepField(
-                                      label: 'Went to bed',
+                                      label: strings.t('sleep.log.start'),
                                       value: _sleepStart.format(context),
                                       icon: Icons.bedtime,
                                       onTap: () => _pickTime(isStart: true),
@@ -585,7 +623,7 @@ class _SleepPageState extends State<SleepPage> {
                                   SizedBox(
                                     width: fieldWidth,
                                     child: _SleepField(
-                                      label: 'Woke up',
+                                      label: strings.t('sleep.log.end'),
                                       value: _sleepEnd.format(context),
                                       icon: Icons.wb_sunny_outlined,
                                       onTap: () => _pickTime(isStart: false),
@@ -595,6 +633,7 @@ class _SleepPageState extends State<SleepPage> {
                               ),
                               const SizedBox(height: 12),
                               _RestfulnessSlider(
+                                label: strings.t('sleep.log.restfulness'),
                                 restfulness: _restfulness,
                                 onChanged: (value) {
                                   setState(() {
@@ -607,17 +646,25 @@ class _SleepPageState extends State<SleepPage> {
                               SizedBox(
                                 width: double.infinity,
                                 child: ElevatedButton.icon(
-                                  onPressed: _isSaving ? null : _saveEntry,
-                                  icon: _isSaving
-                                      ? const SizedBox(
-                                          height: 18,
-                                          width: 18,
-                                          child:
-                                              CircularProgressIndicator(strokeWidth: 2),
-                                        )
-                                      : const Icon(Icons.nights_stay),
-                                  label:
-                                      Text(_isSaving ? 'Saving...' : 'Save sleep entry'),
+                                  onPressed:
+                                      _isSaving
+                                          ? null
+                                          : () => _saveEntry(strings),
+                                  icon:
+                                      _isSaving
+                                          ? const SizedBox(
+                                            height: 18,
+                                            width: 18,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                            ),
+                                          )
+                                          : const Icon(Icons.nights_stay),
+                                  label: Text(
+                                    _isSaving
+                                        ? strings.t('sleep.log.saving')
+                                        : strings.t('sleep.log.save'),
+                                  ),
                                 ),
                               ),
                             ],
@@ -630,7 +677,7 @@ class _SleepPageState extends State<SleepPage> {
               ),
               const SizedBox(height: 16),
               Text(
-                'Recent sleep',
+                strings.t('sleep.recent.title'),
                 style: textTheme.titleLarge,
               ),
               const SizedBox(height: 8),
@@ -638,10 +685,12 @@ class _SleepPageState extends State<SleepPage> {
                 future: _entriesFuture,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: Padding(
-                      padding: EdgeInsets.all(24),
-                      child: CircularProgressIndicator(),
-                    ));
+                    return const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(24),
+                        child: CircularProgressIndicator(),
+                      ),
+                    );
                   }
 
                   if (snapshot.hasError) {
@@ -653,16 +702,22 @@ class _SleepPageState extends State<SleepPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'We could not load your sleep right now.',
+                              strings.t('sleep.error.load'),
                               style: textTheme.titleMedium?.copyWith(
-                                color: Theme.of(context).colorScheme.onErrorContainer,
+                                color:
+                                    Theme.of(
+                                      context,
+                                    ).colorScheme.onErrorContainer,
                               ),
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'Pull to refresh when you are ready.',
+                              strings.t('sleep.error.refresh'),
                               style: textTheme.bodyMedium?.copyWith(
-                                color: Theme.of(context).colorScheme.onErrorContainer,
+                                color:
+                                    Theme.of(
+                                      context,
+                                    ).colorScheme.onErrorContainer,
                               ),
                             ),
                           ],
@@ -677,7 +732,7 @@ class _SleepPageState extends State<SleepPage> {
                       children: [
                         const SizedBox(height: 16),
                         Text(
-                          'No sleep entries yet. Log tonight and we\'ll track it gently.',
+                          strings.t('sleep.empty'),
                           style: textTheme.bodyMedium,
                         ),
                       ],
@@ -685,44 +740,56 @@ class _SleepPageState extends State<SleepPage> {
                   }
 
                   return Column(
-                    children: entries
-                        .map(
-                          (entry) => Card(
-                            elevation: 0,
-                            child: ListTile(
-                              leading: CircleAvatar(
-                                child: Text('${entry.restfulness}/5'),
-                              ),
-                              title: Text(
-                                '${_formatDuration(entry.durationHours)} • Restfulness ${entry.restfulness}',
-                              ),
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(_formatDate(entry.date)),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'Bed ${_formatTime(entry.sleepStart)} → Wake ${_formatTime(entry.sleepEnd)}',
+                    children:
+                        entries
+                            .map(
+                              (entry) => Card(
+                                elevation: 0,
+                                child: ListTile(
+                                  leading: CircleAvatar(
+                                    child: Text('${entry.restfulness}/5'),
                                   ),
-                                ],
+                                  title: Text(
+                                    '${_formatDuration(entry.durationHours)} • ${strings.t('sleep.entry.rest').replaceFirst('{rest}', '${entry.restfulness}')}',
+                                  ),
+                                  subtitle: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(_formatDate(entry.date)),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        strings
+                                            .t('sleep.entry.bed')
+                                            .replaceFirst(
+                                              '{bed}',
+                                              _formatTime(entry.sleepStart),
+                                            )
+                                            .replaceFirst(
+                                              '{wake}',
+                                              _formatTime(entry.sleepEnd),
+                                            ),
+                                      ),
+                                    ],
+                                  ),
+                                  trailing: IconButton(
+                                    tooltip: strings.t('sleep.entry.delete'),
+                                    icon: const Icon(Icons.delete_outline),
+                                    onPressed:
+                                        entry.id == null
+                                            ? null
+                                            : () => _deleteEntry(entry.id!),
+                                  ),
+                                ),
                               ),
-                              trailing: IconButton(
-                                tooltip: 'Delete entry',
-                                icon: const Icon(Icons.delete_outline),
-                                onPressed: entry.id == null
-                                    ? null
-                                    : () => _deleteEntry(entry.id!),
-                              ),
-                            ),
-                          ),
-                        )
-                        .toList(),
+                            )
+                            .toList(),
                   );
                 },
               ),
               const SizedBox(height: 24),
               Text(
-                'Remember: poor sleep is never your fault. Small steps—like a wind-down playlist or a darker room—can help.',
+                strings.t('sleep.footer'),
                 style: textTheme.bodySmall?.copyWith(color: Colors.grey[700]),
               ),
             ],
@@ -741,32 +808,33 @@ class _SleepInsightCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
+    final strings = AppLocalizations.of(context);
 
     return FutureBuilder<String>(
       future: insightsFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Card(
+          return Card(
             elevation: 0,
             child: Padding(
-              padding: EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
-                  SizedBox(
+                  const SizedBox(
                     height: 20,
                     width: 20,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   ),
-                  SizedBox(width: 12),
-                  Text('Loading insights...'),
+                  const SizedBox(width: 12),
+                  Text(strings.t('sleep.insights.loading')),
                 ],
               ),
             ),
           );
         }
 
-        final String insights = snapshot.data ??
-            'Keep logging your sleep and moods; we will look for patterns without judgement.';
+        final String insights =
+            snapshot.data ?? strings.t('sleep.insights.default');
 
         return Card(
           elevation: 0,
@@ -782,8 +850,8 @@ class _SleepInsightCard extends StatelessWidget {
                   child: Text(
                     insights,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: scheme.onPrimaryContainer,
-                        ),
+                      color: scheme.onPrimaryContainer,
+                    ),
                   ),
                 ),
               ],
@@ -797,11 +865,13 @@ class _SleepInsightCard extends StatelessWidget {
 
 class _RestfulnessSlider extends StatelessWidget {
   const _RestfulnessSlider({
+    required this.label,
     required this.restfulness,
     required this.onChanged,
     required this.textTheme,
   });
 
+  final String label;
   final double restfulness;
   final ValueChanged<double> onChanged;
   final TextTheme textTheme;
@@ -814,7 +884,7 @@ class _RestfulnessSlider extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('Restfulness', style: textTheme.titleMedium),
+            Text(label, style: textTheme.titleMedium),
             Text(restfulness.toStringAsFixed(0)),
           ],
         ),
@@ -862,19 +932,15 @@ class _SleepField extends StatelessWidget {
               children: [
                 Icon(icon),
                 const SizedBox(width: 8),
-                Text(
-                  label,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
+                Text(label, style: Theme.of(context).textTheme.titleMedium),
               ],
             ),
             const SizedBox(height: 8),
             Text(
               value,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyLarge
-                  ?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
             ),
           ],
         ),

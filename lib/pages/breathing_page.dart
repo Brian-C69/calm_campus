@@ -1,72 +1,82 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
 import '../models/breathing_exercise.dart';
 import 'breathing_session_page.dart';
 
 class BreathingPage extends StatelessWidget {
   const BreathingPage({super.key});
 
-  final List<BreathingExercise> _exercises = const [
-    BreathingExercise(
-      id: 'box-4-4-4',
-      name: 'Box Breathing (4-4-4-4)',
-      description: 'Steady four-count inhale, hold, exhale, hold to reset stress.',
-      inhaleSeconds: 4,
-      holdSeconds: 4,
-      exhaleSeconds: 4,
-      cycles: 6,
-    ),
-    BreathingExercise(
-      id: '478',
-      name: '4-7-8 Calm',
-      description: 'Gentle nervous system downshift before sleep or study.',
-      inhaleSeconds: 4,
-      holdSeconds: 7,
-      exhaleSeconds: 8,
-      cycles: 4,
-    ),
-    BreathingExercise(
-      id: 'gentle-46',
-      name: 'Gentle 4-6 Breathing',
-      description: 'Beginner-friendly slow inhale and longer exhale to soften tension.',
-      inhaleSeconds: 4,
-      holdSeconds: 0,
-      exhaleSeconds: 6,
-      cycles: 6,
-    ),
-    BreathingExercise(
-      id: 'quick-calm',
-      name: 'Quick Calm (1 minute)',
-      description: 'Fast reset when you need one minute to steady yourself.',
-      inhaleSeconds: 3,
-      holdSeconds: 2,
-      exhaleSeconds: 4,
-      cycles: 5,
-    ),
-  ];
+  List<BreathingExercise> _exercises(AppLocalizations strings) {
+    return [
+      BreathingExercise(
+        id: 'box-4-4-4',
+        name: strings.t('breathing.exercise.box.name'),
+        description: strings.t('breathing.exercise.box.desc'),
+        inhaleSeconds: 4,
+        holdSeconds: 4,
+        exhaleSeconds: 4,
+        cycles: 6,
+      ),
+      BreathingExercise(
+        id: '478',
+        name: strings.t('breathing.exercise.478.name'),
+        description: strings.t('breathing.exercise.478.desc'),
+        inhaleSeconds: 4,
+        holdSeconds: 7,
+        exhaleSeconds: 8,
+        cycles: 4,
+      ),
+      BreathingExercise(
+        id: 'gentle-46',
+        name: strings.t('breathing.exercise.gentle46.name'),
+        description: strings.t('breathing.exercise.gentle46.desc'),
+        inhaleSeconds: 4,
+        holdSeconds: 0,
+        exhaleSeconds: 6,
+        cycles: 6,
+      ),
+      BreathingExercise(
+        id: 'quick-calm',
+        name: strings.t('breathing.exercise.quick.name'),
+        description: strings.t('breathing.exercise.quick.desc'),
+        inhaleSeconds: 3,
+        holdSeconds: 2,
+        exhaleSeconds: 4,
+        cycles: 5,
+      ),
+    ];
+  }
 
-  String _formatDuration(int seconds) {
+  String _formatDuration(int seconds, AppLocalizations strings) {
     if (seconds < 60) {
-      return '~${seconds}s';
+      return strings
+          .t('breathing.duration.seconds')
+          .replaceFirst('{seconds}', '$seconds');
     }
     final minutes = (seconds / 60).ceil();
-    return '~$minutes min';
+    return strings
+        .t('breathing.duration.minutes')
+        .replaceFirst('{minutes}', '$minutes');
   }
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context);
+    final exercises = _exercises(strings);
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Breathing Exercises')),
+      appBar: AppBar(title: Text(strings.t('breathing.title'))),
       body: ListView.builder(
         padding: const EdgeInsets.all(16),
-        itemCount: _exercises.length + 1,
+        itemCount: exercises.length + 1,
         itemBuilder: (context, index) {
           if (index == 0) {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Short guided breathing to help your body settle. Start an exercise to see clear prompts and a countdown.',
+                  strings.t('breathing.intro'),
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
                 const SizedBox(height: 12),
@@ -74,8 +84,11 @@ class BreathingPage extends StatelessWidget {
             );
           }
 
-          final exercise = _exercises[index - 1];
-          final durationLabel = _formatDuration(exercise.totalDurationSeconds);
+          final exercise = exercises[index - 1];
+          final durationLabel = _formatDuration(
+            exercise.totalDurationSeconds,
+            strings,
+          );
 
           return Card(
             elevation: 0,
@@ -89,7 +102,9 @@ class BreathingPage extends StatelessWidget {
                 ),
               ),
               title: Text(exercise.name),
-              subtitle: Text('${exercise.description}\nApprox duration: $durationLabel'),
+              subtitle: Text(
+                '${exercise.description}\n${strings.t('breathing.approx').replaceFirst('{duration}', durationLabel)}',
+              ),
               isThreeLine: true,
               trailing: IconButton(
                 icon: const Icon(Icons.play_arrow),

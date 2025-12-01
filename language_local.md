@@ -13,6 +13,19 @@ This project now supports multiple languages via JSON string files and `AppLocal
 - Usage in widgets: Import `../l10n/app_localizations.dart` and call `AppLocalizations.of(context).t('key')` (or the `context.t('key')` extension) instead of hard-coded strings.
 
 ## Pages already localized
+- Mood (options, greetings, save messages; mood emojis now defined centrally)
+- History (list, empty/error states, theme labels, date formatting)
+- Breathing (exercise list and session UI)
+- Relax (breathing card, sections, player controls)
+- Help Now (cards, safe contacts section, errors)
+- Journal (intro, form, messages)
+- DSA Summary (range picker and preview)
+- Common Challenges (cards and actions)
+- Weather (forecast UI and periods)
+- Support Plan (contacts list, form, actions)
+- Movement (log, ideas, summaries)
+- Period Tracker (calendar, form, stats, delete dialogs)
+- Sleep (sessions, manual log, insights, lists)
 - Home (navigation labels and cards)
 - Settings (profile fields, theme, language picker, reminders, backup)
 - Auth (login/signup flow, errors, helper chips)
@@ -21,9 +34,7 @@ This project now supports multiple languages via JSON string files and `AppLocal
 - Announcements (list, composer, empty state, delete dialogs)
 
 ## Pages pending localization
-- MoodPage (strings still inline)
-- HistoryPage (strings inline; emoji placeholders and date format pending update)
-- RelaxPage, HelpNowPage, JournalPage, DsaSummaryPage, CommonChallengesPage, SleepPage, PeriodTrackerPage, SupportPlanPage, MovementPage, BreathingPage, Weather/CampusMap pages, and any other feature pages still use inline English.
+- CampusMap page (dropdown/location labels are still English-only). All other main pages are localized.
 
 ## Adding/updating strings
 1) Add keys/values to all three language files under `assets/lang/`.

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../l10n/app_localizations.dart';
 import '../models/support_contact.dart';
 import '../services/db_service.dart';
 
@@ -38,31 +39,32 @@ class _HelpNowPageState extends State<HelpNowPage> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context);
     final helpCards = [
       const _HelpCard(
-        title: 'This app is not an emergency service',
-        description: 'If you or someone else is in danger, please contact local emergency services.',
+        title: 'help.card.app.title',
+        description: 'help.card.app.desc',
         icon: Icons.info_outline,
       ),
       const _HelpCard(
-        title: 'Contact DSA counselling',
-        description: 'Email: support@dsa.edu | Phone: +65 1234 5678',
+        title: 'help.card.dsa.title',
+        description: 'help.card.dsa.desc',
         icon: Icons.phone_in_talk,
       ),
       const _HelpCard(
-        title: 'Reach out to a trusted mentor',
-        description: 'Pick a lecturer or mentor you feel safe with and ask for a quick check-in.',
+        title: 'help.card.mentor.title',
+        description: 'help.card.mentor.desc',
         icon: Icons.support_agent,
       ),
       const _HelpCard(
-        title: 'Crisis hotlines',
-        description: 'Samaritans of Singapore: 1767 | IMH Helpline: 6389-2222',
+        title: 'help.card.hotline.title',
+        description: 'help.card.hotline.desc',
         icon: Icons.healing,
       ),
     ];
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Help Now')),
+      appBar: AppBar(title: Text(strings.t('help.title'))),
       body: ListView.separated(
         padding: const EdgeInsets.all(16),
         itemCount: helpCards.length + 1,
@@ -90,7 +92,10 @@ class _HelpNowPageState extends State<HelpNowPage> {
         uri = Uri(scheme: 'tel', path: contact.contactValue);
         break;
       case SupportContactType.whatsapp:
-        final sanitized = contact.contactValue.replaceAll(RegExp(r'[^0-9+]'), '');
+        final sanitized = contact.contactValue.replaceAll(
+          RegExp(r'[^0-9+]'),
+          '',
+        );
         uri = Uri.parse('https://wa.me/$sanitized');
         break;
       case SupportContactType.email:
@@ -104,7 +109,9 @@ class _HelpNowPageState extends State<HelpNowPage> {
     final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!launched && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not open that contact right now.')),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).t('help.error.launch')),
+        ),
       );
     }
   }
@@ -123,6 +130,7 @@ class _SupportContactsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context);
     final colorScheme = Theme.of(context).colorScheme;
 
     return FutureBuilder<List<SupportContact>>(
@@ -145,20 +153,20 @@ class _SupportContactsSection extends StatelessWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'My safe people',
+                        strings.t('help.contacts.title'),
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                     ),
                     FilledButton.tonalIcon(
                       onPressed: onManagePlan,
                       icon: const Icon(Icons.edit),
-                      label: const Text('Manage'),
+                      label: Text(strings.t('help.contacts.manage')),
                     ),
                   ],
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Save the people you feel safe with. They will show up here for quick calls or messages.',
+                  strings.t('help.contacts.desc'),
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
                 const SizedBox(height: 12),
@@ -170,24 +178,26 @@ class _SupportContactsSection extends StatelessWidget {
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
-                    children: contacts
-                        .map(
-                          (contact) => ActionChip(
-                            avatar: Icon(_iconFor(contact.contactType)),
-                            label: Text('${contact.name} (${contact.relationship})'),
-                            onPressed: () => onLaunchContact(contact),
-                          ),
-                        )
-                        .toList(),
+                    children:
+                        contacts
+                            .map(
+                              (contact) => ActionChip(
+                                avatar: Icon(_iconFor(contact.contactType)),
+                                label: Text(
+                                  '${contact.name} (${contact.relationship})',
+                                ),
+                                onPressed: () => onLaunchContact(contact),
+                              ),
+                            )
+                            .toList(),
                   ),
                 if (!isLoading && contacts.isNotEmpty) ...[
                   const SizedBox(height: 8),
                   Text(
-                    'These open your phone apps (calls, WhatsApp, email).',
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.copyWith(color: colorScheme.onSurfaceVariant),
+                    strings.t('help.contacts.tip'),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ],
@@ -213,7 +223,11 @@ class _SupportContactsSection extends StatelessWidget {
 }
 
 class _HelpCard extends StatelessWidget {
-  const _HelpCard({required this.title, required this.description, required this.icon});
+  const _HelpCard({
+    required this.title,
+    required this.description,
+    required this.icon,
+  });
 
   final String title;
   final String description;
@@ -221,6 +235,7 @@ class _HelpCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context);
     return Card(
       elevation: 0,
       child: Padding(
@@ -233,9 +248,12 @@ class _HelpCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: Theme.of(context).textTheme.titleMedium),
+                  Text(
+                    strings.t(title),
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
                   const SizedBox(height: 6),
-                  Text(description),
+                  Text(strings.t(description)),
                 ],
               ),
             ),
@@ -253,24 +271,25 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'No contacts saved yet',
+          strings.t('help.empty.title'),
           style: Theme.of(context).textTheme.titleSmall,
         ),
         const SizedBox(height: 4),
         Text(
-          'Add a trusted friend, sibling, or mentor so they appear here when you need them.',
+          strings.t('help.empty.desc'),
           style: Theme.of(context).textTheme.bodyMedium,
         ),
         const SizedBox(height: 8),
         TextButton.icon(
           onPressed: onManagePlan,
           icon: const Icon(Icons.person_add_alt),
-          label: const Text('Add a support contact'),
-        )
+          label: Text(strings.t('help.empty.add')),
+        ),
       ],
     );
   }

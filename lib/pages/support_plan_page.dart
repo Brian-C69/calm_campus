@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../l10n/app_localizations.dart';
 import '../models/support_contact.dart';
 import '../services/db_service.dart';
 
@@ -23,7 +24,6 @@ class _SupportPlanPageState extends State<SupportPlanPage> {
 
   Future<void> _loadContacts() async {
     final contacts = await DbService.instance.getAllSupportContacts();
-
     if (!mounted) return;
     setState(() {
       _contacts
@@ -35,8 +35,9 @@ class _SupportPlanPageState extends State<SupportPlanPage> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('My Safety & Support Plan')),
+      appBar: AppBar(title: Text(strings.t('support.title'))),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -50,26 +51,19 @@ class _SupportPlanPageState extends State<SupportPlanPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'People who help you feel safe',
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleMedium
-                          ?.copyWith(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSecondaryContainer),
+                      strings.t('support.people.title'),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color:
+                            Theme.of(context).colorScheme.onSecondaryContainer,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Save a few friends, family members, or mentors you can reach out to when things feel heavy. '
-                      'You control who appears here.',
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodyMedium
-                          ?.copyWith(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSecondaryContainer),
+                      strings.t('support.people.desc'),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color:
+                            Theme.of(context).colorScheme.onSecondaryContainer,
+                      ),
                     ),
                   ],
                 ),
@@ -80,39 +74,41 @@ class _SupportPlanPageState extends State<SupportPlanPage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Saved contacts',
+                  strings.t('support.saved'),
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 FilledButton.icon(
                   onPressed: () => _openComposer(),
                   icon: const Icon(Icons.add),
-                  label: const Text('Add contact'),
+                  label: Text(strings.t('support.add')),
                 ),
               ],
             ),
             const SizedBox(height: 12),
             Expanded(
-              child: _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : _contacts.isEmpty
+              child:
+                  _isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : _contacts.isEmpty
                       ? _EmptyState(onAdd: () => _openComposer())
                       : RefreshIndicator(
-                          onRefresh: _loadContacts,
-                          child: ListView.separated(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            itemCount: _contacts.length,
-                            separatorBuilder: (_, __) => const SizedBox(height: 12),
-                            itemBuilder: (context, index) {
-                              final contact = _contacts[index];
-                              return _ContactCard(
-                                contact: contact,
-                                onLaunch: _launchContact,
-                                onEdit: () => _openComposer(contact),
-                                onDelete: () => _deleteContact(contact),
-                              );
-                            },
-                          ),
+                        onRefresh: _loadContacts,
+                        child: ListView.separated(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          itemCount: _contacts.length,
+                          separatorBuilder:
+                              (_, __) => const SizedBox(height: 12),
+                          itemBuilder: (context, index) {
+                            final contact = _contacts[index];
+                            return _ContactCard(
+                              contact: contact,
+                              onLaunch: _launchContact,
+                              onEdit: () => _openComposer(contact),
+                              onDelete: () => _deleteContact(contact),
+                            );
+                          },
                         ),
+                      ),
             ),
           ],
         ),
@@ -147,7 +143,9 @@ class _SupportPlanPageState extends State<SupportPlanPage> {
     if (createdOrUpdated == null) return;
 
     if (createdOrUpdated.id == null) {
-      final id = await DbService.instance.insertSupportContact(createdOrUpdated);
+      final id = await DbService.instance.insertSupportContact(
+        createdOrUpdated,
+      );
       final saved = createdOrUpdated.copyWith(id: id);
       setState(() {
         _contacts.add(saved);
@@ -160,22 +158,24 @@ class _SupportPlanPageState extends State<SupportPlanPage> {
   }
 
   Future<void> _deleteContact(SupportContact contact) async {
+    final strings = AppLocalizations.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Remove contact?'),
-        content: const Text('You can add them back anytime.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+      builder:
+          (context) => AlertDialog(
+            title: Text(strings.t('support.remove.title')),
+            content: Text(strings.t('support.remove.desc')),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text(strings.t('common.cancel')),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: Text(strings.t('common.delete')),
+              ),
+            ],
           ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Remove'),
-          ),
-        ],
-      ),
     );
 
     if (confirmed != true) return;
@@ -190,6 +190,7 @@ class _SupportPlanPageState extends State<SupportPlanPage> {
   }
 
   Future<void> _launchContact(SupportContact contact) async {
+    final strings = AppLocalizations.of(context);
     final Uri? uri;
 
     switch (contact.contactType) {
@@ -197,7 +198,10 @@ class _SupportPlanPageState extends State<SupportPlanPage> {
         uri = Uri(scheme: 'tel', path: contact.contactValue);
         break;
       case SupportContactType.whatsapp:
-        final sanitized = contact.contactValue.replaceAll(RegExp(r'[^0-9+]'), '');
+        final sanitized = contact.contactValue.replaceAll(
+          RegExp(r'[^0-9+]'),
+          '',
+        );
         uri = Uri.parse('https://wa.me/$sanitized');
         break;
       case SupportContactType.email:
@@ -210,9 +214,9 @@ class _SupportPlanPageState extends State<SupportPlanPage> {
 
     final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!launched && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not open that contact right now.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(strings.t('help.error.launch'))));
     }
   }
 }
@@ -232,8 +236,11 @@ class _ContactCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context);
     final colorScheme = Theme.of(context).colorScheme;
-    final priorityLabel = 'Priority ${contact.priority}';
+    final priorityLabel = strings
+        .t('support.priority')
+        .replaceFirst('{level}', '${contact.priority}');
 
     return Card(
       elevation: 0,
@@ -250,33 +257,40 @@ class _ContactCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(contact.name,
-                          style: Theme.of(context).textTheme.titleMedium),
+                      Text(
+                        contact.name,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
                       const SizedBox(height: 2),
                       Text(
                         contact.relationship,
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodyMedium
-                            ?.copyWith(color: colorScheme.onSurfaceVariant),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
                       ),
                     ],
                   ),
                 ),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: Text(priorityLabel,
-                      style: Theme.of(context).textTheme.labelSmall),
+                  child: Text(
+                    priorityLabel,
+                    style: Theme.of(context).textTheme.labelSmall,
+                  ),
                 ),
               ],
             ),
             const SizedBox(height: 8),
-            Text('${_labelFor(contact.contactType)}: ${contact.contactValue}'),
+            Text(
+              '${_labelFor(contact.contactType, strings)}: ${contact.contactValue}',
+            ),
             const SizedBox(height: 12),
             Wrap(
               spacing: 8,
@@ -284,15 +298,19 @@ class _ContactCard extends StatelessWidget {
                 FilledButton.tonalIcon(
                   onPressed: () => onLaunch(contact),
                   icon: Icon(_iconFor(contact.contactType)),
-                  label: Text('Contact ${contact.name}'),
+                  label: Text(
+                    strings
+                        .t('support.contact')
+                        .replaceFirst('{name}', contact.name),
+                  ),
                 ),
                 OutlinedButton.icon(
                   onPressed: onEdit,
                   icon: const Icon(Icons.edit),
-                  label: const Text('Edit'),
+                  label: Text(strings.t('common.edit')),
                 ),
                 IconButton(
-                  tooltip: 'Delete',
+                  tooltip: strings.t('common.delete'),
                   onPressed: onDelete,
                   icon: const Icon(Icons.delete_outline),
                 ),
@@ -317,16 +335,16 @@ class _ContactCard extends StatelessWidget {
     }
   }
 
-  String _labelFor(SupportContactType type) {
+  String _labelFor(SupportContactType type, AppLocalizations strings) {
     switch (type) {
       case SupportContactType.phone:
-        return 'Phone';
+        return strings.t('support.label.phone');
       case SupportContactType.whatsapp:
-        return 'WhatsApp';
+        return strings.t('support.label.whatsapp');
       case SupportContactType.email:
-        return 'Email';
+        return strings.t('support.label.email');
       case SupportContactType.other:
-        return 'Other';
+        return strings.t('support.label.other');
     }
   }
 }
@@ -352,12 +370,13 @@ class _SupportContactFormState extends State<_SupportContactForm> {
   @override
   void initState() {
     super.initState();
-    _nameController =
-        TextEditingController(text: widget.initial?.name ?? '');
-    _relationshipController =
-        TextEditingController(text: widget.initial?.relationship ?? '');
-    _contactValueController =
-        TextEditingController(text: widget.initial?.contactValue ?? '');
+    _nameController = TextEditingController(text: widget.initial?.name ?? '');
+    _relationshipController = TextEditingController(
+      text: widget.initial?.relationship ?? '',
+    );
+    _contactValueController = TextEditingController(
+      text: widget.initial?.contactValue ?? '',
+    );
     _contactType = widget.initial?.contactType ?? SupportContactType.phone;
     _priority = widget.initial?.priority ?? 1;
   }
@@ -372,6 +391,7 @@ class _SupportContactFormState extends State<_SupportContactForm> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context);
     return Form(
       key: _formKey,
       child: Column(
@@ -379,34 +399,50 @@ class _SupportContactFormState extends State<_SupportContactForm> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            widget.initial == null ? 'Add support contact' : 'Edit support contact',
+            widget.initial == null
+                ? strings.t('support.form.title.add')
+                : strings.t('support.form.title.edit'),
             style: Theme.of(context).textTheme.titleLarge,
           ),
           const SizedBox(height: 12),
           TextFormField(
             controller: _nameController,
-            decoration: const InputDecoration(labelText: 'Name'),
-            validator: (value) =>
-                value == null || value.trim().isEmpty ? 'Please add a name' : null,
+            decoration: InputDecoration(
+              labelText: strings.t('support.form.name'),
+            ),
+            validator:
+                (value) =>
+                    value == null || value.trim().isEmpty
+                        ? strings.t('support.form.name.error')
+                        : null,
           ),
           const SizedBox(height: 12),
           TextFormField(
             controller: _relationshipController,
-            decoration: const InputDecoration(labelText: 'Relationship'),
-            validator: (value) => value == null || value.trim().isEmpty
-                ? 'How do you know them?'
-                : null,
+            decoration: InputDecoration(
+              labelText: strings.t('support.form.relationship'),
+            ),
+            validator:
+                (value) =>
+                    value == null || value.trim().isEmpty
+                        ? strings.t('support.form.relationship.error')
+                        : null,
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<SupportContactType>(
             value: _contactType,
-            decoration: const InputDecoration(labelText: 'Contact type'),
-            items: SupportContactType.values
-                .map((type) => DropdownMenuItem(
-                      value: type,
-                      child: Text(_labelFor(type)),
-                    ))
-                .toList(),
+            decoration: InputDecoration(
+              labelText: strings.t('support.form.type'),
+            ),
+            items:
+                SupportContactType.values
+                    .map(
+                      (type) => DropdownMenuItem(
+                        value: type,
+                        child: Text(_labelFor(type, strings)),
+                      ),
+                    )
+                    .toList(),
             onChanged: (type) {
               if (type != null) {
                 setState(() => _contactType = type);
@@ -416,18 +452,34 @@ class _SupportContactFormState extends State<_SupportContactForm> {
           const SizedBox(height: 12),
           TextFormField(
             controller: _contactValueController,
-            decoration: InputDecoration(labelText: _valueLabel(_contactType)),
-            validator: (value) => value == null || value.trim().isEmpty
-                ? 'Please add how to reach them'
-                : null,
+            decoration: InputDecoration(
+              labelText: _valueLabel(_contactType, strings),
+            ),
+            validator:
+                (value) =>
+                    value == null || value.trim().isEmpty
+                        ? strings.t('support.form.value.error')
+                        : null,
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<int>(
             value: _priority,
-            decoration: const InputDecoration(labelText: 'Priority'),
-            items: [1, 2, 3]
-                .map((level) => DropdownMenuItem(value: level, child: Text('Priority $level')))
-                .toList(),
+            decoration: InputDecoration(
+              labelText: strings.t('support.form.priority'),
+            ),
+            items:
+                [1, 2, 3]
+                    .map(
+                      (level) => DropdownMenuItem(
+                        value: level,
+                        child: Text(
+                          strings
+                              .t('support.priority')
+                              .replaceFirst('{level}', '$level'),
+                        ),
+                      ),
+                    )
+                    .toList(),
             onChanged: (value) {
               if (value != null) {
                 setState(() => _priority = value);
@@ -440,13 +492,13 @@ class _SupportContactFormState extends State<_SupportContactForm> {
             children: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Cancel'),
+                child: Text(strings.t('common.cancel')),
               ),
               const SizedBox(width: 8),
               FilledButton.icon(
                 onPressed: _submit,
                 icon: const Icon(Icons.check),
-                label: const Text('Save'),
+                label: Text(strings.t('common.save')),
               ),
             ],
           ),
@@ -471,29 +523,29 @@ class _SupportContactFormState extends State<_SupportContactForm> {
     widget.onSubmit(contact);
   }
 
-  String _labelFor(SupportContactType type) {
+  String _labelFor(SupportContactType type, AppLocalizations strings) {
     switch (type) {
       case SupportContactType.phone:
-        return 'Phone';
+        return strings.t('support.label.phone');
       case SupportContactType.whatsapp:
-        return 'WhatsApp';
+        return strings.t('support.label.whatsapp');
       case SupportContactType.email:
-        return 'Email';
+        return strings.t('support.label.email');
       case SupportContactType.other:
-        return 'Other';
+        return strings.t('support.label.other');
     }
   }
 
-  String _valueLabel(SupportContactType type) {
+  String _valueLabel(SupportContactType type, AppLocalizations strings) {
     switch (type) {
       case SupportContactType.phone:
-        return 'Phone number';
+        return strings.t('support.form.value.phone');
       case SupportContactType.whatsapp:
-        return 'WhatsApp number / link';
+        return strings.t('support.form.value.whatsapp');
       case SupportContactType.email:
-        return 'Email address';
+        return strings.t('support.form.value.email');
       case SupportContactType.other:
-        return 'Link or handle';
+        return strings.t('support.form.value.other');
     }
   }
 }
@@ -505,20 +557,24 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context);
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           const Icon(Icons.people_outline, size: 48),
           const SizedBox(height: 8),
-          Text('No contacts added yet', style: Theme.of(context).textTheme.titleMedium),
+          Text(
+            strings.t('support.empty.title'),
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
           const SizedBox(height: 4),
-          const Text('Add 2–3 safe people you can contact quickly.'),
+          Text(strings.t('support.empty.subtitle')),
           const SizedBox(height: 12),
           ElevatedButton.icon(
             onPressed: onAdd,
             icon: const Icon(Icons.person_add_alt),
-            label: const Text('Add contact'),
+            label: Text(strings.t('support.add')),
           ),
         ],
       ),

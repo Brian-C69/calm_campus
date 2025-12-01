@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../models/mood_entry.dart';
 import '../services/db_service.dart';
 import '../l10n/app_localizations.dart';
+import '../utils/mood_labels.dart';
 
 class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key});
@@ -34,47 +35,44 @@ class _HistoryPageState extends State<HistoryPage> {
   }
 
   String _emojiForMood(MoodLevel mood) {
-    switch (mood) {
-      case MoodLevel.happy:
-        return '😊';
-      case MoodLevel.excited:
-        return '🤩';
-      case MoodLevel.grateful:
-        return '🙏';
-      case MoodLevel.relaxed:
-        return '😌';
-      case MoodLevel.content:
-        return '🙂';
-      case MoodLevel.tired:
-        return '🥱';
-      case MoodLevel.unsure:
-        return '🤔';
-      case MoodLevel.bored:
-        return '😐';
-      case MoodLevel.anxious:
-        return '😟';
-      case MoodLevel.angry:
-        return '😠';
-      case MoodLevel.stressed:
-        return '😣';
-      case MoodLevel.sad:
-        return '😔';
+    return moodEmojis[mood] ?? '🙂';
+  }
+
+  String _moodLabel(MoodLevel mood, AppLocalizations strings) {
+    return moodLabel(mood, strings);
+  }
+
+  String _themeLabel(MoodThemeTag tag, AppLocalizations strings) {
+    switch (tag) {
+      case MoodThemeTag.stress:
+        return strings.t('mood.theme.stress');
+      case MoodThemeTag.foodBody:
+        return strings.t('mood.theme.foodBody');
+      case MoodThemeTag.social:
+        return strings.t('mood.theme.social');
+      case MoodThemeTag.academics:
+        return strings.t('mood.theme.academics');
+      case MoodThemeTag.rest:
+        return strings.t('mood.theme.rest');
+      case MoodThemeTag.motivation:
+        return strings.t('mood.theme.motivation');
+      case MoodThemeTag.other:
+        return strings.t('mood.theme.other');
     }
   }
 
-  String _formatDate(DateTime dateTime) {
+  String _formatDate(DateTime dateTime, AppLocalizations strings) {
     final DateTime local = dateTime.toLocal();
-    final String month = local.month.toString().padLeft(2, '0');
-    final String day = local.day.toString().padLeft(2, '0');
-    final String hour = local.hour.toString().padLeft(2, '0');
-    final String minute = local.minute.toString().padLeft(2, '0');
-    return '${local.year}-$month-$day · $hour:$minute';
+    return DateFormat.yMMMd(strings.localeName).add_jm().format(local);
   }
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Mood History')),
+      appBar: AppBar(title: Text(strings.t('history.title'))),
       body: FutureBuilder<List<MoodEntry>>(
         future: _moodEntriesFuture,
         builder: (context, snapshot) {
@@ -92,12 +90,15 @@ class _HistoryPageState extends State<HistoryPage> {
                     const Icon(Icons.error_outline, size: 48),
                     const SizedBox(height: 12),
                     Text(
-                      'We could not load your moods right now.',
-                      style: Theme.of(context).textTheme.titleMedium,
+                      strings.t('history.error.title'),
+                      style: theme.textTheme.titleMedium,
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 8),
-                    const Text('Please pull down to try again.'),
+                    Text(
+                      strings.t('history.error.retry'),
+                      textAlign: TextAlign.center,
+                    ),
                   ],
                 ),
               ),
@@ -111,13 +112,13 @@ class _HistoryPageState extends State<HistoryPage> {
               onRefresh: _refreshEntries,
               child: ListView(
                 padding: const EdgeInsets.all(16),
-                children: const [
-                  SizedBox(height: 40),
-                  Icon(Icons.sentiment_satisfied_alt, size: 64),
-                  SizedBox(height: 16),
+                children: [
+                  const SizedBox(height: 40),
+                  const Icon(Icons.sentiment_satisfied_alt, size: 64),
+                  const SizedBox(height: 16),
                   Center(
                     child: Text(
-                      'No moods saved yet. Your check-ins will show up here.',
+                      strings.t('history.empty'),
                       textAlign: TextAlign.center,
                     ),
                   ),
@@ -135,9 +136,15 @@ class _HistoryPageState extends State<HistoryPage> {
               itemBuilder: (context, index) {
                 final MoodEntry entry = entries[index];
                 final String moodEmoji = _emojiForMood(entry.overallMood);
-                final String subtitle = entry.note?.isNotEmpty == true
-                    ? entry.note!
-                    : 'Theme: ${entry.mainThemeTag.name}';
+                final String subtitle =
+                    entry.note?.isNotEmpty == true
+                        ? entry.note!
+                        : strings
+                            .t('history.theme')
+                            .replaceFirst(
+                              '{theme}',
+                              _themeLabel(entry.mainThemeTag, strings),
+                            );
 
                 return Card(
                   elevation: 0,
@@ -146,21 +153,17 @@ class _HistoryPageState extends State<HistoryPage> {
                       moodEmoji,
                       style: const TextStyle(fontSize: 28),
                     ),
-                    title: Text(
-                      entry.overallMood.name[0].toUpperCase() +
-                          entry.overallMood.name.substring(1),
-                    ),
+                    title: Text(_moodLabel(entry.overallMood, strings)),
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(subtitle),
                         const SizedBox(height: 4),
                         Text(
-                          _formatDate(entry.dateTime),
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodySmall
-                              ?.copyWith(color: Colors.grey[600]),
+                          _formatDate(entry.dateTime, strings),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: Colors.grey[600],
+                          ),
                         ),
                       ],
                     ),

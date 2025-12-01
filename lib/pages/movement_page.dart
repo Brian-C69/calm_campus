@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
 import '../models/movement_entry.dart';
 import '../services/db_service.dart';
 
@@ -14,8 +15,9 @@ class _MovementPageState extends State<MovementPage> {
   late Future<List<MovementEntry>> _entriesFuture;
   DateTime _selectedDate = DateTime.now();
   int _minutes = 20;
-  final TextEditingController _minutesController =
-      TextEditingController(text: '20');
+  final TextEditingController _minutesController = TextEditingController(
+    text: '20',
+  );
   MovementType _type = MovementType.walk;
   MovementIntensity _intensity = MovementIntensity.light;
   double _energyBefore = 3;
@@ -30,8 +32,9 @@ class _MovementPageState extends State<MovementPage> {
   }
 
   Future<List<MovementEntry>> _loadEntries() async {
-    final DateTime sevenDaysAgo =
-        DateTime.now().subtract(const Duration(days: 7));
+    final DateTime sevenDaysAgo = DateTime.now().subtract(
+      const Duration(days: 7),
+    );
     return DbService.instance.getMovementEntries(from: sevenDaysAgo);
   }
 
@@ -51,21 +54,26 @@ class _MovementPageState extends State<MovementPage> {
     }
   }
 
-  Future<void> _saveEntry() async {
+  Future<void> _saveEntry(AppLocalizations strings) async {
     setState(() {
       _isSaving = true;
     });
 
     final MovementEntry entry = MovementEntry(
-      date: DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day),
+      date: DateTime(
+        _selectedDate.year,
+        _selectedDate.month,
+        _selectedDate.day,
+      ),
       minutes: _minutes,
       type: _type,
       intensity: _intensity,
       energyBefore: _energyBefore.round(),
       energyAfter: _energyAfter.round(),
-      note: _noteController.text.trim().isEmpty
-          ? null
-          : _noteController.text.trim(),
+      note:
+          _noteController.text.trim().isEmpty
+              ? null
+              : _noteController.text.trim(),
     );
 
     await DbService.instance.insertMovementEntry(entry);
@@ -80,7 +88,10 @@ class _MovementPageState extends State<MovementPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          'Logged ${entry.minutes} mins of ${_labelForType(entry.type)}. Nice gentle effort!',
+          strings
+              .t('movement.logged')
+              .replaceFirst('{minutes}', '${entry.minutes}')
+              .replaceFirst('{type}', _labelForType(entry.type, strings)),
         ),
       ),
     );
@@ -94,50 +105,37 @@ class _MovementPageState extends State<MovementPage> {
     });
   }
 
-  String _labelForType(MovementType type) {
-    return switch (type) {
-      MovementType.walk => 'walking',
-      MovementType.stretch => 'stretching',
-      MovementType.yoga => 'yoga or mobility',
-      MovementType.sport => 'sports',
-      MovementType.dance => 'dancing',
-      MovementType.other => 'movement',
-    };
-  }
-
-  String _labelForIntensity(MovementIntensity intensity) {
-    return switch (intensity) {
-      MovementIntensity.light => 'Light',
-      MovementIntensity.moderate => 'Moderate',
-      MovementIntensity.vigorous => 'Vigorous',
-    };
-  }
-
   Map<String, dynamic> _buildWeekSummary(List<MovementEntry> entries) {
     final DateTime now = DateTime.now();
     final DateTime sevenDaysAgo = now.subtract(const Duration(days: 6));
-    final List<MovementEntry> recent = entries
-        .where((entry) => entry.date.isAfter(
-              DateTime(sevenDaysAgo.year, sevenDaysAgo.month, sevenDaysAgo.day)
-                  .subtract(const Duration(days: 1)),
-            ))
-        .toList();
+    final List<MovementEntry> recent =
+        entries
+            .where(
+              (entry) => entry.date.isAfter(
+                DateTime(
+                  sevenDaysAgo.year,
+                  sevenDaysAgo.month,
+                  sevenDaysAgo.day,
+                ).subtract(const Duration(days: 1)),
+              ),
+            )
+            .toList();
 
-    final Set<DateTime> activeDays = recent
-        .map((entry) => DateTime(entry.date.year, entry.date.month, entry.date.day))
-        .toSet();
+    final Set<DateTime> activeDays =
+        recent
+            .map(
+              (entry) =>
+                  DateTime(entry.date.year, entry.date.month, entry.date.day),
+            )
+            .toSet();
     final int totalMinutes = recent.fold<int>(
       0,
       (previousValue, element) => previousValue + element.minutes,
     );
-    final double averageMinutes = recent.isEmpty
-        ? 0
-        : totalMinutes / recent.length;
+    final double averageMinutes =
+        recent.isEmpty ? 0 : totalMinutes / recent.length;
 
-    return {
-      'activeDays': activeDays.length,
-      'averageMinutes': averageMinutes,
-    };
+    return {'activeDays': activeDays.length, 'averageMinutes': averageMinutes};
   }
 
   @override
@@ -149,13 +147,14 @@ class _MovementPageState extends State<MovementPage> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Movement & Energy'),
-        actions: const [
+        title: Text(strings.t('movement.title')),
+        actions: [
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Text('Gentle, no diets'),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Text(strings.t('movement.gentle')),
           ),
         ],
       ),
@@ -176,6 +175,7 @@ class _MovementPageState extends State<MovementPage> {
               padding: const EdgeInsets.all(16),
               children: [
                 _QuickLogCard(
+                  strings: strings,
                   selectedDate: _selectedDate,
                   minutes: _minutes,
                   minutesController: _minutesController,
@@ -213,10 +213,10 @@ class _MovementPageState extends State<MovementPage> {
                       _energyAfter = value;
                     });
                   },
-                  onSave: _saveEntry,
+                  onSave: () => _saveEntry(strings),
                 ),
                 const SizedBox(height: 16),
-                _MovementIdeasCard(),
+                _MovementIdeasCard(strings: strings),
                 const SizedBox(height: 16),
                 Card(
                   elevation: 0,
@@ -227,14 +227,24 @@ class _MovementPageState extends State<MovementPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Recent week snapshot',
+                          strings.t('movement.snapshot.title'),
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                         const SizedBox(height: 8),
                         Text(
                           entries.isEmpty
-                              ? 'Log a few walks or stretches to see your momentum. Even small moves count.'
-                              : '${weekSummary['activeDays']} active day(s) · average ${weekSummary['averageMinutes'].toStringAsFixed(1)} mins per log',
+                              ? strings.t('movement.snapshot.empty')
+                              : strings
+                                  .t('movement.snapshot.data')
+                                  .replaceFirst(
+                                    '{days}',
+                                    '${weekSummary['activeDays']}',
+                                  )
+                                  .replaceFirst(
+                                    '{minutes}',
+                                    weekSummary['averageMinutes']
+                                        .toStringAsFixed(1),
+                                  ),
                         ),
                       ],
                     ),
@@ -250,24 +260,30 @@ class _MovementPageState extends State<MovementPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Recent movement',
+                          strings.t('movement.list.title'),
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                         const SizedBox(height: 8),
                         if (snapshot.connectionState == ConnectionState.waiting)
                           const Center(child: CircularProgressIndicator())
                         else if (entries.isEmpty)
-                          const Text(
-                              'No logs yet. A 5–10 minute stretch or walk is a great gentle start.'),
-                        if (entries.isNotEmpty)
+                          Text(strings.t('movement.list.empty'))
+                        else
                           ...entries.map(
                             (entry) => Dismissible(
-                              key: ValueKey(entry.id ?? entry.date.toIso8601String()),
+                              key: ValueKey(
+                                entry.id ?? entry.date.toIso8601String(),
+                              ),
                               background: Container(
                                 color: Colors.red,
                                 alignment: Alignment.centerLeft,
-                                padding: const EdgeInsets.symmetric(horizontal: 12),
-                                child: const Icon(Icons.delete, color: Colors.red),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                ),
+                                child: const Icon(
+                                  Icons.delete,
+                                  color: Colors.red,
+                                ),
                               ),
                               direction: DismissDirection.startToEnd,
                               onDismissed: (_) {
@@ -278,16 +294,22 @@ class _MovementPageState extends State<MovementPage> {
                               child: ListTile(
                                 leading: CircleAvatar(
                                   backgroundColor:
-                                      Theme.of(context).colorScheme.primaryContainer,
+                                      Theme.of(
+                                        context,
+                                      ).colorScheme.primaryContainer,
                                   child: Icon(
                                     Icons.directions_walk,
-                                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                                    color:
+                                        Theme.of(
+                                          context,
+                                        ).colorScheme.onPrimaryContainer,
                                   ),
                                 ),
                                 title: Text(
-                                    '${entry.minutes} mins · ${_labelForIntensity(entry.intensity)}'),
+                                  '${entry.minutes} ${strings.t('movement.minutes')} • ${_labelForIntensity(entry.intensity, strings)}',
+                                ),
                                 subtitle: Text(
-                                  '${_labelForType(entry.type)} on ${_formatDate(entry.date)}\nEnergy ${entry.energyBefore ?? '-'} → ${entry.energyAfter ?? '-'}',
+                                  '${_labelForType(entry.type, strings)} on ${_formatDate(entry.date)}\n${strings.t('movement.list.energy').replaceFirst('{before}', '${entry.energyBefore ?? '-'}').replaceFirst('{after}', '${entry.energyAfter ?? '-'}')}',
                                 ),
                                 isThreeLine: true,
                               ),
@@ -310,8 +332,40 @@ class _MovementPageState extends State<MovementPage> {
   }
 }
 
+String _labelForType(MovementType type, AppLocalizations strings) {
+  switch (type) {
+    case MovementType.walk:
+      return strings.t('movement.type.walk');
+    case MovementType.stretch:
+      return strings.t('movement.type.stretch');
+    case MovementType.yoga:
+      return strings.t('movement.type.yoga');
+    case MovementType.sport:
+      return strings.t('movement.type.sport');
+    case MovementType.dance:
+      return strings.t('movement.type.dance');
+    case MovementType.other:
+      return strings.t('movement.type.other');
+  }
+}
+
+String _labelForIntensity(
+  MovementIntensity intensity,
+  AppLocalizations strings,
+) {
+  switch (intensity) {
+    case MovementIntensity.light:
+      return strings.t('movement.intensity.light');
+    case MovementIntensity.moderate:
+      return strings.t('movement.intensity.moderate');
+    case MovementIntensity.vigorous:
+      return strings.t('movement.intensity.vigorous');
+  }
+}
+
 class _QuickLogCard extends StatelessWidget {
   const _QuickLogCard({
+    required this.strings,
     required this.selectedDate,
     required this.minutes,
     required this.minutesController,
@@ -330,6 +384,7 @@ class _QuickLogCard extends StatelessWidget {
     required this.onSave,
   });
 
+  final AppLocalizations strings;
   final DateTime selectedDate;
   final int minutes;
   final TextEditingController minutesController;
@@ -361,14 +416,15 @@ class _QuickLogCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  "Today's movement",
+                  strings.t('movement.today'),
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 TextButton.icon(
                   onPressed: onDateTap,
                   icon: const Icon(Icons.calendar_today),
                   label: Text(
-                      '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}'),
+                    '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}',
+                  ),
                 ),
               ],
             ),
@@ -376,9 +432,9 @@ class _QuickLogCard extends StatelessWidget {
             TextField(
               controller: minutesController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Minutes',
-                helperText: 'Short sessions count. Even 5–10 mins helps reset.',
+              decoration: InputDecoration(
+                labelText: strings.t('movement.minutes'),
+                helperText: strings.t('movement.minutes.helper'),
               ),
               onChanged: (value) {
                 final int parsed = int.tryParse(value) ?? minutes;
@@ -391,15 +447,18 @@ class _QuickLogCard extends StatelessWidget {
                 Expanded(
                   child: DropdownButtonFormField<MovementType>(
                     value: type,
-                    decoration: const InputDecoration(labelText: 'Type'),
-                    items: MovementType.values
-                        .map(
-                          (type) => DropdownMenuItem(
-                            value: type,
-                            child: Text(type.name.replaceAll('_', ' ').toUpperCase()),
-                          ),
-                        )
-                        .toList(),
+                    decoration: InputDecoration(
+                      labelText: strings.t('movement.type'),
+                    ),
+                    items:
+                        MovementType.values
+                            .map(
+                              (type) => DropdownMenuItem(
+                                value: type,
+                                child: Text(_labelForType(type, strings)),
+                              ),
+                            )
+                            .toList(),
                     onChanged: onTypeChanged,
                   ),
                 ),
@@ -407,22 +466,29 @@ class _QuickLogCard extends StatelessWidget {
                 Expanded(
                   child: DropdownButtonFormField<MovementIntensity>(
                     value: intensity,
-                    decoration: const InputDecoration(labelText: 'Intensity'),
-                    items: MovementIntensity.values
-                        .map(
-                          (value) => DropdownMenuItem(
-                            value: value,
-                            child: Text(value.name[0].toUpperCase() + value.name.substring(1)),
-                          ),
-                        )
-                        .toList(),
+                    decoration: InputDecoration(
+                      labelText: strings.t('movement.intensity'),
+                    ),
+                    items:
+                        MovementIntensity.values
+                            .map(
+                              (value) => DropdownMenuItem(
+                                value: value,
+                                child: Text(_labelForIntensity(value, strings)),
+                              ),
+                            )
+                            .toList(),
                     onChanged: onIntensityChanged,
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 12),
-            Text('Energy before: ${energyBefore.toStringAsFixed(0)}/5'),
+            Text(
+              strings
+                  .t('movement.energy.before')
+                  .replaceFirst('{value}', energyBefore.toStringAsFixed(0)),
+            ),
             Slider(
               value: energyBefore,
               min: 1,
@@ -430,7 +496,11 @@ class _QuickLogCard extends StatelessWidget {
               divisions: 4,
               onChanged: onEnergyBeforeChanged,
             ),
-            Text('Energy after: ${energyAfter.toStringAsFixed(0)}/5'),
+            Text(
+              strings
+                  .t('movement.energy.after')
+                  .replaceFirst('{value}', energyAfter.toStringAsFixed(0)),
+            ),
             Slider(
               value: energyAfter,
               min: 1,
@@ -441,28 +511,31 @@ class _QuickLogCard extends StatelessWidget {
             const SizedBox(height: 8),
             TextField(
               controller: noteController,
-              decoration: const InputDecoration(
-                labelText: 'Notes (optional)',
-                hintText: 'e.g. Walked with a friend between lectures',
+              decoration: InputDecoration(
+                labelText: strings.t('movement.note.label'),
+                hintText: strings.t('movement.note.hint'),
               ),
               maxLines: 2,
             ),
             const SizedBox(height: 12),
             FilledButton.icon(
               onPressed: isSaving ? null : onSave,
-              icon: isSaving
-                  ? const SizedBox(
-                      height: 16,
-                      width: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.save),
-              label: Text(isSaving ? 'Saving...' : 'Save movement'),
+              icon:
+                  isSaving
+                      ? const SizedBox(
+                        height: 16,
+                        width: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                      : const Icon(Icons.save),
+              label: Text(
+                isSaving
+                    ? strings.t('movement.saving')
+                    : strings.t('movement.save'),
+              ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'No pressure or diet talk here. Movement is about kindness to your body and easing study stress.',
-            ),
+            Text(strings.t('movement.nopressure')),
           ],
         ),
       ),
@@ -473,20 +546,22 @@ class _QuickLogCard extends StatelessWidget {
 class _MovementIdeasCard extends StatelessWidget {
   final List<_MovementIdea> _ideas = const [
     _MovementIdea(
-      title: 'Study break stroll',
-      description: '5–10 mins outside or in the hallway to reset your brain.',
+      title: 'movement.idea.stroll.title',
+      description: 'movement.idea.stroll.desc',
     ),
     _MovementIdea(
-      title: 'Desk stretch',
-      description: 'Neck rolls, shoulder circles, and wrist shakes between tasks.',
+      title: 'movement.idea.desk.title',
+      description: 'movement.idea.desk.desc',
     ),
     _MovementIdea(
-      title: 'Cozy yoga',
-      description: 'Slow stretches or child’s pose before bed, comfy clothes encouraged.',
+      title: 'movement.idea.cozy.title',
+      description: 'movement.idea.cozy.desc',
     ),
   ];
 
-  const _MovementIdeasCard();
+  const _MovementIdeasCard({required this.strings});
+
+  final AppLocalizations strings;
 
   @override
   Widget build(BuildContext context) {
@@ -499,15 +574,15 @@ class _MovementIdeasCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Movement ideas for study days',
+              strings.t('movement.ideas.title'),
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
             ..._ideas.map(
               (idea) => ListTile(
                 leading: const Icon(Icons.lightbulb_outline),
-                title: Text(idea.title),
-                subtitle: Text(idea.description),
+                title: Text(strings.t(idea.title)),
+                subtitle: Text(strings.t(idea.description)),
               ),
             ),
           ],

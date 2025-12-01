@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 
+import '../l10n/app_localizations.dart';
 import '../models/relax_track.dart';
 import 'breathing_page.dart';
 
@@ -241,8 +242,7 @@ class _RelaxPageState extends State<RelaxPage> {
 
       try {
         await _ambientPlayer.stop();
-        await _ambientPlayer
-            .setAudioSource(AudioSource.asset(track.assetPath));
+        await _ambientPlayer.setAudioSource(AudioSource.asset(track.assetPath));
         await _ambientPlayer.setLoopMode(LoopMode.all);
         // Start playback but don't await the full track duration.
         _ambientPlayer.play();
@@ -290,8 +290,7 @@ class _RelaxPageState extends State<RelaxPage> {
 
       try {
         await _guidedPlayer.stop();
-        await _guidedPlayer
-            .setAudioSource(AudioSource.asset(track.assetPath));
+        await _guidedPlayer.setAudioSource(AudioSource.asset(track.assetPath));
         await _guidedPlayer.setLoopMode(LoopMode.off);
         // Start playback but don't await the full track duration.
         _guidedPlayer.play();
@@ -331,30 +330,33 @@ class _RelaxPageState extends State<RelaxPage> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context);
     final safeBottom = MediaQuery.of(context).padding.bottom;
     final playerPadding = _isPlayerExpanded ? 260.0 : 140.0;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Relax & Meditations')),
+      appBar: AppBar(title: Text(strings.t('relax.title'))),
       body: Stack(
         children: [
           ListView(
-            padding: EdgeInsets.fromLTRB(16, 16, 16, playerPadding + safeBottom),
+            padding: EdgeInsets.fromLTRB(
+              16,
+              16,
+              16,
+              playerPadding + safeBottom,
+            ),
             children: [
               _buildBreathingCard(context),
               const SizedBox(height: 12),
-              const Text(
-                'Layer a calming ambient bed with a short guided focus session. '
-                'You can play ambient and guided audio together.',
-              ),
+              Text(strings.t('relax.intro')),
               const SizedBox(height: 16),
               StreamBuilder<PlayerState>(
                 stream: _ambientPlayer.playerStateStream,
                 builder: (context, snapshot) {
                   final ambientState = snapshot.data;
                   return _buildSection(
-                    title: 'Ambient soundscapes',
-                    description: 'Soft textures to play while you study or rest.',
+                    title: strings.t('relax.section.ambient.title'),
+                    description: strings.t('relax.section.ambient.desc'),
                     tracks: _ambientTracks,
                     playerState: ambientState,
                     isAmbient: true,
@@ -367,9 +369,8 @@ class _RelaxPageState extends State<RelaxPage> {
                 builder: (context, snapshot) {
                   final guidedState = snapshot.data;
                   return _buildSection(
-                    title: 'Guided series',
-                    description:
-                        'Pick a Focus, Stress Relief, or Sleep session to match how you want to feel.',
+                    title: strings.t('relax.section.guided.title'),
+                    description: strings.t('relax.section.guided.desc'),
                     tracks: _guidedTracks,
                     playerState: guidedState,
                     isAmbient: false,
@@ -391,6 +392,7 @@ class _RelaxPageState extends State<RelaxPage> {
   }
 
   Widget _buildBreathingCard(BuildContext context) {
+    final strings = AppLocalizations.of(context);
     return Card(
       elevation: 0,
       color: Theme.of(context).colorScheme.secondaryContainer,
@@ -400,12 +402,12 @@ class _RelaxPageState extends State<RelaxPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Guided breathing',
+              strings.t('relax.breathing.title'),
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
             Text(
-              'Short guided breathing to help your body settle when stress spikes. Start to follow clear prompts and a countdown.',
+              strings.t('relax.breathing.desc'),
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 12),
@@ -417,22 +419,18 @@ class _RelaxPageState extends State<RelaxPage> {
                   icon: const Icon(Icons.self_improvement_outlined),
                   onPressed: () {
                     Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const BreathingPage(),
-                      ),
+                      MaterialPageRoute(builder: (_) => const BreathingPage()),
                     );
                   },
-                  label: const Text('Start breathing exercise'),
+                  label: Text(strings.t('relax.breathing.start')),
                 ),
                 OutlinedButton(
                   onPressed: () {
                     Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const BreathingPage(),
-                      ),
+                      MaterialPageRoute(builder: (_) => const BreathingPage()),
                     );
                   },
-                  child: const Text('View exercises'),
+                  child: Text(strings.t('relax.breathing.view')),
                 ),
               ],
             ),
@@ -450,11 +448,9 @@ class _RelaxPageState extends State<RelaxPage> {
     required bool isAmbient,
     bool groupByCategory = false,
   }) {
-    final groupedTracks = groupByCategory
-        ? _groupTracksByCategory(tracks)
-        : {
-            '': tracks,
-          };
+    final strings = AppLocalizations.of(context);
+    final groupedTracks =
+        groupByCategory ? _groupTracksByCategory(tracks) : {'': tracks};
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -474,7 +470,7 @@ class _RelaxPageState extends State<RelaxPage> {
                 Padding(
                   padding: const EdgeInsets.only(left: 4, bottom: 4),
                   child: Text(
-                    categoryLabel,
+                    _categoryLabel(categoryLabel, strings),
                     style: Theme.of(context).textTheme.titleSmall,
                   ),
                 ),
@@ -487,9 +483,8 @@ class _RelaxPageState extends State<RelaxPage> {
                           Theme.of(context).colorScheme.secondaryContainer,
                       child: Icon(
                         isAmbient ? Icons.spa_outlined : Icons.self_improvement,
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onSecondaryContainer,
+                        color:
+                            Theme.of(context).colorScheme.onSecondaryContainer,
                       ),
                     ),
                     title: Text(track.title),
@@ -499,9 +494,11 @@ class _RelaxPageState extends State<RelaxPage> {
                       playerState: playerState,
                       isAmbient: isAmbient,
                     ),
-                    onTap: () => isAmbient
-                        ? _toggleAmbient(track)
-                        : _toggleGuided(track),
+                    onTap:
+                        () =>
+                            isAmbient
+                                ? _toggleAmbient(track)
+                                : _toggleGuided(track),
                   ),
                 ),
               ),
@@ -524,15 +521,32 @@ class _RelaxPageState extends State<RelaxPage> {
     return grouped;
   }
 
+  String _categoryLabel(String category, AppLocalizations strings) {
+    switch (category) {
+      case 'Ambient':
+        return strings.t('relax.category.ambient');
+      case 'Focus':
+        return strings.t('home.card.relax');
+      case 'Stress Relief':
+        return strings.t('challenges.dark.audio');
+      case 'Sleep':
+        return strings.t('home.card.sleep');
+      default:
+        return category;
+    }
+  }
+
   Widget _buildTrailingControl({
     required RelaxTrack track,
     required PlayerState? playerState,
     required bool isAmbient,
   }) {
+    final strings = AppLocalizations.of(context);
     final currentTrack = isAmbient ? _currentAmbientTrack : _currentGuidedTrack;
     final isCurrent = currentTrack?.assetPath == track.assetPath;
     final isPlayingCurrent = isCurrent && (playerState?.playing ?? false);
-    final isBuffering = isCurrent &&
+    final isBuffering =
+        isCurrent &&
         !(playerState?.playing ?? false) &&
         ((playerState?.processingState == ProcessingState.loading) ||
             (playerState?.processingState == ProcessingState.buffering));
@@ -549,11 +563,13 @@ class _RelaxPageState extends State<RelaxPage> {
 
     return IconButton(
       icon: Icon(isPlayingCurrent ? Icons.pause : Icons.play_arrow),
-      onPressed: () =>
-          isAmbient ? _toggleAmbient(track) : _toggleGuided(track),
+      onPressed: () => isAmbient ? _toggleAmbient(track) : _toggleGuided(track),
+      tooltip:
+          isPlayingCurrent
+              ? strings.t('relax.tooltip.pause')
+              : strings.t('relax.tooltip.play'),
     );
   }
-
 
   Future<void> _seekGuided(double offsetSeconds) async {
     final newPosition = _clampPosition(
@@ -593,6 +609,7 @@ class _RelaxPageState extends State<RelaxPage> {
     return StreamBuilder<PlayerState>(
       stream: _ambientPlayer.playerStateStream,
       builder: (context, ambientSnapshot) {
+        final strings = AppLocalizations.of(context);
         return StreamBuilder<PlayerState>(
           stream: _guidedPlayer.playerStateStream,
           builder: (context, guidedSnapshot) {
@@ -600,9 +617,17 @@ class _RelaxPageState extends State<RelaxPage> {
             final guidedState = guidedSnapshot.data;
 
             final collapsedTitle = [
-              if (showAmbient) 'Ambient: ${_currentAmbientTrack!.title}',
-              if (showGuided) 'Guided: ${_currentGuidedTrack!.title}',
-            ].join('  •  ');
+              if (showAmbient) '${strings.t('"'
+                "'relax.category.ambient'"
+                '')}: ${_currentAmbientTrack!.title}',
+              if (showGuided) '${strings.t('"'
+                "'relax.category.guided'"
+                '')}: ${_currentGuidedTrack!.title}',
+            ].join(
+              '"'
+              "'  ?  '"
+              '"',
+            );
 
             return SafeArea(
               child: Card(
@@ -612,7 +637,10 @@ class _RelaxPageState extends State<RelaxPage> {
                   borderRadius: BorderRadius.circular(18),
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -626,12 +654,27 @@ class _RelaxPageState extends State<RelaxPage> {
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'Now playing',
+                              strings.t(
+                                '"'
+                                "'relax.nowPlaying'"
+                                '"',
+                              ),
                               style: Theme.of(context).textTheme.titleMedium,
                             ),
                           ),
                           IconButton(
-                            tooltip: _isPlayerExpanded ? 'Minimize' : 'Expand',
+                            tooltip:
+                                _isPlayerExpanded
+                                    ? strings.t(
+                                      '"'
+                                      "'relax.tooltip.minimize'"
+                                      '"',
+                                    )
+                                    : strings.t(
+                                      '"'
+                                      "'relax.tooltip.expand'"
+                                      '"',
+                                    ),
                             onPressed: () {
                               setState(() {
                                 _isPlayerExpanded = !_isPlayerExpanded;
@@ -649,9 +692,10 @@ class _RelaxPageState extends State<RelaxPage> {
                         duration: const Duration(milliseconds: 200),
                         firstCurve: Curves.easeInOut,
                         secondCurve: Curves.easeInOut,
-                        crossFadeState: _isPlayerExpanded
-                            ? CrossFadeState.showFirst
-                            : CrossFadeState.showSecond,
+                        crossFadeState:
+                            _isPlayerExpanded
+                                ? CrossFadeState.showFirst
+                                : CrossFadeState.showSecond,
                         firstChild: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -659,8 +703,8 @@ class _RelaxPageState extends State<RelaxPage> {
                               AmbientPlayerControls(
                                 title: _currentAmbientTrack!.title,
                                 isPlaying: ambientState?.playing ?? false,
-                                onPlayPause: () =>
-                                    _toggleAmbient(_currentAmbientTrack!),
+                                onPlayPause:
+                                    () => _toggleAmbient(_currentAmbientTrack!),
                                 volume: _ambientVolume,
                                 onVolumeChanged: (value) {
                                   setState(() => _ambientVolume = value);
@@ -672,8 +716,8 @@ class _RelaxPageState extends State<RelaxPage> {
                               GuidedPlayerControls(
                                 title: _currentGuidedTrack!.title,
                                 isPlaying: guidedState?.playing ?? false,
-                                onPlayPause: () =>
-                                    _toggleGuided(_currentGuidedTrack!),
+                                onPlayPause:
+                                    () => _toggleGuided(_currentGuidedTrack!),
                                 onForward: () => _seekGuided(0.5),
                                 onBackward: () => _seekGuided(-0.5),
                                 volume: _guidedVolume,
@@ -702,25 +746,50 @@ class _RelaxPageState extends State<RelaxPage> {
                               children: [
                                 if (showAmbient)
                                   IconButton.filledTonal(
-                                    tooltip: ambientState?.playing == true
-                                        ? 'Pause ambient'
-                                        : 'Play ambient',
-                                    icon: Icon(ambientState?.playing == true
-                                        ? Icons.pause
-                                        : Icons.play_arrow),
-                                    onPressed: () =>
-                                        _toggleAmbient(_currentAmbientTrack!),
+                                    tooltip:
+                                        ambientState?.playing == true
+                                            ? strings.t(
+                                              '"'
+                                              "'relax.tooltip.pauseAmbient'"
+                                              '"',
+                                            )
+                                            : strings.t(
+                                              '"'
+                                              "'relax.tooltip.playAmbient'"
+                                              '"',
+                                            ),
+                                    icon: Icon(
+                                      ambientState?.playing == true
+                                          ? Icons.pause
+                                          : Icons.play_arrow,
+                                    ),
+                                    onPressed:
+                                        () => _toggleAmbient(
+                                          _currentAmbientTrack!,
+                                        ),
                                   ),
                                 if (showGuided)
                                   IconButton.filledTonal(
-                                    tooltip: guidedState?.playing == true
-                                        ? 'Pause guided'
-                                        : 'Play guided',
-                                    icon: Icon(guidedState?.playing == true
-                                        ? Icons.pause
-                                        : Icons.play_arrow),
-                                    onPressed: () =>
-                                        _toggleGuided(_currentGuidedTrack!),
+                                    tooltip:
+                                        guidedState?.playing == true
+                                            ? strings.t(
+                                              '"'
+                                              "'relax.tooltip.pauseGuided'"
+                                              '"',
+                                            )
+                                            : strings.t(
+                                              '"'
+                                              "'relax.tooltip.playGuided'"
+                                              '"',
+                                            ),
+                                    icon: Icon(
+                                      guidedState?.playing == true
+                                          ? Icons.pause
+                                          : Icons.play_arrow,
+                                    ),
+                                    onPressed:
+                                        () =>
+                                            _toggleGuided(_currentGuidedTrack!),
                                   ),
                               ],
                             ),
@@ -757,6 +826,7 @@ class AmbientPlayerControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -769,8 +839,10 @@ class AmbientPlayerControls extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(title, style: Theme.of(context).textTheme.bodyMedium),
-                  Text('Ambient',
-                      style: Theme.of(context).textTheme.bodySmall),
+                  Text(
+                    strings.t('relax.category.ambient'),
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
                 ],
               ),
             ),
@@ -823,6 +895,7 @@ class GuidedPlayerControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -835,13 +908,15 @@ class GuidedPlayerControls extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(title, style: Theme.of(context).textTheme.bodyMedium),
-                  Text('Guided',
-                      style: Theme.of(context).textTheme.bodySmall),
+                  Text(
+                    strings.t('relax.category.guided'),
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
                 ],
               ),
             ),
             IconButton(
-              tooltip: 'Back 0.5s',
+              tooltip: strings.t('relax.tooltip.back'),
               onPressed: onBackward,
               icon: const Icon(Icons.replay_5),
             ),
@@ -850,7 +925,7 @@ class GuidedPlayerControls extends StatelessWidget {
               onPressed: onPlayPause,
             ),
             IconButton(
-              tooltip: 'Forward 0.5s',
+              tooltip: strings.t('relax.tooltip.forward'),
               onPressed: onForward,
               icon: const Icon(Icons.forward_5),
             ),

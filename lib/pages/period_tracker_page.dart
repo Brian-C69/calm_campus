@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 
+import '../l10n/app_localizations.dart';
 import '../models/period_cycle.dart';
 import '../services/db_service.dart';
 
@@ -72,7 +73,14 @@ class _PeriodTrackerPageState extends State<PeriodTrackerPage> {
     return end.difference(start).inDays + 1;
   }
 
-  String _monthLabel(DateTime date) {
+  String _monthLabel(DateTime date, AppLocalizations strings) {
+    final formatter = strings.localeName.startsWith('zh') ? 'MM' : 'MMM';
+    return formatter == 'MM'
+        ? date.month.toString().padLeft(2, '0')
+        : _monthAbbr(date.month);
+  }
+
+  String _monthAbbr(int month) {
     const List<String> monthLabels = [
       'Jan',
       'Feb',
@@ -87,11 +95,12 @@ class _PeriodTrackerPageState extends State<PeriodTrackerPage> {
       'Nov',
       'Dec',
     ];
-    return monthLabels[date.month - 1];
+    return monthLabels[month - 1];
   }
 
-  ({Set<DateTime> allDays, Set<DateTime> ongoingDays})
-      _generatePeriodDaySets(List<PeriodCycle> cycles) {
+  ({Set<DateTime> allDays, Set<DateTime> ongoingDays}) _generatePeriodDaySets(
+    List<PeriodCycle> cycles,
+  ) {
     final Set<DateTime> allDays = {};
     final Set<DateTime> ongoingDays = {};
     final DateTime today = DateUtils.dateOnly(DateTime.now());
@@ -133,12 +142,14 @@ class _PeriodTrackerPageState extends State<PeriodTrackerPage> {
       backgroundColor = theme.colorScheme.primary;
       textColor = theme.colorScheme.onPrimary;
     } else if (isPeriodDay) {
-      backgroundColor = isOngoingDay
-          ? theme.colorScheme.errorContainer
-          : theme.colorScheme.secondaryContainer;
-      textColor = isOngoingDay
-          ? theme.colorScheme.onErrorContainer
-          : theme.colorScheme.onSecondaryContainer;
+      backgroundColor =
+          isOngoingDay
+              ? theme.colorScheme.errorContainer
+              : theme.colorScheme.secondaryContainer;
+      textColor =
+          isOngoingDay
+              ? theme.colorScheme.onErrorContainer
+              : theme.colorScheme.onSecondaryContainer;
     } else if (isToday) {
       backgroundColor = theme.colorScheme.primaryContainer;
       textColor = theme.colorScheme.onPrimaryContainer;
@@ -179,7 +190,7 @@ class _PeriodTrackerPageState extends State<PeriodTrackerPage> {
     );
   }
 
-  Widget _buildCalendar(List<PeriodCycle> cycles) {
+  Widget _buildCalendar(List<PeriodCycle> cycles, AppLocalizations strings) {
     if (cycles.isEmpty) {
       return Card(
         child: Padding(
@@ -188,13 +199,11 @@ class _PeriodTrackerPageState extends State<PeriodTrackerPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Calendar view',
+                strings.t('period.calendar.title'),
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(height: 8),
-              const Text(
-                'Add a period to see it highlighted on your calendar.',
-              ),
+              Text(strings.t('period.calendar.empty')),
             ],
           ),
         ),
@@ -215,11 +224,11 @@ class _PeriodTrackerPageState extends State<PeriodTrackerPage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Calendar view',
+                  strings.t('period.calendar.title'),
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 Text(
-                  '${_monthLabel(_focusedDay)} ${_focusedDay.year}',
+                  '${_monthLabel(_focusedDay, strings)} ${_focusedDay.year}',
                   style: Theme.of(context).textTheme.labelLarge,
                 ),
               ],
@@ -229,7 +238,9 @@ class _PeriodTrackerPageState extends State<PeriodTrackerPage> {
               firstDay: DateTime(today.year - 1, 1, 1),
               lastDay: DateTime(today.year + 1, 12, 31),
               focusedDay: _focusedDay,
-              availableCalendarFormats: const {CalendarFormat.month: 'Month'},
+              availableCalendarFormats: {
+                CalendarFormat.month: strings.t('period.calendar.title'),
+              },
               calendarFormat: CalendarFormat.month,
               selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
               onDaySelected: (selectedDay, focusedDay) {
@@ -247,28 +258,31 @@ class _PeriodTrackerPageState extends State<PeriodTrackerPage> {
                 isTodayHighlighted: false,
               ),
               calendarBuilders: CalendarBuilders(
-                defaultBuilder: (context, day, focusedDay) => _buildDayCell(
-                  context,
-                  day,
-                  periodSets.allDays,
-                  periodSets.ongoingDays,
-                  isToday: isSameDay(day, today),
-                ),
-                todayBuilder: (context, day, focusedDay) => _buildDayCell(
-                  context,
-                  day,
-                  periodSets.allDays,
-                  periodSets.ongoingDays,
-                  isToday: true,
-                ),
-                selectedBuilder: (context, day, focusedDay) => _buildDayCell(
-                  context,
-                  day,
-                  periodSets.allDays,
-                  periodSets.ongoingDays,
-                  isSelected: true,
-                  isToday: isSameDay(day, today),
-                ),
+                defaultBuilder:
+                    (context, day, focusedDay) => _buildDayCell(
+                      context,
+                      day,
+                      periodSets.allDays,
+                      periodSets.ongoingDays,
+                      isToday: isSameDay(day, today),
+                    ),
+                todayBuilder:
+                    (context, day, focusedDay) => _buildDayCell(
+                      context,
+                      day,
+                      periodSets.allDays,
+                      periodSets.ongoingDays,
+                      isToday: true,
+                    ),
+                selectedBuilder:
+                    (context, day, focusedDay) => _buildDayCell(
+                      context,
+                      day,
+                      periodSets.allDays,
+                      periodSets.ongoingDays,
+                      isSelected: true,
+                      isToday: isSameDay(day, today),
+                    ),
               ),
             ),
             const SizedBox(height: 8),
@@ -278,11 +292,11 @@ class _PeriodTrackerPageState extends State<PeriodTrackerPage> {
               children: [
                 _buildLegendChip(
                   color: Theme.of(context).colorScheme.secondaryContainer,
-                  label: 'Past period days',
+                  label: strings.t('period.legend.past'),
                 ),
                 _buildLegendChip(
                   color: Theme.of(context).colorScheme.errorContainer,
-                  label: 'Ongoing period',
+                  label: strings.t('period.legend.ongoing'),
                 ),
               ],
             ),
@@ -292,21 +306,17 @@ class _PeriodTrackerPageState extends State<PeriodTrackerPage> {
     );
   }
 
-  bool _validateDates(BuildContext context) {
+  bool _validateDates(BuildContext context, AppLocalizations strings) {
     if (_startDate == null || _endDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please pick a start and end date for your period.'),
-        ),
+        SnackBar(content: Text(strings.t('period.validate.missing'))),
       );
       return false;
     }
 
     if (_endDate!.isBefore(_startDate!)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('End date cannot be before start date.'),
-        ),
+        SnackBar(content: Text(strings.t('period.validate.order'))),
       );
       return false;
     }
@@ -314,9 +324,7 @@ class _PeriodTrackerPageState extends State<PeriodTrackerPage> {
     final int duration = _calculateDurationDays(_startDate!, _endDate!);
     if (duration < 1 || duration > 14) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please choose a realistic duration between 1 and 14 days.'),
-        ),
+        SnackBar(content: Text(strings.t('period.validate.range'))),
       );
       return false;
     }
@@ -324,8 +332,8 @@ class _PeriodTrackerPageState extends State<PeriodTrackerPage> {
     return true;
   }
 
-  Future<void> _saveCycle() async {
-    if (!_validateDates(context)) return;
+  Future<void> _saveCycle(AppLocalizations strings) async {
+    if (!_validateDates(context, strings)) return;
 
     setState(() {
       _isSaving = true;
@@ -357,9 +365,11 @@ class _PeriodTrackerPageState extends State<PeriodTrackerPage> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(isEditing
-              ? 'Cycle updated.'
-              : 'Cycle saved. Thanks for trusting us with this info.'),
+          content: Text(
+            isEditing
+                ? strings.t('period.save.updated')
+                : strings.t('period.save.success'),
+          ),
         ),
       );
     } finally {
@@ -390,8 +400,8 @@ class _PeriodTrackerPageState extends State<PeriodTrackerPage> {
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Cycle removed.'),
+      SnackBar(
+        content: Text(AppLocalizations.of(context).t('period.delete.success')),
       ),
     );
   }
@@ -400,9 +410,9 @@ class _PeriodTrackerPageState extends State<PeriodTrackerPage> {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
   }
 
-  Widget _buildStats(List<PeriodCycle> cycles) {
+  Widget _buildStats(List<PeriodCycle> cycles, AppLocalizations strings) {
     if (cycles.isEmpty) {
-      return const Text('Log a few periods to unlock gentle insights.');
+      return Text(strings.t('period.stats.empty'));
     }
 
     final List<PeriodCycle> recent = cycles.take(6).toList();
@@ -413,39 +423,74 @@ class _PeriodTrackerPageState extends State<PeriodTrackerPage> {
     for (int i = 0; i < recent.length - 1; i++) {
       final DateTime currentStart = recent[i].cycleStartDate;
       final DateTime previousStart = recent[i + 1].cycleStartDate;
-      final int diff = currentStart
-          .difference(DateTime(previousStart.year, previousStart.month, previousStart.day))
-          .inDays;
+      final int diff =
+          currentStart
+              .difference(
+                DateTime(
+                  previousStart.year,
+                  previousStart.month,
+                  previousStart.day,
+                ),
+              )
+              .inDays;
       cycleLengths.add(diff);
     }
 
     final double averageDuration =
         durations.reduce((a, b) => a + b) / durations.length;
     final double? averageCycleLength =
-        cycleLengths.isNotEmpty ? cycleLengths.reduce((a, b) => a + b) / cycleLengths.length : null;
+        cycleLengths.isNotEmpty
+            ? cycleLengths.reduce((a, b) => a + b) / cycleLengths.length
+            : null;
 
     final PeriodCycle latest = recent.first;
     final StringBuffer buffer = StringBuffer();
-    buffer.writeln('Average period length: ${averageDuration.toStringAsFixed(1)} days');
+    buffer.writeln(
+      strings
+          .t('period.stats.avgLength')
+          .replaceFirst('{days}', averageDuration.toStringAsFixed(1)),
+    );
     if (averageCycleLength != null) {
-      buffer.writeln('Average cycle: ${averageCycleLength.toStringAsFixed(1)} days');
+      buffer.writeln(
+        strings
+            .t('period.stats.avgCycle')
+            .replaceFirst('{days}', averageCycleLength.toStringAsFixed(1)),
+      );
     } else {
-      buffer.writeln('Add another cycle to calculate your average cycle length.');
+      buffer.writeln(strings.t('period.stats.addMore'));
     }
     buffer.writeln(
-        'Last period: ${_formatDate(latest.cycleStartDate)} – ${_formatDate(latest.cycleEndDate)} (${latest.periodDurationDays} days)');
+      strings
+          .t('period.stats.last')
+          .replaceFirst('{start}', _formatDate(latest.cycleStartDate))
+          .replaceFirst('{end}', _formatDate(latest.cycleEndDate))
+          .replaceFirst('{days}', '${latest.periodDurationDays}'),
+    );
 
     final DateTime? predictedStart = _predictNextPeriodStart(cycles);
     if (predictedStart != null && averageCycleLength != null) {
-      final DateTimeRange? ovulationWindow = _estimateOvulationWindow(predictedStart);
+      final DateTimeRange? ovulationWindow = _estimateOvulationWindow(
+        predictedStart,
+      );
       buffer.writeln(
-          'Next period is roughly ${predictedStart.difference(DateTime.now()).inDays} days away (around ${_formatDate(predictedStart)}).');
+        strings
+            .t('period.stats.next')
+            .replaceFirst(
+              '{daysAway}',
+              '${predictedStart.difference(DateTime.now()).inDays}',
+            )
+            .replaceFirst('{date}', _formatDate(predictedStart)),
+      );
       if (ovulationWindow != null) {
         buffer.writeln(
-            'Estimated ovulation window: ${_formatDate(ovulationWindow.start)} – ${_formatDate(ovulationWindow.end)}.');
+          strings
+              .t('period.stats.ovulation')
+              .replaceFirst('{start}', _formatDate(ovulationWindow.start))
+              .replaceFirst('{end}', _formatDate(ovulationWindow.end)),
+        );
       }
     } else {
-      buffer.writeln('We will offer predictions once we have a couple of cycles.');
+      buffer.writeln(strings.t('period.stats.wait'));
     }
 
     return Text(buffer.toString());
@@ -461,91 +506,109 @@ class _PeriodTrackerPageState extends State<PeriodTrackerPage> {
     for (int i = 0; i < sorted.length - 1; i++) {
       final DateTime currentStart = sorted[i].cycleStartDate;
       final DateTime previousStart = sorted[i + 1].cycleStartDate;
-      final int diff = currentStart
-          .difference(DateTime(previousStart.year, previousStart.month, previousStart.day))
-          .inDays;
+      final int diff =
+          currentStart
+              .difference(
+                DateTime(
+                  previousStart.year,
+                  previousStart.month,
+                  previousStart.day,
+                ),
+              )
+              .inDays;
       cycleLengths.add(diff);
     }
 
     if (cycleLengths.isEmpty) return null;
-    final double average = cycleLengths.reduce((a, b) => a + b) / cycleLengths.length;
+    final double average =
+        cycleLengths.reduce((a, b) => a + b) / cycleLengths.length;
     return sorted.first.cycleStartDate.add(Duration(days: average.round()));
   }
 
   DateTimeRange? _estimateOvulationWindow(DateTime predictedNextStart) {
-    final DateTime windowStart = predictedNextStart.subtract(const Duration(days: 16));
-    final DateTime windowEnd = predictedNextStart.subtract(const Duration(days: 12));
+    final DateTime windowStart = predictedNextStart.subtract(
+      const Duration(days: 16),
+    );
+    final DateTime windowEnd = predictedNextStart.subtract(
+      const Duration(days: 12),
+    );
     return DateTimeRange(start: windowStart, end: windowEnd);
   }
 
-  Widget _buildCycleList(List<PeriodCycle> cycles) {
+  Widget _buildCycleList(List<PeriodCycle> cycles, AppLocalizations strings) {
     if (cycles.isEmpty) {
-      return const Text(
-        'Your cycle entries stay on this device. Add your first period to start spotting gentle patterns.',
-      );
+      return Text(strings.t('period.stats.empty'));
     }
 
     return Column(
-      children: cycles
-          .map(
-            (cycle) => Card(
-              child: ListTile(
-                title: Text(
-                  '${_formatDate(cycle.cycleStartDate)} → ${_formatDate(cycle.cycleEndDate)}',
-                ),
-                subtitle: Text(
-                  'Duration: ${cycle.periodDurationDays} days${cycle.calculatedCycleLength != null ? ' • Cycle: ${cycle.calculatedCycleLength} days' : ''}',
-                ),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      tooltip: 'Edit',
-                      onPressed: () {
-                        setState(() {
-                          _editingId = cycle.id;
-                          _startDate = cycle.cycleStartDate;
-                          _endDate = cycle.cycleEndDate;
-                        });
-                      },
-                      icon: const Icon(Icons.edit),
+      children:
+          cycles
+              .map(
+                (cycle) => Card(
+                  child: ListTile(
+                    title: Text(
+                      '${_formatDate(cycle.cycleStartDate)} → ${_formatDate(cycle.cycleEndDate)}',
                     ),
-                    IconButton(
-                      tooltip: 'Delete',
-                      onPressed: _isDeleting
-                          ? null
-                          : () => _showDeleteConfirmation(context, cycle.id!),
-                      icon: const Icon(Icons.delete_outline),
+                    subtitle: Text(
+                      '${strings.t('period.list.duration').replaceFirst('{days}', '${cycle.periodDurationDays}')}${cycle.calculatedCycleLength != null ? ' • ${strings.t('period.list.cycle').replaceFirst('{days}', '${cycle.calculatedCycleLength}')}' : ''}',
                     ),
-                  ],
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          tooltip: AppLocalizations.of(
+                            context,
+                          ).t('common.edit'),
+                          onPressed: () {
+                            setState(() {
+                              _editingId = cycle.id;
+                              _startDate = cycle.cycleStartDate;
+                              _endDate = cycle.cycleEndDate;
+                            });
+                          },
+                          icon: const Icon(Icons.edit),
+                        ),
+                        IconButton(
+                          tooltip: AppLocalizations.of(
+                            context,
+                          ).t('common.delete'),
+                          onPressed:
+                              _isDeleting
+                                  ? null
+                                  : () => _showDeleteConfirmation(
+                                    context,
+                                    cycle.id!,
+                                  ),
+                          icon: const Icon(Icons.delete_outline),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-            ),
-          )
-          .toList(),
+              )
+              .toList(),
     );
   }
 
   void _showDeleteConfirmation(BuildContext context, int id) {
+    final strings = AppLocalizations.of(context);
     showDialog<void>(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Remove this cycle?'),
-          content: const Text(
-            'Your entries are private to your device. Deleting this record cannot be undone.',
-          ),
+          title: Text(strings.t('period.delete.title')),
+          content: Text(strings.t('period.delete.desc')),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
+              child: Text(strings.t('common.cancel')),
             ),
             TextButton(
               onPressed: () async {
                 Navigator.pop(context);
                 await _deleteCycle(id);
               },
-              child: const Text('Delete'),
+              child: Text(strings.t('common.delete')),
             ),
           ],
         );
@@ -555,17 +618,14 @@ class _PeriodTrackerPageState extends State<PeriodTrackerPage> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Period & Cycle Tracker'),
-      ),
+      appBar: AppBar(title: Text(strings.t('period.title'))),
       body: FutureBuilder<List<PeriodCycle>>(
         future: _cyclesFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
+            return const Center(child: CircularProgressIndicator());
           }
 
           if (snapshot.hasError) {
@@ -573,7 +633,7 @@ class _PeriodTrackerPageState extends State<PeriodTrackerPage> {
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Text(
-                  'We could not load your cycles right now. ${snapshot.error}',
+                  '${strings.t('period.error.load')} ${snapshot.error}',
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -587,7 +647,7 @@ class _PeriodTrackerPageState extends State<PeriodTrackerPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildCalendar(cycles),
+                _buildCalendar(cycles, strings),
                 const SizedBox(height: 12),
                 Card(
                   child: Padding(
@@ -597,8 +657,8 @@ class _PeriodTrackerPageState extends State<PeriodTrackerPage> {
                       children: [
                         Text(
                           _editingId == null
-                              ? 'Log your latest period'
-                              : 'Update your period entry',
+                              ? strings.t('period.form.title.add')
+                              : strings.t('period.form.title.edit'),
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                         const SizedBox(height: 12),
@@ -608,13 +668,13 @@ class _PeriodTrackerPageState extends State<PeriodTrackerPage> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text('Period started'),
+                                  Text(strings.t('period.form.started')),
                                   const SizedBox(height: 4),
                                   OutlinedButton(
                                     onPressed: () => _pickDate(isStart: true),
                                     child: Text(
                                       _startDate == null
-                                          ? 'Pick start date'
+                                          ? strings.t('period.form.pickStart')
                                           : _formatDate(_startDate!),
                                     ),
                                   ),
@@ -626,13 +686,13 @@ class _PeriodTrackerPageState extends State<PeriodTrackerPage> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text('Period ended'),
+                                  Text(strings.t('period.form.ended')),
                                   const SizedBox(height: 4),
                                   OutlinedButton(
                                     onPressed: () => _pickDate(isStart: false),
                                     child: Text(
                                       _endDate == null
-                                          ? 'Pick end date'
+                                          ? strings.t('period.form.pickEnd')
                                           : _formatDate(_endDate!),
                                     ),
                                   ),
@@ -647,37 +707,41 @@ class _PeriodTrackerPageState extends State<PeriodTrackerPage> {
                           children: [
                             ActionChip(
                               avatar: const Icon(Icons.today),
-                              label: const Text('Period started today'),
+                              label: Text(strings.t('period.form.chip.start')),
                               onPressed: _setTodayStart,
                             ),
                             ActionChip(
                               avatar: const Icon(Icons.flag),
-                              label: const Text('Period ended today'),
+                              label: Text(strings.t('period.form.chip.end')),
                               onPressed: _setTodayEnd,
                             ),
                           ],
                         ),
                         const SizedBox(height: 12),
                         FilledButton(
-                          onPressed: _isSaving ? null : _saveCycle,
-                          child: Text(_isSaving
-                              ? 'Saving...'
-                              : _editingId == null
-                                  ? 'Save cycle'
-                                  : 'Update cycle'),
+                          onPressed:
+                              _isSaving ? null : () => _saveCycle(strings),
+                          child: Text(
+                            _isSaving
+                                ? strings.t('period.form.saving')
+                                : _editingId == null
+                                ? strings.t('period.form.save')
+                                : strings.t('period.form.update'),
+                          ),
                         ),
                         if (_editingId != null)
                           TextButton(
-                            onPressed: _isSaving
-                                ? null
-                                : () {
-                                    setState(() {
-                                      _editingId = null;
-                                      _startDate = null;
-                                      _endDate = null;
-                                    });
-                                  },
-                            child: const Text('Cancel edit'),
+                            onPressed:
+                                _isSaving
+                                    ? null
+                                    : () {
+                                      setState(() {
+                                        _editingId = null;
+                                        _startDate = null;
+                                        _endDate = null;
+                                      });
+                                    },
+                            child: Text(strings.t('period.form.cancel')),
                           ),
                       ],
                     ),
@@ -692,26 +756,24 @@ class _PeriodTrackerPageState extends State<PeriodTrackerPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Cycle insights',
+                          strings.t('period.insights.title'),
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                         const SizedBox(height: 8),
-                        _buildStats(cycles),
+                        _buildStats(cycles, strings),
                         const SizedBox(height: 8),
-                        const Text(
-                          'Cycles are unique and can shift. These estimates are for your own awareness only — not for contraception or medical decisions.',
-                        ),
+                        Text(strings.t('period.insights.note')),
                       ],
                     ),
                   ),
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'Recent cycles',
+                  strings.t('period.list.title'),
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: 8),
-                _buildCycleList(cycles),
+                _buildCycleList(cycles, strings),
               ],
             ),
           );

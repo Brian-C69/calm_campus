@@ -58,20 +58,18 @@ class _TasksPageState extends State<TasksPage> {
             _FilterRow(
               selected: _selectedFilter,
               onSelected: (filter) => setState(() => _selectedFilter = filter),
-              strings: strings,
             ),
             const SizedBox(height: 12),
             _SortRow(
               selected: _selectedSort,
               onSelected: (sort) => setState(() => _selectedSort = sort),
-              strings: strings,
             ),
             const SizedBox(height: 12),
             Expanded(
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : filteredTasks.isEmpty
-                      ? _EmptyState(onAdd: _openTaskComposer, strings: strings)
+                      ? _EmptyState(onAdd: _openTaskComposer)
                       : _selectedSort == _TaskSort.custom
                           ? ReorderableListView.builder(
                               buildDefaultDragHandles: false,
@@ -89,7 +87,6 @@ class _TasksPageState extends State<TasksPage> {
                                       task: task,
                                       onToggle: () => _toggleTask(task),
                                       showDragHandle: true,
-                                      strings: strings,
                                     ),
                                   ),
                                 );
@@ -103,7 +100,6 @@ class _TasksPageState extends State<TasksPage> {
                                 return _TaskCard(
                                   task: task,
                                   onToggle: () => _toggleTask(task),
-                                  strings: strings,
                                 );
                               },
                             ),
@@ -245,10 +241,7 @@ class _TasksPageState extends State<TasksPage> {
               right: 16,
               top: 16,
             ),
-            child: _TaskComposer(
-              onSubmit: _addTask,
-              strings: AppLocalizations.of(context),
-            ),
+            child: _TaskComposer(onSubmit: _addTask),
           ),
         );
       },
@@ -317,20 +310,19 @@ class _TaskSummary extends StatelessWidget {
 }
 
 class _FilterRow extends StatelessWidget {
-  const _FilterRow({required this.selected, required this.onSelected, required this.strings});
-
+  const _FilterRow({required this.selected, required this.onSelected});
   final _TaskFilter selected;
   final ValueChanged<_TaskFilter> onSelected;
-  final AppLocalizations strings;
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context);
     return Wrap(
       spacing: 8,
       children: _TaskFilter.values
           .map(
             (filter) => FilterChip(
-              label: Text(_labelForFilter(filter)),
+              label: Text(_labelForFilter(filter, strings)),
               selected: selected == filter,
               onSelected: (_) => onSelected(filter),
             ),
@@ -339,7 +331,7 @@ class _FilterRow extends StatelessWidget {
     );
   }
 
-  String _labelForFilter(_TaskFilter filter) {
+  String _labelForFilter(_TaskFilter filter, AppLocalizations strings) {
     switch (filter) {
       case _TaskFilter.today:
         return strings.t('tasks.filter.today');
@@ -354,14 +346,14 @@ class _FilterRow extends StatelessWidget {
 }
 
 class _SortRow extends StatelessWidget {
-  const _SortRow({required this.selected, required this.onSelected, required this.strings});
+  const _SortRow({required this.selected, required this.onSelected});
 
   final _TaskSort selected;
   final ValueChanged<_TaskSort> onSelected;
-  final AppLocalizations strings;
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -397,18 +389,20 @@ class _SortRow extends StatelessWidget {
 }
 
 class _TaskCard extends StatelessWidget {
-  const _TaskCard(
-      {required this.task, required this.onToggle, this.showDragHandle = false, required this.strings});
+  const _TaskCard({
+    required this.task,
+    required this.onToggle,
+    this.showDragHandle = false,
+  });
 
   final Task task;
   final VoidCallback onToggle;
   final bool showDragHandle;
-  final AppLocalizations strings;
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final dueText = _dueText(task.dueDate);
+    final dueText = _dueText(context, task.dueDate);
     final isOverdue = task.dueDate.isBefore(DateTime.now()) && task.status == TaskStatus.pending;
 
     return Card(
@@ -468,11 +462,11 @@ class _TaskCard extends StatelessWidget {
     );
   }
 
-  String _dueText(DateTime dueDate) {
+  String _dueText(BuildContext context, DateTime dueDate) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final dueDay = DateTime(dueDate.year, dueDate.month, dueDate.day);
-
+    final strings = AppLocalizations.of(context);
     if (dueDay == today) return strings.t('tasks.due.today');
     if (dueDay.isBefore(today)) {
       return '${strings.t('tasks.due.overdue')} - ${_formatDate(dueDate)}';
@@ -526,13 +520,13 @@ class _PriorityBadge extends StatelessWidget {
 }
 
 class _EmptyState extends StatelessWidget {
-  const _EmptyState({required this.onAdd, required this.strings});
+  const _EmptyState({required this.onAdd});
 
   final VoidCallback onAdd;
-  final AppLocalizations strings;
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context);
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -555,10 +549,9 @@ class _EmptyState extends StatelessWidget {
 }
 
 class _TaskComposer extends StatefulWidget {
-  const _TaskComposer({required this.onSubmit, required this.strings});
+  const _TaskComposer({required this.onSubmit});
 
   final ValueChanged<Task> onSubmit;
-  final AppLocalizations strings;
 
   @override
   State<_TaskComposer> createState() => _TaskComposerState();
@@ -586,7 +579,7 @@ class _TaskComposerState extends State<_TaskComposer> {
 
   @override
   Widget build(BuildContext context) {
-    final strings = widget.strings;
+    final strings = AppLocalizations.of(context);
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,

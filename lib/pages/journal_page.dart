@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
 import '../models/journal_entry.dart';
 import '../services/db_service.dart';
 import '../services/login_nudge_service.dart';
@@ -34,7 +35,7 @@ class _JournalPageState extends State<JournalPage> {
   Future<void> _saveEntry() async {
     final String text = _controller.text.trim();
     if (text.isEmpty) {
-      _showMessage('Write a little note first.');
+      _showMessage(AppLocalizations.of(context).t('journal.error.empty'));
       return;
     }
 
@@ -55,7 +56,7 @@ class _JournalPageState extends State<JournalPage> {
       _isSaving = false;
     });
 
-    _showMessage('Saved on this device.');
+    _showMessage(AppLocalizations.of(context).t('journal.saved'));
   }
 
   Future<void> _loadInitialState() async {
@@ -76,16 +77,15 @@ class _JournalPageState extends State<JournalPage> {
   Future<bool> _ensureLoggedInForSaving() async {
     if (_isLoggedIn) return true;
 
-    final LoginNudgeAction action = await LoginNudgeService.instance.maybePrompt(
-      context,
-      LoginNudgeTrigger.journalSave,
-    );
+    final LoginNudgeAction action = await LoginNudgeService.instance
+        .maybePrompt(context, LoginNudgeTrigger.journalSave);
 
     if (!mounted) return false;
     if (action == LoginNudgeAction.loginSelected) {
       await Navigator.pushNamed(context, '/auth');
       if (!mounted) return _isLoggedIn;
-      final bool refreshedLogin = await UserProfileService.instance.isLoggedIn();
+      final bool refreshedLogin =
+          await UserProfileService.instance.isLoggedIn();
       setState(() => _isLoggedIn = refreshedLogin);
       if (refreshedLogin) {
         await _loadEntries();
@@ -93,21 +93,22 @@ class _JournalPageState extends State<JournalPage> {
     }
 
     if (!_isLoggedIn) {
-      _showMessage('Log in to save your journal so it stays here.');
+      _showMessage(AppLocalizations.of(context).t('journal.nudge'));
     }
 
     return _isLoggedIn;
   }
 
   void _showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _loadEntries() async {
     setState(() => _isLoadingEntries = true);
-    final List<JournalEntry> entries = await DbService.instance.getJournalEntries();
+    final List<JournalEntry> entries =
+        await DbService.instance.getJournalEntries();
     if (!mounted) return;
     setState(() {
       _entries
@@ -119,15 +120,16 @@ class _JournalPageState extends State<JournalPage> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Journal')),
+      appBar: AppBar(title: Text(strings.t('journal.title'))),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Write a few lines to yourself. This stays on your device unless you choose to log in.',
+              strings.t('journal.intro'),
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 12),
@@ -135,57 +137,68 @@ class _JournalPageState extends State<JournalPage> {
               controller: _controller,
               maxLines: 5,
               minLines: 3,
-              decoration: const InputDecoration(
-                labelText: 'What is on your mind?',
-                hintText: 'Free-write a few sentences',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: strings.t('journal.field.label'),
+                hintText: strings.t('journal.field.hint'),
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                icon: _isSaving
-                    ? const SizedBox(
-                        height: 18,
-                        width: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.bookmark_added_outlined),
-                label: Text(_isSaving ? 'Saving...' : 'Save journal'),
+                icon:
+                    _isSaving
+                        ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                        : const Icon(Icons.bookmark_added_outlined),
+                label: Text(
+                  _isSaving
+                      ? strings.t('journal.saving')
+                      : strings.t('journal.save'),
+                ),
                 onPressed: _isSaving ? null : _saveEntry,
               ),
             ),
             const SizedBox(height: 16),
             Expanded(
-              child: _isLoadingEntries
-                  ? const Center(child: CircularProgressIndicator())
-                  : _entries.isEmpty
+              child:
+                  _isLoadingEntries
+                      ? const Center(child: CircularProgressIndicator())
+                      : _entries.isEmpty
                       ? Center(
-                          child: Text(
-                            _isLoggedIn
-                                ? 'No journal entries yet. Your reflections will be stored here.'
-                                : 'Log in first so we can keep your journal safe and ready for next time.',
-                            textAlign: TextAlign.center,
-                          ),
-                        )
-                      : ListView.separated(
-                          itemCount: _entries.length,
-                          separatorBuilder: (_, __) => const SizedBox(height: 8),
-                          itemBuilder: (context, index) {
-                            final JournalEntry entry = _entries[index];
-                            return Card(
-                              elevation: 0,
-                              child: ListTile(
-                                leading: const Icon(Icons.book_rounded),
-                                title: Text(entry.content),
-                                subtitle: Text(
-                                  'Saved ${_formatDate(entry.createdAt)} on this device',
-                                ),
-                              ),
-                            );
-                          },
+                        child: Text(
+                          _isLoggedIn
+                              ? strings.t('journal.empty.loggedIn')
+                              : strings.t('journal.empty.guest'),
+                          textAlign: TextAlign.center,
                         ),
+                      )
+                      : ListView.separated(
+                        itemCount: _entries.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 8),
+                        itemBuilder: (context, index) {
+                          final JournalEntry entry = _entries[index];
+                          return Card(
+                            elevation: 0,
+                            child: ListTile(
+                              leading: const Icon(Icons.book_rounded),
+                              title: Text(entry.content),
+                              subtitle: Text(
+                                strings
+                                    .t('journal.saved.on')
+                                    .replaceFirst(
+                                      '{timestamp}',
+                                      _formatDate(entry.createdAt),
+                                    ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
             ),
           ],
         ),

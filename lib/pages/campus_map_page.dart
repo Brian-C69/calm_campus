@@ -3,6 +3,8 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../l10n/app_localizations.dart';
+
 class CampusMapPage extends StatefulWidget {
   const CampusMapPage({super.key});
 
@@ -544,6 +546,7 @@ class _CampusMapPageState extends State<CampusMapPage> {
   }
 
   Future<void> _loadCurrentLocation() async {
+    final strings = AppLocalizations.of(context);
     setState(() {
       _isLoadingLocation = true;
       _locationError = null;
@@ -553,7 +556,7 @@ class _CampusMapPageState extends State<CampusMapPage> {
       final serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
         setState(() {
-          _locationError = 'Location services are turned off on this device.';
+          _locationError = strings.t('campus.locationError');
         });
         return;
       }
@@ -566,15 +569,14 @@ class _CampusMapPageState extends State<CampusMapPage> {
       if (permission == LocationPermission.deniedForever ||
           permission == LocationPermission.denied) {
         setState(() {
-          _locationError =
-          'We don\'t have permission to see your location. You can still view the campus map without it.';
+          _locationError = strings.t('campus.error');
         });
         return;
       }
 
       const locationSettings = LocationSettings(
         accuracy: LocationAccuracy.high, // same behaviour as before
-        distanceFilter: 0,               // report all movements
+        distanceFilter: 0, // report all movements
       );
 
       final position = await Geolocator.getCurrentPosition(
@@ -586,8 +588,7 @@ class _CampusMapPageState extends State<CampusMapPage> {
       });
     } catch (e) {
       setState(() {
-        _locationError =
-        'We could not get your current location right now. You can still explore the map.';
+        _locationError = strings.t('campus.locationError');
       });
     } finally {
       if (mounted) {
@@ -598,9 +599,9 @@ class _CampusMapPageState extends State<CampusMapPage> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context);
     final theme = Theme.of(context);
 
     final LatLng mapCenter = _currentPosition ?? _tarUmtCenter;
@@ -614,9 +615,10 @@ class _CampusMapPageState extends State<CampusMapPage> {
           point: LatLng(location.latitude, location.longitude),
           child: Icon(
             Icons.location_on,
-            color: location.id == _selectedLocation?.id
-                ? theme.colorScheme.primary
-                : theme.colorScheme.secondary,
+            color:
+                location.id == _selectedLocation?.id
+                    ? theme.colorScheme.primary
+                    : theme.colorScheme.secondary,
             size: 32,
           ),
         ),
@@ -635,15 +637,11 @@ class _CampusMapPageState extends State<CampusMapPage> {
     ];
 
     final polylines = <Polyline>[
-      if (_currentPosition != null &&
-          _selectedLocation != null)
+      if (_currentPosition != null && _selectedLocation != null)
         Polyline(
           points: [
             _currentPosition!,
-            LatLng(
-              _selectedLocation!.latitude,
-              _selectedLocation!.longitude,
-            ),
+            LatLng(_selectedLocation!.latitude, _selectedLocation!.longitude),
           ],
           strokeWidth: 4,
           color: theme.colorScheme.primary,
@@ -651,9 +649,7 @@ class _CampusMapPageState extends State<CampusMapPage> {
     ];
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Campus Map (TAR UMT)'),
-      ),
+      appBar: AppBar(title: Text(strings.t('campus.title'))),
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -664,7 +660,7 @@ class _CampusMapPageState extends State<CampusMapPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Find your way around campus.',
+                    strings.t('campus.intro.title'),
                     style: theme.textTheme.titleMedium,
                   ),
                   const SizedBox(height: 4),
@@ -683,14 +679,17 @@ class _CampusMapPageState extends State<CampusMapPage> {
                         _selectedLocation = value;
                       });
                     },
-                    items: _campusLocations
-                        .map(
-                          (location) => DropdownMenuItem<CampusLocation>(
-                            value: location,
-                            child: Text('${location.campusZone} • ${location.name}'),
-                          ),
-                        )
-                        .toList(),
+                    items:
+                        _campusLocations
+                            .map(
+                              (location) => DropdownMenuItem<CampusLocation>(
+                                value: location,
+                                child: Text(
+                                  '${location.campusZone} • ${location.name}',
+                                ),
+                              ),
+                            )
+                            .toList(),
                   ),
                   if (_isLoadingLocation)
                     Padding(
@@ -704,7 +703,7 @@ class _CampusMapPageState extends State<CampusMapPage> {
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            'Finding where you are on campus...',
+                            strings.t('campus.loading'),
                             style: theme.textTheme.bodySmall,
                           ),
                         ],
@@ -753,7 +752,7 @@ class _CampusMapPageState extends State<CampusMapPage> {
               padding: const EdgeInsets.all(12),
               child: Text(
                 _currentPosition != null && _selectedLocation != null
-                    ? 'Blue dot shows you, red marker shows the selected place. Walking towards it a bit earlier can help you arrive calmer.'
+                    ? strings.t('campus.legend')
                     : 'Map data © OpenStreetMap contributors. This map is meant to gently help you find your way, not track you.',
                 style: theme.textTheme.bodySmall,
                 textAlign: TextAlign.center,

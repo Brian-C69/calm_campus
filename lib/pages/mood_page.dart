@@ -5,7 +5,7 @@ import '../services/db_service.dart';
 import '../services/login_nudge_service.dart';
 import '../services/user_profile_service.dart';
 import '../l10n/app_localizations.dart';
-import '../l10n/app_localizations.dart';
+import '../utils/mood_labels.dart';
 
 class MoodOption {
   const MoodOption({
@@ -65,20 +65,15 @@ class _MoodPageState extends State<MoodPage> {
   }
 
   List<MoodOption> _moodOptions(AppLocalizations strings) {
-    return [
-      MoodOption(label: strings.t('mood.option.happy'), emoji: '😊', level: MoodLevel.happy),
-      MoodOption(label: strings.t('mood.option.excited'), emoji: '🤩', level: MoodLevel.excited),
-      MoodOption(label: strings.t('mood.option.grateful'), emoji: '🙏', level: MoodLevel.grateful),
-      MoodOption(label: strings.t('mood.option.relaxed'), emoji: '😌', level: MoodLevel.relaxed),
-      MoodOption(label: strings.t('mood.option.content'), emoji: '🙂', level: MoodLevel.content),
-      MoodOption(label: strings.t('mood.option.tired'), emoji: '🥱', level: MoodLevel.tired),
-      MoodOption(label: strings.t('mood.option.unsure'), emoji: '🤔', level: MoodLevel.unsure),
-      MoodOption(label: strings.t('mood.option.bored'), emoji: '😐', level: MoodLevel.bored),
-      MoodOption(label: strings.t('mood.option.anxious'), emoji: '😟', level: MoodLevel.anxious),
-      MoodOption(label: strings.t('mood.option.angry'), emoji: '😠', level: MoodLevel.angry),
-      MoodOption(label: strings.t('mood.option.stressed'), emoji: '😣', level: MoodLevel.stressed),
-      MoodOption(label: strings.t('mood.option.sad'), emoji: '😔', level: MoodLevel.sad),
-    ];
+    return MoodLevel.values
+        .map(
+          (level) => MoodOption(
+            label: moodLabel(level, strings),
+            emoji: moodEmojis[level]!,
+            level: level,
+          ),
+        )
+        .toList();
   }
 
   Future<void> _saveMood() async {
@@ -107,17 +102,17 @@ class _MoodPageState extends State<MoodPage> {
     });
     _noteController.clear();
     _showMessage(
-      AppLocalizations.of(context).t('mood.saved').replaceFirst('{name}', _userName),
+      AppLocalizations.of(
+        context,
+      ).t('mood.saved').replaceFirst('{name}', _userName),
     );
   }
 
   Future<void> _handleLoginNudge() async {
     if (!mounted || _hasPromptedForLogin) return;
 
-    final LoginNudgeAction action = await LoginNudgeService.instance.maybePrompt(
-      context,
-      LoginNudgeTrigger.moodHistorySave,
-    );
+    final LoginNudgeAction action = await LoginNudgeService.instance
+        .maybePrompt(context, LoginNudgeTrigger.moodHistorySave);
 
     if (!mounted) return;
     setState(() {
@@ -137,13 +132,16 @@ class _MoodPageState extends State<MoodPage> {
     if (note.isEmpty) {
       return strings.t('mood.note.default').replaceFirst('{name}', name);
     }
-    return '$note — $name';
+    return strings
+        .t('mood.note.append')
+        .replaceFirst('{note}', note)
+        .replaceFirst('{name}', name);
   }
 
   void _showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -171,18 +169,14 @@ class _MoodPageState extends State<MoodPage> {
             children: [
               Text(
                 '${_timeGreeting(strings)}, $_userName!',
-                style: textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                style: textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 4),
-              Text(
-                strings.t('mood.subtitle'),
-                style: textTheme.bodyMedium,
-              ),
+              Text(strings.t('mood.subtitle'), style: textTheme.bodyMedium),
               const SizedBox(height: 24),
-              Text(
-                strings.t('mood.prompt'),
-                style: textTheme.titleLarge,
-              ),
+              Text(strings.t('mood.prompt'), style: textTheme.titleLarge),
               const SizedBox(height: 8),
               Text(
                 strings.t('mood.instruction'),
@@ -197,21 +191,24 @@ class _MoodPageState extends State<MoodPage> {
                       Wrap(
                         spacing: 12,
                         runSpacing: 12,
-                        children: moodOptions
-                            .map(
-                              (option) => ChoiceChip(
-                                label: Text('${option.emoji} ${option.label}'),
-                                selected: _selectedMood == option.level,
-                                onSelected: (_) async {
-                                  await _handleLoginNudge();
-                                  if (!mounted) return;
-                                  setState(() {
-                                    _selectedMood = option.level;
-                                  });
-                                },
-                              ),
-                            )
-                            .toList(),
+                        children:
+                            moodOptions
+                                .map(
+                                  (option) => ChoiceChip(
+                                    label: Text(
+                                      '${option.emoji} ${option.label}',
+                                    ),
+                                    selected: _selectedMood == option.level,
+                                    onSelected: (_) async {
+                                      await _handleLoginNudge();
+                                      if (!mounted) return;
+                                      setState(() {
+                                        _selectedMood = option.level;
+                                      });
+                                    },
+                                  ),
+                                )
+                                .toList(),
                       ),
                       const SizedBox(height: 20),
                       TextField(
@@ -233,14 +230,19 @@ class _MoodPageState extends State<MoodPage> {
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   onPressed: _isSaving ? null : _saveMood,
-                  icon: _isSaving
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.check),
-                  label: Text(_isSaving ? strings.t('mood.saving') : strings.t('mood.save')),
+                  icon:
+                      _isSaving
+                          ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                          : const Icon(Icons.check),
+                  label: Text(
+                    _isSaving
+                        ? strings.t('mood.saving')
+                        : strings.t('mood.save'),
+                  ),
                 ),
               ),
             ],

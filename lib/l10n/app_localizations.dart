@@ -37,6 +37,7 @@ class AppLocalizations {
   }
 
   String t(String key) => _strings[key] ?? key;
+  String get localeName => locale.toLanguageTag();
 
   static String _localeCode(Locale locale) {
     if (locale.languageCode == 'zh') return 'zh';

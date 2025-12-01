@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
+import '../models/announcement.dart';
 import '../models/class_entry.dart';
 
 class NotificationService {
@@ -136,6 +137,27 @@ class NotificationService {
     }
   }
 
+  Future<void> showAnnouncementAlert(Announcement announcement) async {
+    final String body =
+        announcement.summary.isNotEmpty ? announcement.summary : _truncateBody(announcement.body);
+
+    await _plugin.show(
+      _notificationIdForAnnouncement(announcement),
+      announcement.title,
+      body,
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'campus_news',
+          'Campus news',
+          channelDescription: 'Updates from DSA and wellness team',
+          importance: Importance.high,
+          priority: Priority.high,
+        ),
+        iOS: DarwinNotificationDetails(),
+      ),
+    );
+  }
+
   TimeOfDay? _parseTime(String raw) {
     final String cleaned = raw.trim();
     try {
@@ -183,4 +205,14 @@ class NotificationService {
   }
 
   int _notificationIdForEntry(ClassEntry entry) => 1000 + (entry.id ?? entry.subject.hashCode).abs();
+
+  int _notificationIdForAnnouncement(Announcement announcement) {
+    final int base = announcement.id ?? announcement.title.hashCode;
+    return 3000 + base.abs();
+  }
+
+  String _truncateBody(String body, {int maxChars = 120}) {
+    if (body.length <= maxChars) return body;
+    return '${body.substring(0, maxChars)}...';
+  }
 }

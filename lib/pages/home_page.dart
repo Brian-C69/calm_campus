@@ -52,6 +52,7 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     final routes = <_HomeRouteInfo>[
       _HomeRouteInfo('Mood Check-in', Icons.favorite, '/mood'),
+      _HomeRouteInfo('Latest news', Icons.campaign, '/announcements'),
       _HomeRouteInfo('Campus map', Icons.map, '/campus-map'),
       _HomeRouteInfo('Weather & planning', Icons.cloud, '/weather'),
       _HomeRouteInfo('Journal', Icons.menu_book, '/journal'),

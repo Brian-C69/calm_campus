@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
+import '../models/announcement.dart';
 import '../models/class_entry.dart';
 import '../models/journal_entry.dart';
 import '../models/mood_entry.dart';
@@ -18,7 +19,7 @@ class DbService {
   static final DbService instance = DbService._();
 
   static const String _databaseName = 'calm_campus.db';
-  static const int _databaseVersion = 8;
+  static const int _databaseVersion = 9;
 
   static const String _moodsTable = 'moods';
   static const String _classesTable = 'classes';
@@ -28,6 +29,7 @@ class DbService {
   static const String _periodCyclesTable = 'period_cycles';
   static const String _supportContactsTable = 'support_contacts';
   static const String _movementEntriesTable = 'movement_entries';
+  static const String _announcementsTable = 'announcements';
 
   Database? _database;
 
@@ -47,6 +49,7 @@ class DbService {
       await _createPeriodCyclesTable(db);
       await _createSupportContactsTable(db);
       await _createMovementEntriesTable(db);
+      await _createAnnouncementsTable(db);
     }, onUpgrade: (Database db, int oldVersion, int newVersion) async {
       if (oldVersion < 2) {
         await db.execute(
@@ -81,6 +84,10 @@ class DbService {
 
       if (oldVersion < 8) {
         await _createMovementEntriesTable(db);
+      }
+
+      if (oldVersion < 9) {
+        await _createAnnouncementsTable(db);
       }
     });
 
@@ -187,7 +194,21 @@ class DbService {
         intensity TEXT NOT NULL,
         energyBefore INTEGER,
         energyAfter INTEGER,
-        note TEXT
+      note TEXT
+    )
+    ''');
+  }
+
+  Future<void> _createAnnouncementsTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE $_announcementsTable (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        summary TEXT NOT NULL,
+        body TEXT NOT NULL,
+        author TEXT NOT NULL,
+        category TEXT,
+        publishedAt TEXT NOT NULL
       )
     ''');
   }
@@ -625,6 +646,41 @@ class DbService {
     final Database db = await database;
     return db.delete(
       _movementEntriesTable,
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<int> insertAnnouncement(Announcement announcement) async {
+    final Database db = await database;
+    return db.insert(_announcementsTable, announcement.toMap());
+  }
+
+  Future<void> replaceAnnouncements(List<Announcement> announcements) async {
+    final Database db = await database;
+    await db.transaction((txn) async {
+      await txn.delete(_announcementsTable);
+      for (final Announcement announcement in announcements) {
+        await txn.insert(_announcementsTable, announcement.toMap());
+      }
+    });
+  }
+
+  Future<List<Announcement>> getAnnouncements({int? limit}) async {
+    final Database db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      _announcementsTable,
+      orderBy: 'publishedAt DESC',
+      limit: limit,
+    );
+
+    return maps.map(Announcement.fromMap).toList();
+  }
+
+  Future<int> deleteAnnouncement(int id) async {
+    final Database db = await database;
+    return db.delete(
+      _announcementsTable,
       where: 'id = ?',
       whereArgs: [id],
     );

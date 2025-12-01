@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'pages/auth_page.dart';
+import 'pages/announcements_page.dart';
 import 'pages/chat_page.dart';
 import 'pages/common_challenges_page.dart';
 import 'pages/dsa_summary_page.dart';
@@ -68,6 +69,7 @@ class MyApp extends StatelessWidget {
         '/movement': (_) => const MovementPage(),
         '/campus-map': (_) => const CampusMapPage(),
         '/weather': (_) => const WeatherPage(),
+        '/announcements': (_) => const AnnouncementsPage(),
       },
     );
   }

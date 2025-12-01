@@ -5,6 +5,7 @@ import '../services/db_service.dart';
 import '../services/login_nudge_service.dart';
 import '../services/user_profile_service.dart';
 import '../services/notification_service.dart';
+import '../l10n/app_localizations.dart';
 
 class TimetablePage extends StatefulWidget {
   const TimetablePage({super.key});
@@ -131,6 +132,7 @@ class _TimetablePageState extends State<TimetablePage> {
     final GlobalKey<FormState> formKey = GlobalKey<FormState>();
     final bool isEditing = existing != null;
     const List<String> classTypes = ['Lecture (L)', 'Practical (P)', 'Tutorial (T)'];
+    final strings = AppLocalizations.of(context);
     final TextEditingController courseCodeController =
         TextEditingController(text: existing?.subject ?? '');
     final TextEditingController venueController =
@@ -190,23 +192,25 @@ class _TimetablePageState extends State<TimetablePage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          isEditing ? 'Edit class' : 'Add a class to your timetable',
+                          isEditing
+                              ? strings.t('timetable.sheet.edit')
+                              : strings.t('timetable.sheet.add'),
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                         const SizedBox(height: 12),
                         TextFormField(
                           controller: courseCodeController,
-                          decoration: const InputDecoration(
-                            labelText: 'Course Code',
-                            hintText: 'e.g. BMIT2073',
+                          decoration: InputDecoration(
+                            labelText: strings.t('timetable.courseCode'),
+                            hintText: strings.t('timetable.courseCode.hint'),
                           ),
                           validator: (value) =>
-                              value == null || value.trim().isEmpty ? 'Enter a course code' : null,
+                              value == null || value.trim().isEmpty ? strings.t('timetable.courseCode') : null,
                         ),
                         if (_courseCodeSuggestions.isNotEmpty) ...[
                           const SizedBox(height: 8),
                           Text(
-                            'Pick a recent code to save typing:',
+                            strings.t('timetable.courseCode.recent'),
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
                           const SizedBox(height: 4),
@@ -230,7 +234,7 @@ class _TimetablePageState extends State<TimetablePage> {
                         const SizedBox(height: 12),
                         DropdownButtonFormField<int>(
                           value: selectedDay,
-                          decoration: const InputDecoration(labelText: 'Day of week'),
+                          decoration: InputDecoration(labelText: strings.t('timetable.dayOfWeek')),
                           items: List.generate(
                             _dayNames.length,
                             (index) => DropdownMenuItem<int>(
@@ -244,9 +248,9 @@ class _TimetablePageState extends State<TimetablePage> {
                         const SizedBox(height: 12),
                         DropdownButtonFormField<String>(
                           value: classType,
-                          decoration: const InputDecoration(labelText: 'Type'),
+                          decoration: InputDecoration(labelText: strings.t('timetable.type')),
                           items: classTypes
-                              .map((type) => DropdownMenuItem(value: type, child: Text(type)))
+                              .map((type) => DropdownMenuItem(value: type, child: Text(strings.t(_typeKey(type)))))
                               .toList(),
                           onChanged: (value) =>
                               setSheetState(() => classType = value ?? classTypes.first),
@@ -254,16 +258,16 @@ class _TimetablePageState extends State<TimetablePage> {
                         const SizedBox(height: 12),
                         TextFormField(
                           controller: venueController,
-                          decoration: const InputDecoration(labelText: 'Venue'),
+                          decoration: InputDecoration(labelText: strings.t('timetable.venue')),
                           validator: (value) =>
-                              value == null || value.trim().isEmpty ? 'Enter the venue' : null,
+                              value == null || value.trim().isEmpty ? strings.t('timetable.venue') : null,
                         ),
                         const SizedBox(height: 12),
                         TextFormField(
                           controller: lecturerController,
-                          decoration: const InputDecoration(labelText: 'Lecturer'),
+                          decoration: InputDecoration(labelText: strings.t('timetable.lecturer')),
                           validator: (value) =>
-                              value == null || value.trim().isEmpty ? 'Enter the lecturer name' : null,
+                              value == null || value.trim().isEmpty ? strings.t('timetable.lecturer') : null,
                         ),
                         const SizedBox(height: 12),
                         Row(
@@ -273,7 +277,7 @@ class _TimetablePageState extends State<TimetablePage> {
                                 onPressed: () => selectTime(true),
                                 icon: const Icon(Icons.play_arrow),
                                 label: Text(startTime == null
-                                    ? 'Start time'
+                                    ? strings.t('timetable.startTime')
                                     : _formatTimeOfDay(startTime!)),
                               ),
                             ),
@@ -282,8 +286,11 @@ class _TimetablePageState extends State<TimetablePage> {
                               child: OutlinedButton.icon(
                                 onPressed: () => selectTime(false),
                                 icon: const Icon(Icons.stop),
-                                label:
-                                    Text(endTime == null ? 'End time' : _formatTimeOfDay(endTime!)),
+                                label: Text(
+                                  endTime == null
+                                      ? strings.t('timetable.endTime')
+                                      : _formatTimeOfDay(endTime!),
+                                ),
                               ),
                             ),
                           ],
@@ -292,7 +299,7 @@ class _TimetablePageState extends State<TimetablePage> {
                           Padding(
                             padding: const EdgeInsets.only(top: 8.0),
                             child: Text(
-                              'Please pick both start and end times.',
+                              strings.t('timetable.timeError'),
                               style: TextStyle(color: Theme.of(context).colorScheme.error),
                             ),
                           ),
@@ -334,11 +341,16 @@ class _TimetablePageState extends State<TimetablePage> {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(
-                                      isEditing ? 'Class updated in your timetable.' : 'Class added to your timetable.'),
+                                    isEditing
+                                        ? strings.t('timetable.updated')
+                                        : strings.t('timetable.added'),
+                                  ),
                                 ),
                               );
                             },
-                            child: Text(isEditing ? 'Save changes' : 'Save class'),
+                            child: Text(isEditing
+                                ? strings.t('timetable.saveChanges')
+                                : strings.t('timetable.save')),
                           ),
                         ),
                       ],
@@ -354,6 +366,7 @@ class _TimetablePageState extends State<TimetablePage> {
   }
 
   Future<void> _showClassActions(ClassEntry entry) async {
+    final strings = AppLocalizations.of(context);
     final String? action = await showModalBottomSheet<String>(
       context: context,
       showDragHandle: true,
@@ -363,17 +376,17 @@ class _TimetablePageState extends State<TimetablePage> {
           children: [
             ListTile(
               leading: const Icon(Icons.edit),
-              title: const Text('Edit class'),
+              title: Text(strings.t('timetable.actions.edit')),
               onTap: () => Navigator.of(context).pop('edit'),
             ),
             ListTile(
               leading: const Icon(Icons.delete_outline),
-              title: const Text('Delete class'),
+              title: Text(strings.t('timetable.actions.delete')),
               onTap: () => Navigator.of(context).pop('delete'),
             ),
             ListTile(
               leading: const Icon(Icons.close),
-              title: const Text('Cancel'),
+              title: Text(strings.t('common.cancel')),
               onTap: () => Navigator.of(context).pop(),
             ),
           ],
@@ -389,19 +402,25 @@ class _TimetablePageState extends State<TimetablePage> {
   }
 
   Future<void> _confirmDelete(ClassEntry entry) async {
+    final strings = AppLocalizations.of(context);
     final bool? confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Remove this class?'),
-        content: Text('Delete ${entry.subject} (${entry.classType}) from your timetable?'),
+        title: Text(strings.t('timetable.delete.title')),
+        content: Text(
+          strings
+              .t('timetable.delete.message')
+              .replaceFirst('{subject}', entry.subject)
+              .replaceFirst('{type}', entry.classType),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+            child: Text(strings.t('common.cancel')),
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Delete'),
+            child: Text(strings.t('common.delete')),
           ),
         ],
       ),
@@ -422,11 +441,23 @@ class _TimetablePageState extends State<TimetablePage> {
     }
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Class removed.')),
+      SnackBar(content: Text(strings.t('timetable.removed'))),
     );
   }
 
+  String _typeKey(String raw) {
+    switch (raw) {
+      case 'Practical (P)':
+        return 'timetable.type.practical';
+      case 'Tutorial (T)':
+        return 'timetable.type.tutorial';
+      default:
+        return 'timetable.type.lecture';
+    }
+  }
+
   List<Widget> _buildClassSections() {
+    final strings = AppLocalizations.of(context);
     if (_classes.isEmpty) {
       return [
         const SizedBox(height: 16),
@@ -436,12 +467,10 @@ class _TimetablePageState extends State<TimetablePage> {
             padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                Text('No classes yet'),
-                SizedBox(height: 8),
-                Text(
-                  'Add your first class with details like course code, type, venue, lecturer, and time range.',
-                ),
+              children: [
+                Text(strings.t('timetable.empty.title')),
+                const SizedBox(height: 8),
+                Text(strings.t('timetable.empty.subtitle')),
               ],
             ),
           ),
@@ -530,11 +559,11 @@ class _TimetablePageState extends State<TimetablePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Timetable')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context).t('timetable.title'))),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openClassForm(),
         icon: const Icon(Icons.add),
-        label: const Text('Add class'),
+        label: Text(AppLocalizations.of(context).t('timetable.cta')),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -542,7 +571,7 @@ class _TimetablePageState extends State<TimetablePage> {
               padding: const EdgeInsets.all(16),
               children: [
                 Text(
-                  'Plan your week and choose whether to keep reminders as a guest or with an account.',
+                  AppLocalizations.of(context).t('timetable.plan.subtitle'),
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
                 const SizedBox(height: 12),
@@ -552,9 +581,9 @@ class _TimetablePageState extends State<TimetablePage> {
                   label: Text(
                     _remindersEnabled
                         ? _isLoggedIn
-                            ? 'Reminders on (saved to your account)'
-                            : 'Reminders on (guest mode)'
-                        : 'Set up timetable reminders',
+                            ? AppLocalizations.of(context).t('timetable.reminders.on.logged')
+                            : AppLocalizations.of(context).t('timetable.reminders.on.guest')
+                        : AppLocalizations.of(context).t('timetable.reminders.setup'),
                   ),
                 ),
                 ..._buildClassSections(),

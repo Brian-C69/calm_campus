@@ -1,9 +1,11 @@
 import 'dart:collection';
 
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../models/task.dart';
 import '../services/db_service.dart';
+import '../l10n/app_localizations.dart';
 
 class TasksPage extends StatefulWidget {
   const TasksPage({super.key});
@@ -30,16 +32,17 @@ class _TasksPageState extends State<TasksPage> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context);
     final List<Task> filteredTasks = _filteredTasks();
     final pendingCount = _tasks.where((task) => task.status == TaskStatus.pending).length;
     final completedCount = _tasks.length - pendingCount;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Tasks'),
+        title: Text(strings.t('tasks.title')),
         actions: [
           IconButton(
-            tooltip: 'Clear completed tasks',
+            tooltip: strings.t('tasks.clearCompleted'),
             onPressed: completedCount > 0 ? _clearCompleted : null,
             icon: const Icon(Icons.clear_all),
           ),
@@ -55,18 +58,20 @@ class _TasksPageState extends State<TasksPage> {
             _FilterRow(
               selected: _selectedFilter,
               onSelected: (filter) => setState(() => _selectedFilter = filter),
+              strings: strings,
             ),
             const SizedBox(height: 12),
             _SortRow(
               selected: _selectedSort,
               onSelected: (sort) => setState(() => _selectedSort = sort),
+              strings: strings,
             ),
             const SizedBox(height: 12),
             Expanded(
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : filteredTasks.isEmpty
-                      ? _EmptyState(onAdd: _openTaskComposer)
+                      ? _EmptyState(onAdd: _openTaskComposer, strings: strings)
                       : _selectedSort == _TaskSort.custom
                           ? ReorderableListView.builder(
                               buildDefaultDragHandles: false,
@@ -84,6 +89,7 @@ class _TasksPageState extends State<TasksPage> {
                                       task: task,
                                       onToggle: () => _toggleTask(task),
                                       showDragHandle: true,
+                                      strings: strings,
                                     ),
                                   ),
                                 );
@@ -97,6 +103,7 @@ class _TasksPageState extends State<TasksPage> {
                                 return _TaskCard(
                                   task: task,
                                   onToggle: () => _toggleTask(task),
+                                  strings: strings,
                                 );
                               },
                             ),
@@ -107,7 +114,7 @@ class _TasksPageState extends State<TasksPage> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _openTaskComposer,
         icon: const Icon(Icons.add_task),
-        label: const Text('New task'),
+        label: Text(strings.t('tasks.new')),
       ),
     );
   }
@@ -238,7 +245,10 @@ class _TasksPageState extends State<TasksPage> {
               right: 16,
               top: 16,
             ),
-            child: _TaskComposer(onSubmit: _addTask),
+            child: _TaskComposer(
+              onSubmit: _addTask,
+              strings: AppLocalizations.of(context),
+            ),
           ),
         );
       },
@@ -270,6 +280,7 @@ class _TaskSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context);
     final colorScheme = Theme.of(context).colorScheme;
     return Card(
       color: colorScheme.surfaceContainerHigh,
@@ -279,21 +290,22 @@ class _TaskSummary extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Study planner', style: Theme.of(context).textTheme.titleMedium),
+            Text(strings.t('tasks.summary.title'),
+                style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 4),
-            Text('Keep your tasks light and doable today.',
+            Text(strings.t('tasks.summary.subtitle'),
                 style: Theme.of(context).textTheme.bodyMedium),
             const SizedBox(height: 12),
             Wrap(
               spacing: 12,
               runSpacing: 4,
               children: [
-                Text('$pendingCount pending',
+                Text('${strings.t('tasks.pending')}: $pendingCount',
                     style: Theme.of(context)
                         .textTheme
                         .titleSmall
                         ?.copyWith(color: colorScheme.primary)),
-                Text('$completedCount done',
+                Text('${strings.t('tasks.done')}: $completedCount',
                     style: Theme.of(context).textTheme.bodySmall),
               ],
             ),
@@ -305,10 +317,11 @@ class _TaskSummary extends StatelessWidget {
 }
 
 class _FilterRow extends StatelessWidget {
-  const _FilterRow({required this.selected, required this.onSelected});
+  const _FilterRow({required this.selected, required this.onSelected, required this.strings});
 
   final _TaskFilter selected;
   final ValueChanged<_TaskFilter> onSelected;
+  final AppLocalizations strings;
 
   @override
   Widget build(BuildContext context) {
@@ -329,22 +342,23 @@ class _FilterRow extends StatelessWidget {
   String _labelForFilter(_TaskFilter filter) {
     switch (filter) {
       case _TaskFilter.today:
-        return 'Today';
+        return strings.t('tasks.filter.today');
       case _TaskFilter.week:
-        return 'This week';
+        return strings.t('tasks.filter.week');
       case _TaskFilter.completed:
-        return 'Completed';
+        return strings.t('tasks.filter.completed');
       case _TaskFilter.all:
-      return 'All';
+        return strings.t('tasks.filter.all');
     }
   }
 }
 
 class _SortRow extends StatelessWidget {
-  const _SortRow({required this.selected, required this.onSelected});
+  const _SortRow({required this.selected, required this.onSelected, required this.strings});
 
   final _TaskSort selected;
   final ValueChanged<_TaskSort> onSelected;
+  final AppLocalizations strings;
 
   @override
   Widget build(BuildContext context) {
@@ -355,7 +369,7 @@ class _SortRow extends StatelessWidget {
           children: [
             const Icon(Icons.sort, size: 18),
             const SizedBox(width: 6),
-            Text('Sort tasks', style: Theme.of(context).textTheme.labelLarge),
+            Text(strings.t('tasks.sort.title'), style: Theme.of(context).textTheme.labelLarge),
           ],
         ),
         const SizedBox(height: 6),
@@ -363,10 +377,10 @@ class _SortRow extends StatelessWidget {
           spacing: 8,
           runSpacing: 6,
           children: [
-            _buildChip('Custom order', _TaskSort.custom),
-            _buildChip('Newest first', _TaskSort.newestFirst),
-            _buildChip('Oldest first', _TaskSort.oldestFirst),
-            _buildChip('Urgency', _TaskSort.urgency),
+            _buildChip(strings.t('tasks.sort.custom'), _TaskSort.custom),
+            _buildChip(strings.t('tasks.sort.newest'), _TaskSort.newestFirst),
+            _buildChip(strings.t('tasks.sort.oldest'), _TaskSort.oldestFirst),
+            _buildChip(strings.t('tasks.sort.urgency'), _TaskSort.urgency),
           ],
         ),
       ],
@@ -383,11 +397,13 @@ class _SortRow extends StatelessWidget {
 }
 
 class _TaskCard extends StatelessWidget {
-  const _TaskCard({required this.task, required this.onToggle, this.showDragHandle = false});
+  const _TaskCard(
+      {required this.task, required this.onToggle, this.showDragHandle = false, required this.strings});
 
   final Task task;
   final VoidCallback onToggle;
   final bool showDragHandle;
+  final AppLocalizations strings;
 
   @override
   Widget build(BuildContext context) {
@@ -457,28 +473,16 @@ class _TaskCard extends StatelessWidget {
     final today = DateTime(now.year, now.month, now.day);
     final dueDay = DateTime(dueDate.year, dueDate.month, dueDate.day);
 
-    if (dueDay == today) return 'Due today';
-    if (dueDay.isBefore(today)) return 'Overdue - ${_formatDate(dueDate)}';
-    if (dueDay.difference(today).inDays == 1) return 'Due tomorrow';
-    return 'Due ${_formatDate(dueDate)}';
+    if (dueDay == today) return strings.t('tasks.due.today');
+    if (dueDay.isBefore(today)) {
+      return '${strings.t('tasks.due.overdue')} - ${_formatDate(dueDate)}';
+    }
+    if (dueDay.difference(today).inDays == 1) return strings.t('tasks.due.tomorrow');
+    return '${strings.t('tasks.due.on')} ${_formatDate(dueDate)}';
   }
 
   String _formatDate(DateTime date) {
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec'
-    ];
-    return '${months[date.month - 1]} ${date.day}';
+    return DateFormat.MMMd().format(date);
   }
 }
 
@@ -522,9 +526,10 @@ class _PriorityBadge extends StatelessWidget {
 }
 
 class _EmptyState extends StatelessWidget {
-  const _EmptyState({required this.onAdd});
+  const _EmptyState({required this.onAdd, required this.strings});
 
   final VoidCallback onAdd;
+  final AppLocalizations strings;
 
   @override
   Widget build(BuildContext context) {
@@ -534,14 +539,14 @@ class _EmptyState extends StatelessWidget {
         children: [
           const Icon(Icons.inbox, size: 48),
           const SizedBox(height: 8),
-          Text('Nothing here yet', style: Theme.of(context).textTheme.titleMedium),
+          Text(strings.t('tasks.empty.title'), style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 4),
-          const Text('Add one gentle task to get started.'),
+          Text(strings.t('tasks.empty.subtitle')),
           const SizedBox(height: 12),
           ElevatedButton.icon(
             onPressed: onAdd,
             icon: const Icon(Icons.add),
-            label: const Text('Add a task'),
+            label: Text(strings.t('tasks.empty.add')),
           ),
         ],
       ),
@@ -550,9 +555,10 @@ class _EmptyState extends StatelessWidget {
 }
 
 class _TaskComposer extends StatefulWidget {
-  const _TaskComposer({required this.onSubmit});
+  const _TaskComposer({required this.onSubmit, required this.strings});
 
   final ValueChanged<Task> onSubmit;
+  final AppLocalizations strings;
 
   @override
   State<_TaskComposer> createState() => _TaskComposerState();
@@ -580,31 +586,32 @@ class _TaskComposerState extends State<_TaskComposer> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = widget.strings;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('New task', style: Theme.of(context).textTheme.titleLarge),
+        Text(strings.t('tasks.new'), style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 12),
         TextField(
           controller: _titleController,
-          decoration: const InputDecoration(labelText: 'Title'),
+          decoration: InputDecoration(labelText: strings.t('tasks.field.title')),
         ),
         const SizedBox(height: 8),
         TextField(
           controller: _subjectController,
-          decoration: const InputDecoration(labelText: 'Subject / module'),
+          decoration: InputDecoration(labelText: strings.t('tasks.field.subject')),
         ),
         const SizedBox(height: 12),
         Row(
           children: [
             Expanded(
-              child: Text('Due: ${_formatDate(_selectedDate)}'),
+              child: Text('${strings.t('tasks.field.due')}: ${_formatDate(_selectedDate)}'),
             ),
             TextButton.icon(
               onPressed: _pickDate,
               icon: const Icon(Icons.calendar_today),
-              label: const Text('Pick date'),
+              label: Text(strings.t('tasks.field.pickDate')),
             ),
           ],
         ),
@@ -622,21 +629,21 @@ class _TaskComposerState extends State<_TaskComposer> {
               .toList(),
         ),
         const SizedBox(height: 16),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text(strings.t('common.cancel')),
+                ),
+                const SizedBox(width: 8),
+                FilledButton.icon(
+                  onPressed: _isValid ? _submit : null,
+                  icon: const Icon(Icons.check),
+                  label: Text(strings.t('common.save')),
+                ),
+              ],
             ),
-            const SizedBox(width: 8),
-            FilledButton.icon(
-              onPressed: _isValid ? _submit : null,
-              icon: const Icon(Icons.check),
-              label: const Text('Save'),
-            ),
-          ],
-        ),
         const SizedBox(height: 12),
       ],
     );

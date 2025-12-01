@@ -24,8 +24,11 @@ import 'pages/campus_map_page.dart';
 import 'pages/weather_page.dart';
 import 'services/notification_service.dart';
 import 'services/theme_controller.dart';
+import 'services/language_controller.dart';
+import 'l10n/app_localizations.dart';
 import 'services/supabase_sync_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,6 +37,7 @@ Future<void> main() async {
     anonKey: 'sb_publishable_CQ9qwM0iWstuTJBrcH4eeQ_Th6W0TS4',
   );
   await NotificationService.instance.initialize();
+  await LanguageController.instance.loadSavedLanguage();
   await ThemeController.instance.loadSavedTheme();
   SupabaseSyncService.instance.startAutoUploadWatcher();
   try {
@@ -49,46 +53,59 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<ThemeMode>(
-      valueListenable: ThemeController.instance.themeModeNotifier,
-      builder: (context, mode, _) {
-        return MaterialApp(
-          title: 'CalmCampus',
-          themeMode: mode,
-          theme: ThemeData(
-            colorSchemeSeed: Colors.teal,
-            useMaterial3: true,
-            brightness: Brightness.light,
-          ),
-          darkTheme: ThemeData(
-            colorSchemeSeed: Colors.teal,
-            useMaterial3: true,
-            brightness: Brightness.dark,
-          ),
-          initialRoute: '/home',
-          routes: {
-            '/auth': (_) => const AuthPage(),
-            '/home': (_) => const MainNavigation(),
-            '/mood': (_) => const MoodPage(),
-            '/history': (_) => const HistoryPage(),
-            '/journal': (_) => const JournalPage(),
-            '/timetable': (_) => const TimetablePage(),
-            '/tasks': (_) => const TasksPage(),
-            '/chat': (_) => const ChatPage(),
-            '/relax': (_) => const RelaxPage(),
-            '/breathing': (_) => const BreathingPage(),
-            '/profile': (_) => const ProfilePage(),
-            '/settings': (_) => const SettingsPage(),
-            '/help-now': (_) => const HelpNowPage(),
-            '/dsa-summary': (_) => const DsaSummaryPage(),
-            '/challenges': (_) => const CommonChallengesPage(),
-            '/sleep': (_) => const SleepPage(),
-            '/period-tracker': (_) => const PeriodTrackerPage(),
-            '/support-plan': (_) => const SupportPlanPage(),
-            '/movement': (_) => const MovementPage(),
-            '/campus-map': (_) => const CampusMapPage(),
-            '/weather': (_) => const WeatherPage(),
-            '/announcements': (_) => const AnnouncementsPage(),
+    return ValueListenableBuilder<Locale>(
+      valueListenable: LanguageController.instance.localeNotifier,
+      builder: (context, locale, _) {
+        return ValueListenableBuilder<ThemeMode>(
+          valueListenable: ThemeController.instance.themeModeNotifier,
+          builder: (context, mode, _) {
+            return MaterialApp(
+              title: 'CalmCampus',
+              locale: locale,
+              supportedLocales: AppLocalizations.supportedLocales,
+              localizationsDelegates: const [
+                AppLocalizations.delegate,
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+              themeMode: mode,
+              theme: ThemeData(
+                colorSchemeSeed: Colors.teal,
+                useMaterial3: true,
+                brightness: Brightness.light,
+              ),
+              darkTheme: ThemeData(
+                colorSchemeSeed: Colors.teal,
+                useMaterial3: true,
+                brightness: Brightness.dark,
+              ),
+              initialRoute: '/home',
+              routes: {
+                '/auth': (_) => const AuthPage(),
+                '/home': (_) => const MainNavigation(),
+                '/mood': (_) => const MoodPage(),
+                '/history': (_) => const HistoryPage(),
+                '/journal': (_) => const JournalPage(),
+                '/timetable': (_) => const TimetablePage(),
+                '/tasks': (_) => const TasksPage(),
+                '/chat': (_) => const ChatPage(),
+                '/relax': (_) => const RelaxPage(),
+                '/breathing': (_) => const BreathingPage(),
+                '/profile': (_) => const ProfilePage(),
+                '/settings': (_) => const SettingsPage(),
+                '/help-now': (_) => const HelpNowPage(),
+                '/dsa-summary': (_) => const DsaSummaryPage(),
+                '/challenges': (_) => const CommonChallengesPage(),
+                '/sleep': (_) => const SleepPage(),
+                '/period-tracker': (_) => const PeriodTrackerPage(),
+                '/support-plan': (_) => const SupportPlanPage(),
+                '/movement': (_) => const MovementPage(),
+                '/campus-map': (_) => const CampusMapPage(),
+                '/weather': (_) => const WeatherPage(),
+                '/announcements': (_) => const AnnouncementsPage(),
+              },
+            );
           },
         );
       },
@@ -127,6 +144,7 @@ class _MainNavigationState extends State<MainNavigation> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context);
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
@@ -135,26 +153,26 @@ class _MainNavigationState extends State<MainNavigation> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
         onDestinationSelected: _onItemTapped,
-        destinations: const [
+        destinations: [
           NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'Home',
+            icon: const Icon(Icons.home_outlined),
+            selectedIcon: const Icon(Icons.home),
+            label: strings.t('nav.home'),
           ),
           NavigationDestination(
-            icon: Icon(Icons.favorite_outline),
-            selectedIcon: Icon(Icons.favorite),
-            label: 'Mood',
+            icon: const Icon(Icons.favorite_outline),
+            selectedIcon: const Icon(Icons.favorite),
+            label: strings.t('nav.mood'),
           ),
           NavigationDestination(
-            icon: Icon(Icons.checklist_outlined),
-            selectedIcon: Icon(Icons.checklist),
-            label: 'Tasks',
+            icon: const Icon(Icons.checklist_outlined),
+            selectedIcon: const Icon(Icons.checklist),
+            label: strings.t('nav.tasks'),
           ),
           NavigationDestination(
-            icon: Icon(Icons.spa_outlined),
-            selectedIcon: Icon(Icons.spa),
-            label: 'Relax',
+            icon: const Icon(Icons.spa_outlined),
+            selectedIcon: const Icon(Icons.spa),
+            label: strings.t('nav.relax'),
           ),
         ],
       ),

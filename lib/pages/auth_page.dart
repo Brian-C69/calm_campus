@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/user_profile_service.dart';
 import '../services/supabase_sync_service.dart';
+import '../l10n/app_localizations.dart';
 
 class AuthPage extends StatefulWidget {
   const AuthPage({super.key});
@@ -38,10 +39,12 @@ class _AuthPageState extends State<AuthPage> {
   }
 
   Future<void> _submit() async {
+    final strings = AppLocalizations.of(context);
     final isValid = _formKey.currentState?.validate() ?? false;
     if (!isValid) return;
 
-    final friendlyAction = _isLogin ? 'signed in' : 'signed up';
+    final friendlyAction =
+        _isLogin ? strings.t('auth.state.signedIn') : strings.t('auth.state.signedUp');
     final email = _emailController.text.trim();
     final password = _passwordController.text;
     final client = Supabase.instance.client;
@@ -75,7 +78,7 @@ class _AuthPageState extends State<AuthPage> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                'You are signed in, but we could not pull your cloud data yet. Please check your connection and try again later.\nDetails: $e',
+                '${strings.t('auth.sync.pullFailed')}\nDetails: $e',
               ),
             ),
           );
@@ -88,7 +91,7 @@ class _AuthPageState extends State<AuthPage> {
           content: Text(
             e.message.isNotEmpty
                 ? e.message
-                : 'We could not ${_isLogin ? 'log you in' : 'create your account'} right now. Please try again.',
+                : (_isLogin ? strings.t('auth.error.login') : strings.t('auth.error.signup')),
           ),
         ),
       );
@@ -98,7 +101,7 @@ class _AuthPageState extends State<AuthPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Something went wrong while contacting the server. Your local data is still safe on this device.\nDetails: $e',
+            '${strings.t('auth.error.generic')}\nDetails: $e',
           ),
         ),
       );
@@ -110,7 +113,7 @@ class _AuthPageState extends State<AuthPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          'You\'re $friendlyAction. Your data will stay on this device and is now also backed up to your account.',
+          strings.t('auth.success').replaceFirst('{state}', friendlyAction),
         ),
       ),
     );
@@ -120,6 +123,7 @@ class _AuthPageState extends State<AuthPage> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context);
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -131,14 +135,14 @@ class _AuthPageState extends State<AuthPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Welcome to CalmCampus',
+                    strings.t('auth.welcome.title'),
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'A gentle place to check in with yourself. Create an account or log in to keep your mood, tasks, and calming tracks in one spot.',
+                    strings.t('auth.welcome.subtitle'),
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                   const SizedBox(height: 24),
@@ -158,9 +162,9 @@ class _AuthPageState extends State<AuthPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           SegmentedButton<bool>(
-                            segments: const [
-                              ButtonSegment(value: true, label: Text('Log in')),
-                              ButtonSegment(value: false, label: Text('Sign up')),
+                            segments: [
+                              ButtonSegment(value: true, label: Text(strings.t('auth.login'))),
+                              ButtonSegment(value: false, label: Text(strings.t('auth.signup'))),
                             ],
                             selected: {_isLogin},
                             onSelectionChanged: (selection) {
@@ -176,15 +180,14 @@ class _AuthPageState extends State<AuthPage> {
                                   TextFormField(
                                     controller: _nameController,
                                     textInputAction: TextInputAction.next,
-                                    decoration: const InputDecoration(
-                                      labelText: 'Preferred name',
-                                      helperText:
-                                          'We\'ll greet you with this name inside the app.',
-                                      prefixIcon: Icon(Icons.person_outline),
+                                    decoration: InputDecoration(
+                                      labelText: strings.t('auth.name'),
+                                      helperText: strings.t('auth.name.helper'),
+                                      prefixIcon: const Icon(Icons.person_outline),
                                     ),
                                     validator: (value) {
                                       if (value == null || value.trim().isEmpty) {
-                                        return 'Please share a name we can use.';
+                                        return strings.t('auth.name.error');
                                       }
                                       return null;
                                     },
@@ -194,16 +197,16 @@ class _AuthPageState extends State<AuthPage> {
                                   controller: _emailController,
                                   textInputAction: TextInputAction.next,
                                   keyboardType: TextInputType.emailAddress,
-                                  decoration: const InputDecoration(
-                                    labelText: 'University email',
-                                    prefixIcon: Icon(Icons.email_outlined),
+                                  decoration: InputDecoration(
+                                    labelText: strings.t('auth.email'),
+                                    prefixIcon: const Icon(Icons.email_outlined),
                                   ),
                                   validator: (value) {
                                     if (value == null || value.trim().isEmpty) {
-                                      return 'Email helps us keep your space personal.';
+                                      return strings.t('auth.email.error');
                                     }
                                     if (!value.contains('@')) {
-                                      return 'Please enter a valid email address.';
+                                      return strings.t('auth.email.invalid');
                                     }
                                     return null;
                                   },
@@ -215,7 +218,9 @@ class _AuthPageState extends State<AuthPage> {
                                       _isLogin ? TextInputAction.done : TextInputAction.next,
                                   obscureText: _obscurePassword,
                                   decoration: InputDecoration(
-                                    labelText: 'Password',
+                                    labelText: _isLogin
+                                        ? strings.t('auth.password')
+                                        : strings.t('auth.password.create'),
                                     prefixIcon: const Icon(Icons.lock_outline),
                                     suffixIcon: IconButton(
                                       onPressed: () {
@@ -229,16 +234,16 @@ class _AuthPageState extends State<AuthPage> {
                                             : Icons.visibility_off_outlined,
                                       ),
                                       tooltip: _obscurePassword
-                                          ? 'Show password'
-                                          : 'Hide password',
+                                          ? strings.t('common.show')
+                                          : strings.t('common.hide'),
                                     ),
                                   ),
                                   validator: (value) {
                                     if (value == null || value.isEmpty) {
-                                      return 'A password keeps your check-ins private.';
+                                      return strings.t('auth.password.error');
                                     }
                                     if (value.length < 8) {
-                                      return 'Use at least 8 characters for extra safety.';
+                                      return strings.t('auth.password.short');
                                     }
                                     return null;
                                   },
@@ -249,16 +254,16 @@ class _AuthPageState extends State<AuthPage> {
                                     controller: _confirmPasswordController,
                                     textInputAction: TextInputAction.done,
                                     obscureText: _obscurePassword,
-                                    decoration: const InputDecoration(
-                                      labelText: 'Confirm password',
-                                      prefixIcon: Icon(Icons.verified_user_outlined),
+                                    decoration: InputDecoration(
+                                      labelText: strings.t('auth.password.confirm'),
+                                      prefixIcon: const Icon(Icons.verified_user_outlined),
                                     ),
                                     validator: (value) {
                                       if (value == null || value.isEmpty) {
-                                        return 'Please confirm your password.';
+                                        return strings.t('auth.password.error');
                                       }
                                       if (value != _passwordController.text) {
-                                        return 'The passwords don\'t match yet.';
+                                        return strings.t('auth.password.mismatch');
                                       }
                                       return null;
                                     },
@@ -269,7 +274,9 @@ class _AuthPageState extends State<AuthPage> {
                                   icon: Icon(_isLogin
                                       ? Icons.login_rounded
                                       : Icons.person_add_alt_1_outlined),
-                                  label: Text(_isLogin ? 'Log in' : 'Create account'),
+                                  label: Text(
+                                    _isLogin ? strings.t('auth.login') : strings.t('auth.signup'),
+                                  ),
                                   style: FilledButton.styleFrom(
                                     minimumSize: const Size.fromHeight(48),
                                   ),
@@ -279,8 +286,8 @@ class _AuthPageState extends State<AuthPage> {
                                   onPressed: () => _toggleMode(!_isLogin),
                                   child: Text(
                                     _isLogin
-                                        ? 'New here? Create a gentle space.'
-                                        : 'Already have an account? Log in.',
+                                        ? strings.t('auth.cta.toSignup')
+                                        : strings.t('auth.cta.toLogin'),
                                   ),
                                 ),
                               ],
@@ -297,7 +304,7 @@ class _AuthPageState extends State<AuthPage> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'Your reflections stay private. If you ever feel unsafe, please reach out to campus support or a trusted person.',
+                          strings.t('auth.privacy'),
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ),
@@ -307,18 +314,18 @@ class _AuthPageState extends State<AuthPage> {
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
-                    children: const [
+                    children: [
                       Chip(
-                        label: Text('Gentle check-ins'),
-                        avatar: Icon(Icons.self_improvement_outlined),
+                        label: Text(strings.t('auth.chip.checkins')),
+                        avatar: const Icon(Icons.self_improvement_outlined),
                       ),
                       Chip(
-                        label: Text('Track study tasks'),
-                        avatar: Icon(Icons.task_alt_outlined),
+                        label: Text(strings.t('auth.chip.tasks')),
+                        avatar: const Icon(Icons.task_alt_outlined),
                       ),
                       Chip(
-                        label: Text('Relaxing audio'),
-                        avatar: Icon(Icons.headphones_outlined),
+                        label: Text(strings.t('auth.chip.audio')),
+                        avatar: const Icon(Icons.headphones_outlined),
                       ),
                     ],
                   ),

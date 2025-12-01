@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../services/user_profile_service.dart';
+import '../l10n/app_localizations.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -50,29 +51,30 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context);
     final routes = <_HomeRouteInfo>[
-      _HomeRouteInfo('Mood Check-in', Icons.favorite, '/mood'),
-      _HomeRouteInfo('Latest news', Icons.campaign, '/announcements'),
-      _HomeRouteInfo('Campus map', Icons.map, '/campus-map'),
-      _HomeRouteInfo('Weather & planning', Icons.cloud, '/weather'),
-      _HomeRouteInfo('Journal', Icons.menu_book, '/journal'),
-      _HomeRouteInfo('My Profile', Icons.person, '/profile'),
-      _HomeRouteInfo('Timetable', Icons.schedule, '/timetable'),
-      _HomeRouteInfo('Tasks', Icons.checklist, '/tasks'),
-      _HomeRouteInfo('AI Buddy', Icons.chat, '/chat'),
-      _HomeRouteInfo('Relax & Meditate', Icons.spa, '/relax'),
-      _HomeRouteInfo('Sleep tracking', Icons.nights_stay, '/sleep'),
-      _HomeRouteInfo('Movement & Energy', Icons.directions_walk, '/movement'),
-      _HomeRouteInfo('Period & Cycle tracker', Icons.calendar_today, '/period-tracker'),
-      _HomeRouteInfo('Support contacts', Icons.emoji_people, '/support-plan'),
-      _HomeRouteInfo('Help Now', Icons.volunteer_activism, '/help-now'),
-      _HomeRouteInfo('DSA Summary', Icons.analytics, '/dsa-summary'),
-      _HomeRouteInfo('Common Challenges', Icons.menu_book, '/challenges'),
+      _HomeRouteInfo(strings.t('home.card.mood'), Icons.favorite, '/mood'),
+      _HomeRouteInfo(strings.t('home.card.news'), Icons.campaign, '/announcements'),
+      _HomeRouteInfo(strings.t('home.card.map'), Icons.map, '/campus-map'),
+      _HomeRouteInfo(strings.t('home.card.weather'), Icons.cloud, '/weather'),
+      _HomeRouteInfo(strings.t('home.card.journal'), Icons.menu_book, '/journal'),
+      _HomeRouteInfo(strings.t('home.card.profile'), Icons.person, '/profile'),
+      _HomeRouteInfo(strings.t('home.card.timetable'), Icons.schedule, '/timetable'),
+      _HomeRouteInfo(strings.t('home.card.tasks'), Icons.checklist, '/tasks'),
+      _HomeRouteInfo(strings.t('home.card.chat'), Icons.chat, '/chat'),
+      _HomeRouteInfo(strings.t('home.card.relax'), Icons.spa, '/relax'),
+      _HomeRouteInfo(strings.t('home.card.sleep'), Icons.nights_stay, '/sleep'),
+      _HomeRouteInfo(strings.t('home.card.movement'), Icons.directions_walk, '/movement'),
+      _HomeRouteInfo(strings.t('home.card.period'), Icons.calendar_today, '/period-tracker'),
+      _HomeRouteInfo(strings.t('home.card.support'), Icons.emoji_people, '/support-plan'),
+      _HomeRouteInfo(strings.t('home.card.help'), Icons.volunteer_activism, '/help-now'),
+      _HomeRouteInfo(strings.t('home.card.dsa'), Icons.analytics, '/dsa-summary'),
+      _HomeRouteInfo(strings.t('home.card.challenges'), Icons.menu_book, '/challenges'),
     ];
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('CalmCampus'),
+        title: Text(strings.t('app.title')),
         actions: [
           FutureBuilder<bool>(
             future: _isLoggedInFuture,
@@ -94,7 +96,7 @@ class _HomePageState extends State<HomePage> {
                   _openAuth();
                 },
                 icon: const Icon(Icons.login),
-                label: const Text('Log in'),
+                label: Text(strings.t('auth.login')),
               );
             },
           ),
@@ -116,8 +118,8 @@ class _HomePageState extends State<HomePage> {
                     final nickname = snapshot.data;
                     final greeting =
                         isLoggedIn && nickname != null && nickname.isNotEmpty
-                            ? 'Welcome back, $nickname'
-                            : 'Welcome back';
+                            ? strings.t('home.greeting.named').replaceFirst('{name}', nickname)
+                            : strings.t('home.greeting');
 
                     return Text(
                       greeting,
@@ -129,7 +131,7 @@ class _HomePageState extends State<HomePage> {
             ),
             const SizedBox(height: 12),
             Text(
-              'Choose a space to explore. We are here with calm, kind support.',
+              strings.t('home.subtitle'),
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 16),

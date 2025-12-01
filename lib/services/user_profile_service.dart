@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 enum AppThemeMode { system, light, dark }
+enum AppLanguage { englishUK, chineseCN, malayMY }
 
 class UserProfileService {
   UserProfileService._();
@@ -14,6 +15,7 @@ class UserProfileService {
   final String _firstRunKey = 'is_first_run';
   final String _loggedInKey = 'is_logged_in';
   final String _themeKey = 'app_theme';
+  final String _languageKey = 'app_language';
   final String _reminderTimeKey = 'daily_reminder_time';
 
   Future<bool> isLoggedIn() async {
@@ -76,6 +78,18 @@ class UserProfileService {
     final String? stored = prefs.getString(_themeKey);
     if (stored == null) return AppThemeMode.system;
     return AppThemeMode.values.byName(stored);
+  }
+
+  Future<void> saveLanguage(AppLanguage language) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_languageKey, language.name);
+  }
+
+  Future<AppLanguage> getLanguage() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final String? stored = prefs.getString(_languageKey);
+    if (stored == null) return AppLanguage.englishUK;
+    return AppLanguage.values.byName(stored);
   }
 
   Future<void> saveDailyReminderTime(TimeOfDay time) async {

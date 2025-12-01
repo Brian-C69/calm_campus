@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../models/mood_entry.dart';
 import '../services/db_service.dart';
+import '../l10n/app_localizations.dart';
 
 class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key});

@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 import '../models/announcement.dart';
 import '../services/announcement_service.dart';
+import '../l10n/app_localizations.dart';
 
 class AnnouncementsPage extends StatefulWidget {
   const AnnouncementsPage({super.key});
@@ -72,19 +73,20 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
   }
 
   Future<void> _deleteAnnouncement(Announcement announcement) async {
+    final strings = AppLocalizations.of(context);
     final bool? confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Remove this post?'),
-        content: const Text('This will remove the post from your device.'),
+        title: Text(strings.t('announcements.delete.title')),
+        content: Text(strings.t('announcements.delete.desc')),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+            child: Text(strings.t('common.cancel')),
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Remove'),
+            child: Text(strings.t('announcements.remove')),
           ),
         ],
       ),
@@ -124,10 +126,11 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context);
     final ColorScheme colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Latest news'),
+        title: Text(strings.t('announcements.title')),
       ),
       body: RefreshIndicator(
         onRefresh: _loadAnnouncements,
@@ -212,7 +215,7 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _openComposer,
         icon: const Icon(Icons.add),
-        label: const Text('New post'),
+        label: Text(strings.t('announcements.newPost')),
       ),
     );
   }
@@ -263,29 +266,30 @@ class _AnnouncementComposerState extends State<_AnnouncementComposer> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('New wellness update', style: Theme.of(context).textTheme.titleLarge),
+        Text(AppLocalizations.of(context).t('announcements.compose.title'),
+            style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 12),
         TextField(
           controller: _titleController,
-          decoration: const InputDecoration(labelText: 'Title'),
+          decoration: InputDecoration(labelText: AppLocalizations.of(context).t('announcements.compose.titleLabel')),
           onChanged: (_) => setState(() {}),
         ),
         const SizedBox(height: 10),
         TextField(
           controller: _summaryController,
-          decoration: const InputDecoration(
-            labelText: 'Short summary',
-            helperText: 'One or two sentences students see first.',
+          decoration: InputDecoration(
+            labelText: AppLocalizations.of(context).t('announcements.compose.summaryLabel'),
+            helperText: AppLocalizations.of(context).t('announcements.compose.summary.helper'),
           ),
           onChanged: (_) => setState(() {}),
         ),
         const SizedBox(height: 10),
         TextField(
           controller: _bodyController,
-          decoration: const InputDecoration(
-            labelText: 'Full message',
+          decoration: InputDecoration(
+            labelText: AppLocalizations.of(context).t('announcements.compose.bodyLabel'),
             alignLabelWithHint: true,
-            helperText: 'Keep it gentle and clear. Add helplines if relevant.',
+            helperText: AppLocalizations.of(context).t('announcements.compose.body.helper'),
           ),
           minLines: 6,
           maxLines: null,
@@ -294,21 +298,21 @@ class _AnnouncementComposerState extends State<_AnnouncementComposer> {
         const SizedBox(height: 10),
         TextField(
           controller: _authorController,
-          decoration: const InputDecoration(labelText: 'From'),
+          decoration: InputDecoration(labelText: AppLocalizations.of(context).t('announcements.compose.from')),
           onChanged: (_) => setState(() {}),
         ),
         const SizedBox(height: 10),
         TextField(
           controller: _categoryController,
-          decoration: const InputDecoration(labelText: 'Category'),
+          decoration: InputDecoration(labelText: AppLocalizations.of(context).t('announcements.compose.category')),
           onChanged: (_) => setState(() {}),
         ),
         const SizedBox(height: 8),
         SwitchListTile.adaptive(
           value: _sendNotification,
           onChanged: (value) => setState(() => _sendNotification = value),
-          title: const Text('Send a notification now'),
-          subtitle: const Text('Students will see this as a push alert on this device.'),
+          title: Text(AppLocalizations.of(context).t('announcements.compose.notify')),
+          subtitle: Text(AppLocalizations.of(context).t('announcements.compose.notify.desc')),
         ),
         const SizedBox(height: 8),
         Row(
@@ -316,13 +320,13 @@ class _AnnouncementComposerState extends State<_AnnouncementComposer> {
           children: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
+              child: Text(AppLocalizations.of(context).t('common.cancel')),
             ),
             const SizedBox(width: 8),
             FilledButton.icon(
               onPressed: _isValid ? _submit : null,
               icon: const Icon(Icons.send),
-              label: const Text('Publish'),
+              label: Text(AppLocalizations.of(context).t('announcements.compose.publish')),
             ),
           ],
         ),
@@ -464,6 +468,7 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context);
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -475,9 +480,10 @@ class _EmptyState extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('No news yet', style: Theme.of(context).textTheme.titleMedium),
+                Text(strings.t('announcements.empty.title'),
+                    style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 8),
-                const Text('Tap "New post" to share a gentle update from DSA or counselling.'),
+                Text(strings.t('announcements.empty.desc')),
               ],
             ),
           ),
@@ -486,7 +492,7 @@ class _EmptyState extends StatelessWidget {
         ElevatedButton.icon(
           onPressed: onCompose,
           icon: const Icon(Icons.add),
-          label: const Text('Create first post'),
+          label: Text(strings.t('announcements.createFirst')),
         ),
       ],
     );

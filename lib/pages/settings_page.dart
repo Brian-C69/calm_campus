@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../services/user_profile_service.dart';
 import '../services/supabase_sync_service.dart';
 import '../services/theme_controller.dart';
+import '../services/language_controller.dart';
+import '../l10n/app_localizations.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -18,6 +20,7 @@ class _SettingsPageState extends State<SettingsPage> {
   final _yearController = TextEditingController();
 
   AppThemeMode _themeMode = AppThemeMode.system;
+  AppLanguage _language = AppLanguage.englishUK;
   TimeOfDay? _reminderTime;
 
   @override
@@ -31,6 +34,7 @@ class _SettingsPageState extends State<SettingsPage> {
     final course = await UserProfileService.instance.getCourse();
     final year = await UserProfileService.instance.getYearOfStudy();
     final theme = await UserProfileService.instance.getTheme();
+    final language = await UserProfileService.instance.getLanguage();
     final reminder = await UserProfileService.instance.getDailyReminderTime();
 
     setState(() {
@@ -38,6 +42,7 @@ class _SettingsPageState extends State<SettingsPage> {
       _courseController.text = course ?? '';
       _yearController.text = year?.toString() ?? '';
       _themeMode = theme;
+      _language = language;
       _reminderTime = reminder;
     });
   }
@@ -74,22 +79,22 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<void> _saveAll() async {
     await _saveProfile();
     await ThemeController.instance.updateTheme(_themeMode);
+    await LanguageController.instance.updateLanguage(_language);
     await _saveReminder();
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Settings saved')), 
+      SnackBar(content: Text(AppLocalizations.of(context).t('settings.saved'))), 
     );
   }
 
   Future<void> _backupToSupabase() async {
+    final strings = AppLocalizations.of(context);
     final client = Supabase.instance.client;
     if (client.auth.currentUser == null) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Please sign in on the Auth page before backing up your data.',
-          ),
+        SnackBar(
+          content: Text(strings.t('settings.backup.needLogin')),
         ),
       );
       return;
@@ -99,8 +104,8 @@ class _SettingsPageState extends State<SettingsPage> {
       await SupabaseSyncService.instance.uploadAllData();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Your data has been backed up to the cloud.'),
+        SnackBar(
+          content: Text(strings.t('settings.backup.success')),
         ),
       );
     } catch (e) {
@@ -108,7 +113,7 @@ class _SettingsPageState extends State<SettingsPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'We could not back up your data right now. Please check your connection and try again.\nDetails: $e',
+            '${strings.t('settings.backup.error')}\nDetails: $e',
           ),
         ),
       );
@@ -126,10 +131,11 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final strings = AppLocalizations.of(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Settings'),
+        title: Text(strings.t('settings.title')),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -142,30 +148,30 @@ class _SettingsPageState extends State<SettingsPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Profile', style: theme.textTheme.titleMedium),
+                    Text(strings.t('settings.profile'), style: theme.textTheme.titleMedium),
                     const SizedBox(height: 12),
                     TextField(
                       controller: _nicknameController,
-                      decoration: const InputDecoration(
-                        labelText: 'Nickname',
-                        helperText: 'What should we call you?',
+                      decoration: InputDecoration(
+                        labelText: strings.t('settings.nickname'),
+                        helperText: strings.t('settings.nickname.helper'),
                       ),
                     ),
                     const SizedBox(height: 12),
                     TextField(
                       controller: _courseController,
-                      decoration: const InputDecoration(
-                        labelText: 'Course',
-                        helperText: 'E.g. Computer Science',
+                      decoration: InputDecoration(
+                        labelText: strings.t('settings.course'),
+                        helperText: strings.t('settings.course.helper'),
                       ),
                     ),
                     const SizedBox(height: 12),
                     TextField(
                       controller: _yearController,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'Year of study',
-                        helperText: '1, 2, 3...',
+                      decoration: InputDecoration(
+                        labelText: strings.t('settings.year'),
+                        helperText: strings.t('settings.year.helper'),
                       ),
                     ),
                   ],
@@ -180,7 +186,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Appearance', style: theme.textTheme.titleMedium),
+                    Text(strings.t('settings.appearance'), style: theme.textTheme.titleMedium),
                     const SizedBox(height: 8),
                     ...AppThemeMode.values.map(
                       (mode) => RadioListTile<AppThemeMode>(
@@ -206,24 +212,52 @@ class _SettingsPageState extends State<SettingsPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Daily reminder', style: theme.textTheme.titleMedium),
+                    Text(strings.t('settings.language'), style: theme.textTheme.titleMedium),
+                    const SizedBox(height: 8),
+                    ...AppLanguage.values.map(
+                      (lang) => RadioListTile<AppLanguage>(
+                        value: lang,
+                        groupValue: _language,
+                        title: Text(_languageLabel(lang, strings)),
+                        onChanged: (value) {
+                          if (value == null) return;
+                          setState(() => _language = value);
+                          LanguageController.instance.updateLanguage(value);
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Card(
+              elevation: 0,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(strings.t('settings.reminder'), style: theme.textTheme.titleMedium),
                     const SizedBox(height: 8),
                     Row(
                       children: [
                         Expanded(
                           child: Text(
                             _reminderTime != null
-                                ? 'Reminder set for ${_reminderTime!.format(context)}'
-                                : 'No reminder scheduled',
+                                ? strings
+                                    .t('settings.reminder.set')
+                                    .replaceFirst('{time}', _reminderTime!.format(context))
+                                : strings.t('settings.reminder.none'),
                           ),
                         ),
                         TextButton(
                           onPressed: _pickReminderTime,
-                          child: const Text('Choose time'),
+                          child: Text(strings.t('settings.reminder.choose')),
                         ),
                         IconButton(
                           icon: const Icon(Icons.clear),
-                          tooltip: 'Clear reminder',
+                          tooltip: strings.t('settings.reminder.clear'),
                           onPressed: () => setState(() => _reminderTime = null),
                         ),
                       ],
@@ -240,17 +274,17 @@ class _SettingsPageState extends State<SettingsPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Cloud backup', style: theme.textTheme.titleMedium),
+                    Text(strings.t('settings.cloud'), style: theme.textTheme.titleMedium),
                     const SizedBox(height: 8),
                     Text(
-                      'If you sign in with your CalmCampus account, you can back up your mood, sleep, tasks, and other logs to Supabase so they are available if you switch devices.',
+                      strings.t('settings.cloud.desc'),
                       style: theme.textTheme.bodySmall,
                     ),
                     const SizedBox(height: 12),
                     FilledButton.icon(
                       onPressed: _backupToSupabase,
                       icon: const Icon(Icons.cloud_upload_outlined),
-                      label: const Text('Back up my data now'),
+                      label: Text(strings.t('settings.cloud.button')),
                     ),
                   ],
                 ),
@@ -260,7 +294,7 @@ class _SettingsPageState extends State<SettingsPage> {
             FilledButton.icon(
               onPressed: _saveAll,
               icon: const Icon(Icons.check),
-              label: const Text('Save changes'),
+              label: Text(strings.t('settings.save')),
             ),
           ],
         ),
@@ -271,11 +305,22 @@ class _SettingsPageState extends State<SettingsPage> {
   String _themeLabel(AppThemeMode mode) {
     switch (mode) {
       case AppThemeMode.system:
-        return 'Use system setting';
+        return AppLocalizations.of(context).t('settings.theme.system');
       case AppThemeMode.light:
-        return 'Light mode';
+        return AppLocalizations.of(context).t('settings.theme.light');
       case AppThemeMode.dark:
-        return 'Dark mode';
+        return AppLocalizations.of(context).t('settings.theme.dark');
+    }
+  }
+
+  String _languageLabel(AppLanguage language, AppLocalizations strings) {
+    switch (language) {
+      case AppLanguage.englishUK:
+        return strings.t('settings.language.en');
+      case AppLanguage.chineseCN:
+        return strings.t('settings.language.zh');
+      case AppLanguage.malayMY:
+        return strings.t('settings.language.ms');
     }
   }
 }

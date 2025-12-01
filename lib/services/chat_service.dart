@@ -7,7 +7,10 @@ class ChatService {
     String? baseUrl,
     http.Client? client,
   })  : _baseUrl = baseUrl ??
-            const String.fromEnvironment('CHAT_BASE_URL', defaultValue: 'http://10.0.2.2:3001'),
+            const String.fromEnvironment(
+              'CHAT_BASE_URL',
+              defaultValue: 'https://bernard.onthewifi.com:3001',
+            ),
         _client = client ?? http.Client();
 
   final String _baseUrl;

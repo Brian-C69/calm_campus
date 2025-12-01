@@ -6,6 +6,7 @@ Legend:
 - ❌ = not doing / dropped
 
 You can change `[ ]` to `[x]` as you complete items.
+Status: reviewed 2025-12-02 after lint fixes; checklist kept in place unless clearly completed already.
 
 ---
 
@@ -187,35 +188,35 @@ You can change `[ ]` to `[x]` as you complete items.
 
 ### 5.1 Backend (Node/Python + Ollama)
 
-- [ ] Set up Ollama locally and test `/api/chat`
-- [ ] Create backend server:
-    - [ ] `/chat` endpoint
-    - [ ] Accepts: `message`, `history`, `mood`, `timetable`, (optional `tasks`)
-- [ ] Implement system prompt:
-    - [ ] Friendly mental health + study assistant
-    - [ ] No diagnosis / no medical advice
-    - [ ] ED-safe and body-neutral wording
-    - [ ] Social anxiety–supportive wording
-    - [ ] Crisis-safe (direct to help, not hidden alerts)
-- [ ] Implement JSON response format:
-    - [ ] `mode` (`check_in` | `support` | `study_planner`)
-    - [ ] `message_for_user`
-    - [ ] `follow_up_question`
-    - [ ] `suggested_actions` (list of strings)
-- [ ] Implement crisis keyword detection:
-    - [ ] If triggered, inject extra safety instructions into prompt
+- [x] Set up Ollama locally and test `/api/chat`
+- [x] Create backend server:
+    - [x] `/chat` endpoint
+    - [x] Accepts: `message`, `history`, `mood`, `timetable`, (optional `tasks`)
+- [x] Implement system prompt:
+    - [x] Friendly mental health + study assistant
+    - [x] No diagnosis / no medical advice
+    - [x] ED-safe and body-neutral wording
+    - [x] Social anxiety supportive wording
+    - [x] Crisis-safe (direct to help, not hidden alerts)
+- [x] Implement JSON response format:
+    - [x] `mode` (`check_in` | `support` | `study_planner`)
+    - [x] `message_for_user`
+    - [x] `follow_up_question`
+    - [x] `suggested_actions` (list of strings)
+- [x] Implement crisis keyword detection:
+    - [x] If triggered, inject extra safety instructions into prompt
 
 ### 5.2 Flutter ChatPage
 
-- [ ] `ChatService`:
-    - [ ] `sendMessage(String text, {mood, timetable, tasks})`
-    - [ ] Parse backend response JSON
-- [ ] `ChatPage` UI:
-    - [ ] List of chat bubbles (user + bot)
-    - [ ] TextField + send button
-    - [ ] Show loading indicator while waiting for reply
-    - [ ] Render `suggested_actions` as tappable chips/buttons
-    - [ ] (Nice-to-have) Persist minimal chat history locally
+- [x] `ChatService`:
+    - [x] `sendMessage(String text, {mood, timetable, tasks})`
+    - [x] Parse backend response JSON
+- [x] `ChatPage` UI:
+    - [x] List of chat bubbles (user + bot)
+    - [x] TextField + send button
+    - [x] Show loading indicator while waiting for reply
+    - [x] Render `suggested_actions` as tappable chips/buttons
+    - [x] (Nice-to-have) Persist minimal chat history locally
 
 ---
 
@@ -672,4 +673,6 @@ So the app can remember “my safe people” and show them quickly in rough time
 - [ ] Mood / Sleep context:
     - [ ] (Future) Optionally log “breathing session completed” with timestamp
     - [ ] (Future) Use this in insights: e.g. “You tend to use breathing before late-night study blocks.”
+
+
 

@@ -1,23 +1,22 @@
-# CalmCampus – Logged-in Users Save to Cloud (Multi-Device Sync)
+# CalmCampus – Logged-in Users Save to Cloud (Multi-Device Sync)  
+_Reviewed 2025-12-02. Supabase backup + restore is live: after sign-in we upload local data, then pull the user’s cloud records into SQLite. If a Supabase session exists on launch, we restore silently. Real auth + email confirmation is working and data syncs after signup._  
 
 ## 0. Assumptions & Goal
 
-- [x] Goal: **If user is logged in, all data lives in a cloud database**, so logging in on any device pulls the same data.
-- [x] Guests still use **local-only** storage on that device.
+- [x] Goal: if a user is logged in, all data lives in a cloud database and stays in sync across devices.
+- [x] Guests stay local-only on that device.
 - [x] Logged-in users:
-    - [x] Read/write to **remote DB**
+    - [x] Read/write to remote DB
     - [x] (Optional but nice) Also cache locally for offline use
-
-_Update 2025-12-01:_ Supabase backup + restore is live. After sign-in we upload local data, then pull the user’s cloud records back into SQLite. On app launch, if a Supabase session exists, we silently restore the latest cloud copy.
 
 ---
 
 ## 1. Choose Backend & Data Source Strategy
 
-- [ ] Decide backend option:
+- [x] Decide backend option:
     - [ ] Option A: Firebase (Auth + Firestore)
     - [x] Option B: Supabase (Postgres + Auth)
-    - [ ] Option C: Your own backend (PHP/Laravel/Node/Python + REST API + DB)
+    - [ ] Option C: Own backend (PHP/Laravel/Node/Python + REST API + DB)
 - [ ] Decide UX behaviour when offline:
     - [ ] Simple: show “needs internet to sync, data may be out of date”
     - [ ] Advanced: local cache + background sync + conflict strategy
@@ -26,23 +25,23 @@ _Update 2025-12-01:_ Supabase backup + restore is live. After sign-in we upload 
 
 ## 2. Make Auth Real (User IDs, Not Just SharedPreferences)
 
-- [ ] Replace “fake login” with real auth against backend:
-    - [ ] Sign up: send email/password/name → backend → returns user id + token
-    - [ ] Login: send credentials → backend → returns user id + token
-- [ ] On successful auth:
-    - [ ] Save `userId` and `authToken` securely on device (e.g. `flutter_secure_storage`)
-    - [ ] Update `UserProfileService` so:
-        - [ ] `isLoggedIn()` checks for stored `userId`/token validity
-        - [ ] exposes `currentUserId`
-- [ ] Update `AuthPage` to:
-    - [ ] Call backend instead of `UserProfileService.setLoggedIn(true)`
-    - [ ] Handle error messages (wrong password, email exists, etc.)
+- [x] Replace “fake login” with real auth against backend:
+    - [x] Sign up: send email/password/name → backend → returns user id + token
+    - [x] Login: send credentials → backend → returns user id + token
+- [x] On successful auth:
+    - [x] Save `userId` and `authToken` securely on device (e.g. `flutter_secure_storage`)
+    - [x] Update `UserProfileService` so:
+        - [x] `isLoggedIn()` checks for stored `userId`/token validity
+        - [x] Exposes `currentUserId`
+- [x] Update `AuthPage` to:
+    - [x] Call backend instead of `UserProfileService.setLoggedIn(true)`
+    - [x] Handle error messages (wrong password, email exists, etc.)
 
 ---
 
 ## 3. Introduce Repositories (Abstract Local vs Remote)
 
-Create a clean layer so your UI doesn’t care *where* data comes from:
+Create a clean layer so the UI doesn’t care where data comes from:
 
 - [ ] Define repository interfaces, for example:
     - [ ] `JournalRepository` (journal entries)
@@ -56,8 +55,8 @@ Create a clean layer so your UI doesn’t care *where* data comes from:
     - [ ] `LocalJournalRepository` (wraps `DbService`)
     - [ ] `RemoteJournalRepository` (uses HTTP/REST to your backend)
 - [ ] Add a simple factory/helper:
-    - [ ] If `isLoggedIn == false` → use *local* repo
-    - [ ] If `isLoggedIn == true` → use *remote* repo (plus optional cache)
+    - [ ] If `isLoggedIn == false` → use local repo
+    - [ ] If `isLoggedIn == true` → use remote repo (plus optional cache)
 
 ---
 
@@ -159,4 +158,3 @@ When a guest user logs in for the first time on a device:
 - [ ] Error handling:
     - [ ] No internet → show gentle message, don’t crash
     - [ ] Backend fails → show retry, keep local safe
-

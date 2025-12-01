@@ -1,0 +1,16 @@
+
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope LocalMachine
+
+  cd C:\xampp\htdocs\calm_campus\ai-buddy-server
+  $env:LLM_MODEL="gemma3:4b"
+  $env:LLM_TIMEOUT_MS="40000"
+  npm start
+
+ fetch('http://localhost:3001/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      message: 'Help me plan study for tomorrow',
+      consentFlags: { timetable: true, tasks: true }
+    })
+  }).then(r => r.json()).then(console.log).catch(console.error);

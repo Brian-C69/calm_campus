@@ -1,5 +1,10 @@
-import 'package:flutter/material.dart';
+import 'dart:convert';
 
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../l10n/app_localizations.dart';
+import '../services/chat_service.dart';
 import '../services/login_nudge_service.dart';
 
 class ChatPage extends StatefulWidget {
@@ -12,6 +17,15 @@ class ChatPage extends StatefulWidget {
 class _ChatPageState extends State<ChatPage> {
   String _tone = 'Gentle';
   double _temperature = 0.4;
+  static const String _storageKey = 'chat_history';
+  final TextEditingController _controller = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
+  final ChatService _chatService = ChatService();
+  final List<ChatMessage> _history = [];
+  final List<_ChatTurn> _turns = [];
+  bool _isSending = false;
+  List<String> _suggestedActions = [];
+  String? _error;
 
   Future<void> _openCustomization() async {
     final LoginNudgeAction action = await LoginNudgeService.instance.maybePrompt(
@@ -41,21 +55,14 @@ class _ChatPageState extends State<ChatPage> {
 
   @override
   Widget build(BuildContext context) {
-    final sampleMessages = [
-      const _ChatBubble(text: 'Hi, I am your CalmCampus buddy. How are you?', isUser: false),
-      const _ChatBubble(text: 'A bit stressed about exams.', isUser: true),
-      const _ChatBubble(
-        text: 'Thanks for sharing. Want a short breathing exercise or a study plan reminder?',
-        isUser: false,
-      ),
-    ];
+    final strings = AppLocalizations.of(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('AI Buddy'),
+        title: Text(strings.t('chat.title')),
         actions: [
           IconButton(
-            tooltip: 'Customise AI companion',
+            tooltip: strings.t('chat.customize'),
             onPressed: _openCustomization,
             icon: const Icon(Icons.tune),
           ),
@@ -68,17 +75,55 @@ class _ChatPageState extends State<ChatPage> {
             padding: const EdgeInsets.all(12),
             color: Theme.of(context).colorScheme.surfaceContainerHighest,
             child: Text(
-              'Logged in is only needed for DSA sharing or cloud sync. You can keep chatting as a guest.',
+              strings.t('chat.note'),
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ),
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.all(16),
-              itemCount: sampleMessages.length,
-              itemBuilder: (context, index) => sampleMessages[index],
+              controller: _scrollController,
+              itemCount: _turns.length,
+              itemBuilder: (context, index) => _ChatBubble(
+                text: _turns[index].content,
+                isUser: _turns[index].isUser,
+              ),
             ),
           ),
+          if (_suggestedActions.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    strings.t('chat.suggested'),
+                    style: Theme.of(context).textTheme.labelLarge,
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: _suggestedActions
+                        .map(
+                          (action) => ActionChip(
+                            label: Text(action),
+                            onPressed: _isSending ? null : () => _sendMessage(action),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ],
+              ),
+            ),
+          if (_error != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                _error!,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+            ),
           const Divider(height: 1),
           SafeArea(
             top: false,
@@ -89,8 +134,10 @@ class _ChatPageState extends State<ChatPage> {
                 children: [
                   Expanded(
                     child: TextField(
+                      controller: _controller,
+                      onSubmitted: (_) => _sendMessage(),
                       decoration: InputDecoration(
-                        hintText: 'Type a message',
+                        hintText: strings.t('chat.hint'),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -99,10 +146,17 @@ class _ChatPageState extends State<ChatPage> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  IconButton(
-                    onPressed: () {},
-                    icon: const Icon(Icons.send),
-                  ),
+                  _isSending
+                      ? const SizedBox(
+                          height: 24,
+                          width: 24,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : IconButton(
+                          tooltip: strings.t('chat.send'),
+                          onPressed: _sendMessage,
+                          icon: const Icon(Icons.send),
+                        ),
                 ],
               ),
             ),
@@ -110,6 +164,109 @@ class _ChatPageState extends State<ChatPage> {
         ],
       ),
     );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadHistory();
+  }
+
+  Future<void> _loadHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getString(_storageKey);
+    if (saved == null) return;
+    try {
+      final List<dynamic> parsed = jsonDecode(saved) as List<dynamic>;
+      final loadedMessages = parsed
+          .map((e) => ChatMessage(role: e['role']?.toString() ?? 'assistant', content: e['content']?.toString() ?? ''))
+          .toList();
+      if (!mounted) return;
+      setState(() {
+        _history
+          ..clear()
+          ..addAll(loadedMessages);
+        _turns
+          ..clear()
+          ..addAll(loadedMessages.map((m) => _ChatTurn(content: m.content, isUser: m.role == 'user')));
+      });
+      _scrollToEnd();
+    } catch (_) {
+      // Ignore corrupt history and continue.
+    }
+  }
+
+  Future<void> _saveHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    final encoded = jsonEncode(_history.map((m) => m.toMap()).toList());
+    await prefs.setString(_storageKey, encoded);
+  }
+
+  Future<void> _sendMessage([String? quickAction]) async {
+    final strings = AppLocalizations.of(context);
+    final text = (quickAction ?? _controller.text).trim();
+    if (text.isEmpty || _isSending) return;
+    FocusScope.of(context).unfocus();
+    setState(() {
+      _turns.add(_ChatTurn(content: text, isUser: true));
+      _history.add(ChatMessage(role: 'user', content: text));
+      _isSending = true;
+      _error = null;
+      _controller.clear();
+    });
+    await _saveHistory();
+    _scrollToEnd();
+
+    try {
+      final reply = await _chatService.sendMessage(
+        message: text,
+        history: _history,
+        consent: const ConsentFlags(), // Wire real user consents here.
+        context: const ChatContext(),
+      );
+      if (!mounted) return;
+      final assistantMessage = _combineAssistantMessage(reply);
+      setState(() {
+        _turns.add(_ChatTurn(content: assistantMessage, isUser: false));
+        _history.add(ChatMessage(role: 'assistant', content: assistantMessage));
+        _suggestedActions = reply.suggestedActions;
+      });
+      await _saveHistory();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = e.toString();
+        _turns.add(_ChatTurn(content: strings.t('chat.unavailable'), isUser: false));
+      });
+      await _saveHistory();
+    } finally {
+      if (!mounted) return;
+      setState(() => _isSending = false);
+      _scrollToEnd();
+    }
+  }
+
+  String _combineAssistantMessage(ChatReply reply) {
+    if (reply.followUpQuestion.isEmpty) return reply.messageForUser;
+    return '${reply.messageForUser}\n\n${reply.followUpQuestion}';
+  }
+
+  void _scrollToEnd() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_scrollController.hasClients) return;
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent + 80,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _scrollController.dispose();
+    super.dispose();
   }
 }
 
@@ -128,21 +285,23 @@ class _CustomizationSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final List<String> tones = ['Gentle', 'Direct', 'Practical'];
+    final strings = AppLocalizations.of(context);
+    final List<String> tones = [
+      strings.t('chat.tone.gentle'),
+      strings.t('chat.tone.direct'),
+      strings.t('chat.tone.practical'),
+    ];
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            'Customise your AI companion',
+            strings.t('chat.customize.title'),
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 8),
-          const Text(
-            'Choose the voice and creativity level you like. This stays in guest mode unless you opt in to sync.',
-            textAlign: TextAlign.center,
-          ),
+          Text(strings.t('chat.customize.desc'), textAlign: TextAlign.center),
           const SizedBox(height: 12),
           Wrap(
             spacing: 8,
@@ -165,7 +324,7 @@ class _CustomizationSheet extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Creativity level'),
+                    Text(strings.t('chat.customize.creativity')),
                     Slider(
                       min: 0.1,
                       max: 1,
@@ -183,7 +342,7 @@ class _CustomizationSheet extends StatelessWidget {
           FilledButton.icon(
             onPressed: () => Navigator.pop(context),
             icon: const Icon(Icons.check),
-            label: const Text('Save preferences (guest-friendly)'),
+            label: Text(strings.t('chat.customize.save')),
           ),
           const SizedBox(height: 12),
         ],
@@ -220,4 +379,11 @@ class _ChatBubble extends StatelessWidget {
       ],
     );
   }
+}
+
+class _ChatTurn {
+  const _ChatTurn({required this.content, required this.isUser});
+
+  final String content;
+  final bool isUser;
 }

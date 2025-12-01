@@ -279,12 +279,12 @@
   "help.title": "Bantuan segera",
   "help.card.app.title": "Aplikasi ini bukan khidmat kecemasan",
   "help.card.app.desc": "Jika anda atau orang lain dalam bahaya, hubungi perkhidmatan kecemasan tempatan.",
-  "help.card.dsa.title": "Hubungi kaunseling DSA",
+  "help.card.dsa.title": "Khidmat Kaunseling Universiti",
   "help.card.dsa.desc": "E-mel: support@dsa.edu | Telefon: +65 1234 5678",
-  "help.card.mentor.title": "Hubungi mentor dipercayai",
+  "help.card.mentor.title": "Keselamatan Universiti (lepas waktu)",
   "help.card.mentor.desc": "Pilih pensyarah atau mentor yang selesa dan minta semakan ringkas.",
   "help.card.hotline.title": "Talian krisis",
-  "help.card.hotline.desc": "Samaritans of Singapore: 1767 | IMH Helpline: 6389-2222",
+  "help.card.hotline.desc": "Befrienders KL: 03-7627 2929 (24 jam) | Talian HEAL: 15555 (8am-12am)",|"help.card.hotline.desc": "Befrienders KL: 03-7627 2929 (24 jam) | Talian HEAL: 15555 (8am-12am)",
   "help.contacts.title": "Orang selamat saya",
   "help.contacts.desc": "Simpan orang yang anda rasa selamat. Mereka muncul di sini untuk panggilan atau mesej pantas.",
   "help.contacts.manage": "Urus",
@@ -510,3 +510,4 @@
   "settings.aiBuddy.shareAll": "Kongsi semua data dengan Rakan",
   "settings.aiBuddy.shareAll.helper": "Termasuk mood, jadual, tugas, tidur, pergerakan, kitaran, dan kontak sokongan (di peranti sahaja)."
 }
+

@@ -262,10 +262,6 @@ class _ChatPageState extends State<ChatPage> {
     final text = (quickAction ?? _controller.text).trim();
     if (text.isEmpty || _isSending) return;
     FocusScope.of(context).unfocus();
-    if (_shareAllData && !_loadingContext && _consent.isEmpty && _turns.isEmpty) {
-      // Ensure context is prepared on first send after toggle.
-      await _buildContextAndConsent(strings);
-    }
     setState(() {
       _turns.add(_ChatTurn(content: text, isUser: true));
       _history.add(ChatMessage(role: 'user', content: text));
@@ -277,11 +273,16 @@ class _ChatPageState extends State<ChatPage> {
     _scrollToEnd();
 
     try {
+      if (_shareAllData && !_loadingContext && _consent.isEmpty && _turns.length == 1) {
+        await _buildContextAndConsent(strings);
+      }
+
       final reply = await _chatService.sendMessage(
         message: text,
         history: _history,
         consent: _consent,
         context: _context,
+        timeout: const Duration(seconds: 25),
       );
       if (!mounted) return;
       final assistantMessage = _combineAssistantMessage(reply);
@@ -299,9 +300,9 @@ class _ChatPageState extends State<ChatPage> {
       });
       await _saveHistory();
     } finally {
-      if (!mounted){
-      setState(() => _isSending = false);
-      _scrollToEnd();
+      if (mounted) {
+        setState(() => _isSending = false);
+        _scrollToEnd();
       }
     }
   }

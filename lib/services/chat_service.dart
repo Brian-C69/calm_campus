@@ -23,6 +23,7 @@ class ChatService {
     List<ChatMessage> history = const [],
     ConsentFlags consent = const ConsentFlags(),
     ChatContext context = const ChatContext(),
+    Duration timeout = const Duration(seconds: 25),
   }) async {
     final payload = <String, dynamic>{
       'message': message,
@@ -31,11 +32,18 @@ class ChatService {
       ...context.toPayload(),
     };
 
-    final response = await _client.post(
-      _chatUri,
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(payload),
-    );
+    http.Response response;
+    try {
+      response = await _client
+          .post(
+            _chatUri,
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode(payload),
+          )
+          .timeout(timeout);
+    } on Exception catch (e) {
+      throw ChatException('Network error: $e');
+    }
 
     if (response.statusCode != 200) {
       throw ChatException('Server error ${response.statusCode}');

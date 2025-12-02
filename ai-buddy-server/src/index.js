@@ -8,6 +8,8 @@ const primaryModel = process.env.LLM_MODEL || 'gemma3:4b';
 const fallbackModel = process.env.LLM_MODEL_FALLBACK || 'gemma3:1b';
 const temperature = Number(process.env.LLM_TEMP || 0.5);
 const timeoutMs = Number(process.env.LLM_TIMEOUT_MS || 40000);
+const fcmKey = process.env.FCM_SERVER_KEY || 'BHPMwEXJmUHFlES_gHRZN9buDGsFnmCXT5ib8vIS6S1WkgtsNUz3tQO4JDFNx4MIsA0Po4tba46lNSfhrwEjEjY';
+const fcmTopic = process.env.FCM_TOPIC || 'announcements';
 
 const CRISIS_KEYWORDS = [
   'suicide',
@@ -46,6 +48,21 @@ app.post('/chat', async (req, res) => {
   const response = await callWithFallback(messages);
   const parsed = safeParseModelResponse(response, crisis);
   return res.json(parsed);
+});
+
+app.post('/notify/announcement', async (req, res) => {
+  const { title, body } = req.body || {};
+  if (!title || !body) {
+    return res.status(400).json({ error: 'title and body are required' });
+  }
+  if (!fcmKey) {
+    return res.status(500).json({ error: 'FCM_SERVER_KEY not set' });
+  }
+  const result = await sendFcmNotification({ title, body });
+  if (!result.ok) {
+    return res.status(500).json({ error: result.error || 'fcm_error' });
+  }
+  return res.json({ status: 'sent' });
 });
 
 function crisisCheck(text) {
@@ -208,6 +225,29 @@ function fallbackResponse(crisis, error) {
       : ['Retry in a few seconds', 'Share one small thing stressing you right now'],
     error: error || undefined
   };
+}
+
+async function sendFcmNotification({ title, body }) {
+  try {
+    const resp = await fetch('https://fcm.googleapis.com/fcm/send', {
+      method: 'POST',
+      headers: {
+        Authorization: `key=${fcmKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        to: `/topics/${fcmTopic}`,
+        notification: { title, body }
+      })
+    });
+    if (!resp.ok) {
+      const text = await resp.text();
+      return { ok: false, error: text || `HTTP ${resp.status}` };
+    }
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error: error?.message || 'fcm_error' };
+  }
 }
 
 app.listen(port, () => {

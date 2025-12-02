@@ -29,6 +29,8 @@ Environment variables (optional):
 - `LLM_MODEL_FALLBACK` (e.g. `gemma3:4b`)
 - `LLM_TEMP` (default `0.5`)
 - `LLM_TIMEOUT_MS` (default `20000`)
+- `FCM_SERVER_KEY` for announcement push
+- `FCM_TOPIC` (default `announcements`)
 
 ## API
 
@@ -67,6 +69,12 @@ Returns JSON:
   "suggested_actions": ["...", "..."]
 }
 ```
+
+`POST /notify/announcement`
+```json
+{ "title": "New announcement", "body": "Check Latest News" }
+```
+Requires `FCM_SERVER_KEY`. Broadcasts to topic `/topics/${FCM_TOPIC}`.
 
 `GET /health` returns `{ status, model, fallbackModel }`.
 

@@ -151,7 +151,7 @@ class _ChatPageState extends State<ChatPage> {
                           .map(
                             (action) => ActionChip(
                               label: Text(action),
-                              onPressed: _isSending ? null : () => _sendMessage(action),
+                              onPressed: _isSending ? null : () => _handleAction(action, strings),
                             ),
                           )
                           .toList(),
@@ -305,6 +305,16 @@ class _ChatPageState extends State<ChatPage> {
         _scrollToEnd();
       }
     }
+  }
+
+  Future<void> _handleAction(String action, AppLocalizations strings) async {
+    final lower = action.toLowerCase();
+    if (lower.contains('challenge')) {
+      if (!mounted) return;
+      Navigator.pushNamed(context, '/challenges');
+      return;
+    }
+    await _sendMessage(action);
   }
 
   String _combineAssistantMessage(ChatReply reply) {

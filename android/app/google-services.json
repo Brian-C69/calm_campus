@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "427927917290",
+    "project_id": "calmcampus-4e3c4",
+    "storage_bucket": "calmcampus-4e3c4.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:427927917290:android:87197d6d23144918973d93",
+        "android_client_info": {
+          "package_name": "com.example.calm_campus"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBLoSTxdtYog-zHhkhZgnLFWmZdhkYjoEM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'pages/auth_page.dart';
+import 'l10n/app_localizations.dart';
 import 'pages/announcements_page.dart';
+import 'pages/auth_page.dart';
+import 'pages/breathing_page.dart';
+import 'pages/campus_map_page.dart';
 import 'pages/chat_page.dart';
 import 'pages/common_challenges_page.dart';
 import 'pages/dsa_summary_page.dart';
@@ -11,7 +16,6 @@ import 'pages/home_page.dart';
 import 'pages/journal_page.dart';
 import 'pages/mood_page.dart';
 import 'pages/movement_page.dart';
-import 'pages/breathing_page.dart';
 import 'pages/period_tracker_page.dart';
 import 'pages/profile_page.dart';
 import 'pages/relax_page.dart';
@@ -20,15 +24,12 @@ import 'pages/sleep_page.dart';
 import 'pages/support_plan_page.dart';
 import 'pages/tasks_page.dart';
 import 'pages/timetable_page.dart';
-import 'pages/campus_map_page.dart';
 import 'pages/weather_page.dart';
-import 'services/notification_service.dart';
-import 'services/theme_controller.dart';
+import 'services/firebase_messaging_service.dart';
 import 'services/language_controller.dart';
-import 'l10n/app_localizations.dart';
+import 'services/notification_service.dart';
 import 'services/supabase_sync_service.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
+import 'services/theme_controller.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -37,6 +38,7 @@ Future<void> main() async {
     anonKey: 'sb_publishable_CQ9qwM0iWstuTJBrcH4eeQ_Th6W0TS4',
   );
   await NotificationService.instance.initialize();
+  await FirebaseMessagingService.instance.init();
   await LanguageController.instance.loadSavedLanguage();
   await ThemeController.instance.loadSavedTheme();
   SupabaseSyncService.instance.startAutoUploadWatcher();

@@ -3,6 +3,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/announcement.dart';
 import 'db_service.dart';
 import 'notification_service.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class AnnouncementService {
   AnnouncementService._();
@@ -39,6 +41,7 @@ class AnnouncementService {
 
     if (sendNotification) {
       await NotificationService.instance.showAnnouncementAlert(saved);
+      await _triggerRemotePush(saved);
     }
 
     return saved;
@@ -154,6 +157,27 @@ If crowds feel heavy, it is okay to step outside for air or message a trusted fr
       });
     } catch (_) {
       // Silent fail: local cache remains, but remote sync will be attempted later.
+    }
+  }
+
+  Future<void> _triggerRemotePush(Announcement announcement) async {
+    final String baseUrl =
+        const String.fromEnvironment('PUSH_BASE_URL', defaultValue: 'http://10.0.2.2:3001');
+    final Uri url = Uri.parse('$baseUrl/notify/announcement');
+
+    try {
+      final response = await http
+          .post(
+            url,
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'title': announcement.title, 'body': announcement.summary}),
+          )
+          .timeout(const Duration(seconds: 10));
+      if (response.statusCode != 200) {
+        // ignore failures silently for now
+      }
+    } catch (_) {
+      // ignore network errors to keep local publish smooth
     }
   }
 }

@@ -130,6 +130,7 @@
   "auth.error.login": "We could not log you in right now. Please try again.",
   "auth.error.signup": "We could not create your account right now. Please try again.",
   "auth.error.generic": "Something went wrong while contacting the server. Your local data is still safe on this device.",
+  "auth.signup.verifyEmail": "Please confirm your email, then log in to back up your data. We will keep everything safe on this device until you sign in.",
   "auth.sync.pullFailed": "You are signed in, but we could not pull your cloud data yet. Please check your connection and try again later.",
   "auth.cta.toSignup": "New here? Create a gentle space.",
   "auth.cta.toLogin": "Already have an account? Log in.",

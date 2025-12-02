@@ -126,6 +126,7 @@
   "auth.error.login": "Kami tidak dapat log masuk sekarang. Cuba lagi.",
   "auth.error.signup": "Kami tidak dapat cipta akaun sekarang. Cuba lagi.",
   "auth.error.generic": "Masalah sambungan ke pelayan. Data tempatan anda masih selamat.",
+  "auth.signup.verifyEmail": "Sila sahkan e-mel anda dahulu, kemudian log masuk untuk membuat sandaran. Kami simpan semua catatan dengan selamat di peranti ini sementara itu.",
   "auth.sync.pullFailed": "Anda sudah log masuk, tetapi kami tidak dapat tarik data awan lagi. Semak sambungan dan cuba semula.",
   "auth.cta.toSignup": "Baru di sini? Cipta ruang lembut anda.",
   "auth.cta.toLogin": "Sudah ada akaun? Log masuk.",

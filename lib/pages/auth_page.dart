@@ -50,24 +50,37 @@ class _AuthPageState extends State<AuthPage> {
     final client = Supabase.instance.client;
 
     try {
+      AuthResponse response;
       if (_isLogin) {
-        await client.auth.signInWithPassword(
+        response = await client.auth.signInWithPassword(
           email: email,
           password: password,
         );
       } else {
-        await client.auth.signUp(
+        response = await client.auth.signUp(
           email: email,
           password: password,
           data: {
             'preferred_name': _nameController.text.trim(),
           },
         );
-      }
-
-      if (!_isLogin) {
         await UserProfileService.instance.saveNickname(_nameController.text);
       }
+
+      final session = response.session ?? client.auth.currentSession;
+      final user = session?.user ?? response.user;
+
+      if (user == null) {
+        await UserProfileService.instance.setLoggedIn(false);
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(strings.t('auth.signup.verifyEmail')),
+          ),
+        );
+        return;
+      }
+
       await UserProfileService.instance.setLoggedIn(true);
 
       await SupabaseSyncService.instance.uploadAllData();

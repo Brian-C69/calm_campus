@@ -1,5 +1,5 @@
 # CalmCampus – Logged-in Users Save to Cloud (Multi-Device Sync)  
-_Reviewed 2025-12-02. Supabase backup + restore is live: after sign-in we upload local data, then pull the user’s cloud records into SQLite. If a Supabase session exists on launch, we restore silently. Real auth + email confirmation is working and data syncs after signup._  
+_Reviewed 2025-12-02. Supabase backup + restore is live: after sign-in we upload local data, then pull the user’s cloud records into SQLite. If a Supabase session exists on launch, we restore silently. If signup needs email verification, we now ask you to confirm first and sync once you log in._  
 
 ## 0. Assumptions & Goal
 

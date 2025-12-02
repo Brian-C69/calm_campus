@@ -278,6 +278,7 @@
   "auth.login": "登录",
   "auth.logout": "退出登录",
   "auth.error": "登录失败，请稍后再试。",
+  "auth.signup.verifyEmail": "请先验证邮箱，再登录备份数据。我们会把你的记录安全保存在这台设备上。",
   "weather.title": "天气与规划",
   "weather.temp": "温度",
   "weather.humidity": "湿度",

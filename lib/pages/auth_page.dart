@@ -60,6 +60,7 @@ class _AuthPageState extends State<AuthPage> {
         response = await client.auth.signUp(
           email: email,
           password: password,
+          emailRedirectTo: 'http://bernard.onthewifi.com:3000',
           data: {
             'preferred_name': _nameController.text.trim(),
           },

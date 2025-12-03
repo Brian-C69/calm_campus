@@ -154,7 +154,12 @@ class _MovementPageState extends State<MovementPage> {
         actions: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Text(strings.t('movement.gentle')),
+            child: Text(
+              strings.t('movement.gentle'),
+              overflow: TextOverflow.fade,
+              softWrap: false,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
           ),
         ],
       ),
@@ -435,6 +440,7 @@ class _QuickLogCard extends StatelessWidget {
               decoration: InputDecoration(
                 labelText: strings.t('movement.minutes'),
                 helperText: strings.t('movement.minutes.helper'),
+                helperMaxLines: 2,
               ),
               onChanged: (value) {
                 final int parsed = int.tryParse(value) ?? minutes;
@@ -442,46 +448,67 @@ class _QuickLogCard extends StatelessWidget {
               },
             ),
             const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: DropdownButtonFormField<MovementType>(
-                    value: type,
-                    decoration: InputDecoration(
-                      labelText: strings.t('movement.type'),
-                    ),
-                    items:
-                        MovementType.values
-                            .map(
-                              (type) => DropdownMenuItem(
-                                value: type,
-                                child: Text(_labelForType(type, strings)),
-                              ),
-                            )
-                            .toList(),
-                    onChanged: onTypeChanged,
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final isNarrow = constraints.maxWidth < 360;
+                final typeField = DropdownButtonFormField<MovementType>(
+                  isExpanded: true,
+                  value: type,
+                  decoration: InputDecoration(
+                    labelText: strings.t('movement.type'),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: DropdownButtonFormField<MovementIntensity>(
-                    value: intensity,
-                    decoration: InputDecoration(
-                      labelText: strings.t('movement.intensity'),
-                    ),
-                    items:
-                        MovementIntensity.values
-                            .map(
-                              (value) => DropdownMenuItem(
-                                value: value,
-                                child: Text(_labelForIntensity(value, strings)),
-                              ),
-                            )
-                            .toList(),
-                    onChanged: onIntensityChanged,
+                  items: MovementType.values
+                      .map(
+                        (type) => DropdownMenuItem(
+                          value: type,
+                          child: Text(
+                            _labelForType(type, strings),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: onTypeChanged,
+                );
+
+                final intensityField = DropdownButtonFormField<MovementIntensity>(
+                  isExpanded: true,
+                  value: intensity,
+                  decoration: InputDecoration(
+                    labelText: strings.t('movement.intensity'),
                   ),
-                ),
-              ],
+                  items: MovementIntensity.values
+                      .map(
+                        (value) => DropdownMenuItem(
+                          value: value,
+                          child: Text(
+                            _labelForIntensity(value, strings),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: onIntensityChanged,
+                );
+
+                if (isNarrow) {
+                  return Column(
+                    children: [
+                      typeField,
+                      const SizedBox(height: 12),
+                      intensityField,
+                    ],
+                  );
+                }
+
+                return Row(
+                  children: [
+                    Expanded(child: typeField),
+                    const SizedBox(width: 12),
+                    Expanded(child: intensityField),
+                  ],
+                );
+              },
             ),
             const SizedBox(height: 12),
             Text(

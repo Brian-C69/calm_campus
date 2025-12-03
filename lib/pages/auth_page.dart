@@ -60,7 +60,7 @@ class _AuthPageState extends State<AuthPage> {
         response = await client.auth.signUp(
           email: email,
           password: password,
-          emailRedirectTo: 'http://bernard.onthewifi.com:3000',
+          emailRedirectTo: 'https://luba-irrecusable-clayton.ngrok-free.dev',
           data: {
             'preferred_name': _nameController.text.trim(),
           },
@@ -69,14 +69,14 @@ class _AuthPageState extends State<AuthPage> {
       }
 
       final session = response.session ?? client.auth.currentSession;
-      final user = session?.user ?? response.user;
-
-      if (user == null) {
+      if (session == null) {
         await UserProfileService.instance.setLoggedIn(false);
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(strings.t('auth.signup.verifyEmail')),
+            content: Text(
+              _isLogin ? strings.t('auth.error.login') : strings.t('auth.signup.verifyEmail'),
+            ),
           ),
         );
         return;

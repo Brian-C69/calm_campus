@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CalmCampus – Email confirmed</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f7f9;
+      --card: #ffffff;
+      --text: #1c2a38;
+      --muted: #5b7083;
+      --accent: #2f9e8d;
+    }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 16px;
+    }
+    .card {
+      background: var(--card);
+      border-radius: 14px;
+      padding: 24px 20px;
+      max-width: 420px;
+      width: 100%;
+      box-shadow: 0 12px 30px rgba(16, 24, 40, 0.08);
+      border: 1px solid #e2e8f0;
+      text-align: center;
+    }
+    h1 {
+      margin: 0 0 12px;
+      font-size: 22px;
+      font-weight: 700;
+    }
+    p {
+      margin: 0 0 18px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    .btn {
+      display: inline-block;
+      padding: 12px 16px;
+      border-radius: 10px;
+      background: var(--accent);
+      color: #fff;
+      text-decoration: none;
+      font-weight: 600;
+      box-shadow: 0 6px 16px rgba(47, 158, 141, 0.25);
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Email confirmed</h1>
+    <p>Your CalmCampus account is verified. You can now return to the app and log in to finish setting up your space.</p>
+    <a class="btn" href="#" onclick="window.close(); return false;">Close this tab</a>
+  </div>
+</body>
+</html>

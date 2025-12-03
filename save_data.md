@@ -1,5 +1,9 @@
 # CalmCampus – Logged-in Users Save to Cloud (Multi-Device Sync)  
-_Reviewed 2025-12-02. Supabase backup + restore is live: after sign-in we upload local data, then pull the user’s cloud records into SQLite. If a Supabase session exists on launch, we restore silently. If signup needs email verification, we now ask you to confirm first and sync once you log in._  
+_Reviewed 2025-12-02. Supabase backup + restore is live: after sign-in we upload local data, then pull the user’s cloud records into SQLite. If a Supabase session exists on launch, we restore silently. If signup needs email verification, we now ask you to confirm first and sync once you log in. Email confirm links now target https://luba-irrecusable-clayton.ngrok-free.dev._  
+
+Temp landing page for confirm redirect:
+- Host `web/confirm/index.html` on port 3000: `cd web/confirm && python -m http.server 3000`
+- Tunnel it: `ngrok http 3000` → use the HTTPS URL as `emailRedirectTo` and in Supabase “Additional Redirect URLs”.
 
 ## 0. Assumptions & Goal
 

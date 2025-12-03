@@ -138,6 +138,11 @@ class _AuthPageState extends State<AuthPage> {
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context);
+    final brightness = Theme.of(context).brightness;
+    final logoAsset = brightness == Brightness.dark
+        ? 'assets/photo/calm_campus_logo_white.png'
+        : 'assets/photo/calm_campus_logo.png';
+
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -148,6 +153,18 @@ class _AuthPageState extends State<AuthPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Center(
+                    child: Semantics(
+                      label: strings.t('app.title'),
+                      child: Image.asset(
+                        logoAsset,
+                        width: 160,
+                        height: 80,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
                   Text(
                     strings.t('auth.welcome.title'),
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(

@@ -43,3 +43,4 @@ flutter:
     - assets/audio/ambient/
     - assets/audio/guided/
     - assets/lang/
+    - assets/photo/

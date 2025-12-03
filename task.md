@@ -313,6 +313,7 @@ Status: reviewed 2025-12-02 after lint fixes; checklist kept in place unless cle
 - [x] Keep Home login indicator in sync after logout
 - [x] Fix Supabase signup backup error when email confirmation is pending (now asks you to verify email first)
 - [x] Point Supabase confirmation emails to https://luba-irrecusable-clayton.ngrok-free.dev
+- [x] Fix announcement push notifications so they broadcast to all devices (used the shared server URL instead of the emulator-only one)
 - [ ] Prepare screenshots for slides
 - [ ] Prepare demo script:
     - [ ] Scenario: stressed student before exams

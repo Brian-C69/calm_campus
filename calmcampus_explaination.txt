@@ -1,0 +1,981 @@
+1. Current CalmCampus Features (What the app actually does)
+A. Mood, Sleep & Period – How you feel across time
+1) Mood tracking & history
+Students can log a daily mood check-in with:
+
+
+Overall mood (emoji / label)
+
+
+Main theme tag (Stress, Food & Body, Social, Sleep, Lonely, Dark thoughts, etc.)
+
+
+Optional notes
+
+
+Mood entries are stored in SQLite (MoodEntry).
+
+
+There’s a History view to:
+
+
+See previous check-ins (date + mood + main theme)
+
+
+Eventually drill down to the full note and tags
+
+
+Purpose: give students a non-clinical, low-pressure way to track how they’re doing emotionally over time.
+
+
+
+2) Sleep tracking (SleepPage)
+We’ve built a sleep module that connects sleep to mood:
+Two ways to log sleep:
+
+
+Simple sleep session
+
+
+Tap “Start sleep session” when going to bed.
+
+
+App records start time into SharedPreferences.
+
+
+In the morning, tap “I’m awake”.
+
+
+A gentle dialog asks: “How rested do you feel? (1–5)”
+
+
+The app calculates duration, saves a SleepEntry (date, start, end, hours, restfulness).
+
+
+Manual sleep log
+
+
+Choose date.
+
+
+Select “Went to bed” and “Woke up” times.
+
+
+Rate restfulness 1–5 on a slider.
+
+
+App handles overnight sleep that passes midnight.
+
+
+Insights:
+
+
+The app computes:
+
+
+Average sleep duration over recent days (e.g. last 7)
+
+
+Average restfulness
+
+
+It cross-checks mood data:
+
+
+On brighter mood days, how many hours of sleep on average?
+
+
+On lower mood days, how many hours?
+
+
+Shows a friendly summary like:
+
+
+ “Past week: average sleep 7h 20m · restfulness 3.6/5.
+ On brighter days you averaged 7h 45m, compared to 6h 10m on tougher days…”
+
+
+
+So sleep is not just a number – it’s connected to emotional patterns.
+
+3) Period tracking (concept + model defined)
+We’ve planned a simple, gentle period tracker, especially for users whose mood, energy, and stress change around their cycle.
+Core ideas (for the task list / upcoming implementation):
+Manual entry of:
+
+
+Period start date
+
+
+Period end date
+
+
+Support edge cases (start & end on same day)
+
+
+From these logs, the app will:
+
+
+Calculate average cycle length
+
+
+Calculate average period duration
+
+
+Predict next period (“Expected in X days”)
+
+
+Mark ovulation window (e.g. around cycle mid-point)
+
+
+Later integration:
+
+
+Mood & energy context: “You usually feel more tired around this phase.”
+
+
+Reminders: “Your period is likely in 3 days, consider bringing a pad.”
+
+
+This keeps period tracking inside the same mental health ecosystem, not hidden in some separate app.
+
+B. Time, Tasks & Study – Organising the student life
+4) Timetable & reminders (TimetablePage)
+ClassEntry model and SQLite classes table.
+
+
+Students can:
+
+
+Add classes with:
+
+
+Course code
+
+
+Day of week
+
+
+Type (Lecture, Practical, Tutorial)
+
+
+Time range (start & end)
+
+
+Venue
+
+
+Lecturer
+
+
+See classes grouped by day.
+
+
+There’s a reminder toggle:
+
+
+When they enable it, a Login Nudge can gently say:
+
+
+ “To keep reminders safe and sync in future, you can log in – or continue as guest.”
+
+
+
+This can later link with local notifications:
+
+
+“Your next class starts in 30 minutes.”
+
+
+This tackles disorganisation and last-minute rushing, which fuel anxiety.
+
+5) Tasks / study planner (Tasks model & DB)
+Task model and tasks table are planned/partially implemented:
+
+
+Title
+
+
+Subject
+
+
+Due date
+
+
+Priority
+
+
+Status (pending/done)
+
+
+Intended UI:
+
+
+Add/edit/delete tasks
+
+
+See what’s due soon.
+
+
+Later: connect tasks + timetable + mood to see:
+
+
+Overload days
+
+
+Procrastination patterns.
+
+
+This helps with academic overwhelm and “I don’t even know where to start”.
+
+C. Support & Safety – Not being alone in a crisis
+6) HelpNowPage
+A dedicated “big red button” page for rough moments:
+Clear statement:
+
+
+ “This app is not an emergency service.”
+
+
+
+Shows key options:
+
+
+DSA counselling contact (email / phone)
+
+
+Ideas for contacting a trusted mentor (lecturer/mentor)
+
+
+Crisis hotlines (e.g. Befrienders)
+
+
+This page is linked from:
+
+
+Home (“Need urgent help?”)
+
+
+Possibly mood check-in (if user flags darker thoughts)
+
+
+AI buddy suggestions in crisis-like situations.
+
+
+Goal: when thoughts get scary, the student sees real-world, human options quickly.
+
+7) “My Safe People” – Support contacts model & UI
+We already designed and partly implemented SupportContact:
+SupportContact model:
+
+
+id
+
+
+name
+
+
+relationship (friend, sibling, partner, lecturer…)
+
+
+contactType (phone, WhatsApp, email, other)
+
+
+contactValue (number / email / link)
+
+
+priority (to show at top in HelpNow)
+
+
+In HelpNowPage, there’s a “My safe people” section:
+
+
+Shows top priority contacts as chips:
+
+
+e.g. “Alya (Best friend)” – tap → phone / WhatsApp / email
+
+
+“Manage” button to edit in “My Safety & Support Plan” page.
+
+
+Empty state explains:
+
+
+ “Add a trusted friend, sibling, or mentor so they appear here when you need them.”
+
+
+
+Tied to future behaviour:
+
+
+When AI Buddy detects “very low mood” or “I feel like giving up”, it can gently say:
+
+
+ “Do you want to talk to one of your safe people? I can pull them up.”
+
+
+
+This shifts the app from only self-help to “who can stand with me”.
+
+D. Soothing, Regulation & Self-Help – Regulate now, not just analyse later
+8) Relax & Meditations (RelaxPage)
+We’ve built a pretty nice dual audio system:
+Two categories:
+
+
+Ambient tracks (Calm River, Denali, Fireplace, etc.)
+
+
+Guided focus sessions (Focus Day 1–6)
+
+
+Features:
+Separate players:
+
+
+_ambientPlayer loops gentle sound (rain, stream, etc.)
+
+
+_guidedPlayer plays one-shot guidance (5–10 min, for example).
+
+
+You can layer them together:
+
+
+e.g. Fireplace + guided grounding.
+
+
+Floating player with:
+
+
+Play/Pause
+
+
+Volume sliders for ambient & guided separately
+
+
+Skip +/- 0.5s for guided tracks
+
+
+“Now playing” card shows what’s active.
+
+
+Use cases:
+Before sleep
+
+
+Before class / exam
+
+
+During overwhelm / meltdown recovery
+
+
+The idea is: not just track the crisis – help the nervous system settle.
+
+E. AI & Insights – Making sense, gently
+9) AI Buddy (planned, partly specced)
+We’ve scoped an AI chat system (with Ollama or other LLM) as:
+A friendly, non-clinical buddy that:
+
+
+Reflects feelings back
+
+
+Helps break tasks into steps
+
+
+Suggests related CalmCampus tools (Relax page, tasks, HelpNow, etc.)
+
+
+Backend endpoint /chat receives:
+
+
+Message
+
+
+History
+
+
+Recent mood
+
+
+Sleep + timetable (optional)
+
+
+Support contacts context (optional)
+
+
+Returns:
+
+
+message_for_user
+
+
+follow_up_question
+
+
+suggested_actions (chips like “Open Relax Page”, “See HelpNow”, “Add task”, etc.)
+
+
+With strict rules:
+No diagnosis.
+
+
+No “I can keep you safe” promises.
+
+
+In crisis language → signpost HelpNow & real humans.
+
+
+
+10) DSA Summary & analytics
+Using mood (and later sleep) data, we can generate:
+
+
+High-level summaries over 30 / 60 / 90 days.
+
+
+“In the last month, you checked in 18 times… Main themes: stress and sleep.”
+
+
+Designed for:
+
+
+Students to share with counsellors or DSA (“Here’s a summary of how I’ve been feeling.”)
+
+
+This respects privacy: data lives on the device unless they choose to share.
+
+
+
+2. What Problem Are We Actually Solving?
+Let’s phrase it like a proper FYP / report.
+The core problem
+University & college students often struggle with a mix of:
+Academic stress (deadlines, exams, timetable chaos)
+
+
+Sleep problems
+
+
+Emotional overload (anxiety, low mood, food & body struggles, loneliness)
+
+
+Difficulty reaching out for help (social anxiety, stigma, not knowing who to contact)
+
+
+Disorganisation (forgetting classes, tasks, self-care)
+
+
+Existing apps tend to be single-purpose:
+Just a to-do list
+
+
+Just a timetable
+
+
+Just a generic mood tracker
+
+
+Just a meditation app
+
+
+Or a clinical mental-health tool that feels heavy, medical, or “not for me unless I’m really sick”
+
+
+For many students, this leaves a gap:
+“I’m not ‘sick enough’ to see a psychiatrist, but I’m also not fine.
+ I’m just tired, stressed, lonely, and disorganised… and I don’t know where to start.”
+They need something:
+Non-judgemental and student-friendly
+
+
+That connects daily life (classes / tasks / sleep) with emotional wellbeing
+
+
+That gently nudges them towards real human support (friends, mentors, counsellors)
+
+
+That works even if they don’t want to log in or share data to the cloud yet
+
+
+
+CalmCampus’ solution in one line
+CalmCampus is a gentle campus companion that links your timetable, tasks, sleep, mood, and support network into one place – so you can see patterns, regulate in the moment, and reach help earlier.
+Concretely, CalmCampus aims to:
+Reduce overwhelm and chaos
+
+
+Timetable + tasks + reminders → fewer surprises, better planning.
+
+
+Sleep logging shows how exhaustion and stress are connected.
+
+
+Period tracking helps users understand their own cycles and energy shifts.
+
+
+Increase self-awareness without guilt
+
+
+Mood + sleep + period data → patterns explained in plain language.
+
+
+No “you failed your habit streak”, just:
+
+
+ “Here’s what we notice. Let’s adjust.”
+
+
+
+Offer simple tools to regulate in the moment
+
+
+Relax page (ambient + guided audio) to calm nervous system.
+
+
+Future micro-cards for “Common Challenges” (“when thoughts get dark”, “when food/body anxiety hits”, etc.)
+
+
+Bridge to real-world support rather than replacing it
+
+
+“My safe people” stored and surfaced at the right moment.
+
+
+HelpNow page with DSA, hotlines, and mentors.
+
+
+AI Buddy gently suggesting: “Do you want to look at HelpNow?”
+ or “Do you want to message [your safe person]?”.
+
+
+Respect autonomy and different comfort levels
+
+
+Can be used fully in guest mode.
+
+
+Login is only nudged when features like cross-device sync or campus integrations are needed.
+
+
+Language is non-clinical, non-shaming, body-neutral, and trauma-informed.
+
+
+
+
+
+
+
+
+
+
+1. Report Section: Problem Statement, Objectives, Scope
+1.1 Problem Statement
+University and college students often struggle with a combination of academic pressure, emotional distress, and disorganisation. Common issues include overloaded timetables, poor sleep, anxiety about exams, changes in mood around the menstrual cycle, and difficulty reaching out for help.
+Existing digital tools tend to be highly fragmented:
+Timetable and task apps focus only on academic scheduling.
+
+
+Mood or journaling apps track feelings but ignore daily context (classes, sleep, cycle).
+
+
+Meditation apps offer relaxation but are not linked to the student’s actual stressors.
+
+
+Clinical mental health apps can feel “too formal” or “for seriously ill people”, increasing stigma and reducing adoption.
+
+
+As a result, many students are left in a grey zone:
+They are not in immediate crisis, but they are also not fully fine. They are tired, stressed, lonely, and disorganised – and they do not know where to start or who to talk to.
+There is a need for a gentle, student-friendly companion that:
+Integrates everyday data (mood, sleep, period, timetable, tasks)
+
+
+Helps students notice patterns between lifestyle and mental state
+
+
+Provides in-the-moment regulation tools (e.g. relaxation audio)
+
+
+And offers a safe bridge to real-world support (friends, mentors, campus services)
+ without being a clinical diagnostic tool or an emergency service.
+
+
+CalmCampus is proposed as a mobile application that addresses this gap by integrating wellbeing tracking, study organisation, and support pathways into one coherent, trauma-informed experience.
+
+1.2 Objectives
+The main objective of CalmCampus is:
+To support university students’ emotional wellbeing and academic functioning by connecting their daily routines (classes, tasks, sleep, menstrual cycle) with mood awareness, self-regulation tools, and accessible support options.
+This can be broken down into the following specific objectives:
+Mood & Sleep Awareness
+
+
+To provide a simple, non-clinical way for students to log their moods and sleep patterns, and to generate gentle insights about how rest and emotional state are related.
+
+
+Cycle & Energy Awareness (Period Tracking)
+
+
+To allow students who menstruate to manually log their periods and receive predictions for upcoming cycles, duration, and ovulation windows, helping them understand how hormonal changes may affect mood, energy, and stress.
+
+
+Academic Organisation
+
+
+To help students reduce academic overwhelm by offering a basic timetable and task planner that surfaces upcoming classes and deadlines in a clear and manageable way.
+
+
+In-the-Moment Regulation
+
+
+To provide calming tools such as ambient soundscapes and guided sessions that students can use during moments of stress, before sleep, or prior to demanding academic events.
+
+
+Support & Safety Pathways
+
+
+To store and surface “safe people” (trusted contacts) and key crisis resources (campus counselling, hotlines) so that students can quickly reach real-world human help when needed.
+
+
+Gentle, Non-Stigmatising Experience
+
+
+To design the app language, flows, and nudges so that students feel validated and supported rather than judged, and to make it usable in guest mode without forcing logins or labels.
+
+
+Foundation for AI-Assisted Support (Future Work)
+
+
+To prepare structured data and flows that can later integrate with an AI Buddy, which will provide supportive chat, reflections, and context-aware suggestions while respecting ethical and safety constraints.
+
+
+
+1.3 Scope of the System
+1.3.1 In-Scope Features
+Mood Tracking & History
+
+
+Record daily mood entries with:
+
+
+Overall mood label (e.g. happy, anxious, tired, unsure)
+
+
+Main theme tag (e.g. Stress, Food & Body, Sleep, Social, Lonely, Dark thoughts, etc.)
+
+
+Optional note.
+
+
+View past entries in a history list.
+
+
+Store data locally using SQLite.
+
+
+Sleep Tracking & Insights
+
+
+Simple “sleep session”:
+
+
+Start session when going to bed, end when waking up.
+
+
+Ask for restfulness rating (1–5).
+
+
+Automatically log duration and times as SleepEntry.
+
+
+Manual sleep logging:
+
+
+Choose date, sleep start, sleep end, restfulness.
+
+
+Handle overnight sleep (past midnight).
+
+
+Generate basic insights:
+
+
+Average sleep duration and restfulness over recent days.
+
+
+Compare sleep on “brighter mood” vs “lower mood” days.
+
+
+Period Tracking (Cycle Awareness)
+
+
+Manual logging of:
+
+
+Period start date
+
+
+Period end date (including one-day periods).
+
+
+Compute:
+
+
+Average cycle length
+
+
+Average period duration
+
+
+Predict:
+
+
+Estimated next period date
+
+
+Days until next period
+
+
+Approximate ovulation window.
+
+
+Display simple cycle statistics to help users understand patterns.
+
+
+Timetable Management
+
+
+Add, edit, and delete class entries (ClassEntry) with:
+
+
+Course code
+
+
+Day of week
+
+
+Start and end times
+
+
+Type (Lecture/Practical/Tutorial)
+
+
+Venue
+
+
+Lecturer.
+
+
+Group classes by day and show them in a readable schedule.
+
+
+Provide an option to enable timetable reminders in-app (with a gentle login nudge if cloud sync or campus integration is needed later).
+
+
+Task / Study Planner
+
+
+Define tasks with:
+
+
+Title
+
+
+Subject
+
+
+Due date
+
+
+Priority
+
+
+Status (pending/completed).
+
+
+Display pending and completed tasks in a simple view.
+
+
+Connect tasks conceptually to stress and mood (for later analytics and AI).
+
+
+Relax & Meditation Tools
+
+
+Provide a Relax page with:
+
+
+Ambient soundscapes (e.g. Calm River, Fireplace, etc.).
+
+
+Guided focus/meditation tracks (e.g. Focus Day 1–6).
+
+
+Dual audio system:
+
+
+Play ambient and guided tracks together.
+
+
+Control volumes independently.
+
+
+Floating player with play/pause and skip controls.
+
+
+Use for pre-exam calming, bedtime wind-down, or during stressful moments.
+
+
+HelpNow & Support Contacts
+
+
+HelpNow page containing:
+
+
+Clear disclaimer that the app is not an emergency service.
+
+
+Campus counselling contact (email/phone).
+
+
+Advice to reach out to a trusted mentor or lecturer.
+
+
+Crisis hotlines (configurable per location).
+
+
+SupportContact model:
+
+
+Store “safe people” including name, relationship, contact type (phone/WhatsApp/email/other), contact value, and priority.
+
+
+Show top priority contacts on HelpNow as quick ActionChips that open the corresponding phone/WhatsApp/email apps via url_launcher.
+
+
+Provide a “My Safety & Support Plan” entry point for managing these contacts.
+
+
+Local Data Storage & Preferences
+
+
+SQLite for structured data (mood, sleep, classes, tasks, support contacts, period logs, etc.).
+
+
+SharedPreferences for:
+
+
+First-run flag
+
+
+Simple profile (nickname, course, year)
+
+
+Sleep session in progress
+
+
+Simple app settings (theme, etc.).
+
+
+Basic DSA summary text for students to share with counsellors, generated from local mood/sleep data.
+
+
+
+1.3.2 Out-of-Scope (for this phase)
+Real-time chat with professional counsellors or therapists.
+
+
+Clinical diagnosis or risk scoring (e.g. depression scales, ED scales).
+
+
+Acting as or replacing an emergency service.
+
+
+Cloud sync, multi-device login, or institution-wide dashboards (can be future work).
+
+
+Deep integration with device health APIs (Google Fit/Apple Health) for automatic sleep tracking (currently manual + internal timer only).
+
+
+Full AI Buddy integration in this phase (only prepared structurally; can be implemented in future iterations).
+
+
+
+2. Slide-Style Summary for Presentation
+You can turn this into 2–3 slides. Here’s a table you can paste into PowerPoint/Canva and style:
+Slide: CalmCampus – Key Features & Why They Matter
+Feature
+What it does
+Why it matters for students
+Mood tracking & history
+Lets students log how they feel, what the main theme is (stress, food/body, sleep, social, etc.), and add notes.
+Builds self-awareness over time without clinical labels. Helps them see “I’ve been struggling for a while” instead of thinking each day is random.
+Sleep tracking & insights
+Offers a one-tap sleep session (start/stop), or manual logging, plus restfulness rating. Generates insights linking sleep hours to mood patterns.
+Shows the connection between sleep and emotional state, so students understand that exhaustion isn’t a personal failure – it’s a real factor they can adjust.
+Period tracking (cycle awareness)
+Allows manual logging of period start/end, predicts next period, estimates cycle length & ovulation window.
+Helps those who menstruate understand how hormonal cycles affect mood, energy, hunger, and concentration – reducing confusion and self-blame.
+Timetable management
+Stores classes with day, time, venue, lecturer, and type (L/P/T). Shows schedule by day and prepares for reminders.
+Reduces chaos and last-minute panic by making the academic week visible and predictable in the same place as wellbeing tools.
+Task / study planner
+Tracks tasks with subject, due dates, priorities, and completion status.
+Helps students break workload into smaller steps, reducing overwhelm and supporting better exam preparation.
+Relax & meditation (audio)
+Provides ambient sounds and guided focus sessions, with dual-player controls for volume and layering.
+Gives students instant regulation tools to calm their nervous system before sleep, exams, or after stressful events. Not just tracking; real “what to do now”.
+HelpNow page
+Clearly states the app is not an emergency service, and lists campus counselling, crisis hotlines, and mentor suggestions.
+Ensures that when things get scary, the app pushes students toward real humans and real-world support, not just self-help.
+“My safe people” contacts
+Lets students save trusted friends/relatives/mentors with phone/WhatsApp/email, and prioritises them on HelpNow.
+In rough moments, students don’t have to dig through contacts – their “safe people” are right there. Future AI Buddy can also suggest: “Do you want to call your best friend?”
+Local data & DSA summary
+Uses SQLite and SharedPreferences to keep data on-device, and can generate a summary for DSA/counsellors.
+Respects privacy while still giving a structured way to say, “Here’s what my last 30 days looked like” in a session.
+
+
+Slide: The Problem vs Our Solution
+You can use this as another slide:
+Problem (Student Reality)
+Stress from classes, deadlines, and exams
+
+
+Poor or irregular sleep
+
+
+Mood swings, loneliness, and anxiety
+
+
+Period-related energy and mood changes
+
+
+Hard to reach out for help; don’t know who to contact
+
+
+Too many separate apps that don’t talk to each other
+
+
+CalmCampus Solution
+One app that links timetable, tasks, sleep, mood, and cycle
+
+
+Gentle insights instead of harsh stats (“you slept X, no judgement”)
+
+
+Built-in Relax tools (ambient + guided audio) for real-time calming
+
+
+HelpNow + safe people for quick access to real-world support
+
+
+Optional, future-ready AI Buddy to talk, reflect, and suggest next steps
+
+
+Designed in non-clinical, student-friendly language – safe for those who “are not okay, but not sure if they are ‘sick’ either”.
+
+
+

@@ -161,8 +161,11 @@ If crowds feel heavy, it is okay to step outside for air or message a trusted fr
   }
 
   Future<void> _triggerRemotePush(Announcement announcement) async {
-    final String baseUrl =
-        const String.fromEnvironment('PUSH_BASE_URL', defaultValue: 'http://10.0.2.2:3001');
+    const String pushEnv = String.fromEnvironment('PUSH_BASE_URL');
+    const String chatEnv = String.fromEnvironment('CHAT_BASE_URL');
+    final String baseUrl = pushEnv.isNotEmpty
+        ? pushEnv
+        : (chatEnv.isNotEmpty ? chatEnv : 'http://bernard.onthewifi.com:3001');
     final Uri url = Uri.parse('$baseUrl/notify/announcement');
 
     try {

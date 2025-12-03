@@ -33,6 +33,7 @@
 - Settings & Profile
   - `SettingsPage` (`/settings`)
   - `ProfilePage` (`/profile`)
+  - `AboutPage` (`/about`)
 
 ## Navigation map (start at Home)
 - Home (`/home`):
@@ -51,5 +52,4 @@
   - Open Announcements (`/announcements`)
   - Open Campus Map (`/map`)
   - Open Weather (`/weather`)
-  - Open Profile (`/profile`)
-  - Open Settings (`/settings`)
+  - Open Profile (`/profile`) → Settings (`/settings`); About (`/about`)

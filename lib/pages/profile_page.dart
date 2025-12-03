@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../services/user_profile_service.dart';
+import '../l10n/app_localizations.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -42,6 +43,10 @@ class _ProfilePageState extends State<ProfilePage> {
     });
   }
 
+  Future<void> _openAbout() async {
+    await Navigator.pushNamed(context, '/about');
+  }
+
   Future<void> _openLogin() async {
     await Navigator.pushNamed(context, '/auth');
     setState(() {
@@ -50,6 +55,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _logout() async {
+    final strings = AppLocalizations.of(context);
     await UserProfileService.instance.setLoggedIn(false);
 
     if (!mounted) return;
@@ -58,18 +64,14 @@ class _ProfilePageState extends State<ProfilePage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('You are now logged out'),
-          content: const Text(
-            'Your past check-ins, timetable, and tasks are still saved on this phone, even after logging out. '
-            'From now on, anything you add will stay on this device only and will not sync to other devices. '
-            'If you ever want to remove your local data, you can delete the app from your phone.',
-          ),
+          title: Text(strings.t('profile.logout.title')),
+          content: Text(strings.t('profile.logout.body')),
           actions: [
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: const Text('OK'),
+              child: Text(strings.t('common.ok')),
             ),
           ],
         );
@@ -84,9 +86,10 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Profile'),
+        title: Text(strings.t('profile.title')),
       ),
       body: FutureBuilder<_ProfileData>(
         future: _profileFuture,
@@ -109,20 +112,20 @@ class _ProfilePageState extends State<ProfilePage> {
                         size: 56, color: theme.colorScheme.primary),
                     const SizedBox(height: 12),
                     Text(
-                      'Log in to see your saved profile details.',
+                      strings.t('profile.guest.title'),
                       style: theme.textTheme.titleMedium,
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'We keep your nickname, course, and study year private. Sign in to view or update them.',
+                      strings.t('profile.guest.body'),
                       style: theme.textTheme.bodyMedium,
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 16),
                     FilledButton(
                       onPressed: _openLogin,
-                      child: const Text('Log in'),
+                      child: Text(strings.t('profile.login')),
                     ),
                   ],
                 ),
@@ -156,18 +159,20 @@ class _ProfilePageState extends State<ProfilePage> {
                           ),
                           const SizedBox(height: 12),
                           Text(
-                            profile.nickname ?? 'Add your nickname in settings',
+                            profile.nickname ?? strings.t('profile.nickname.missing'),
                             style: theme.textTheme.titleLarge,
                           ),
                           Text(
-                            profile.course ?? 'Course not set',
+                            profile.course ?? strings.t('profile.course.missing'),
                             style: theme.textTheme.bodyMedium,
                           ),
                           const SizedBox(height: 8),
                           Text(
                             profile.yearOfStudy != null
-                                ? 'Year ${profile.yearOfStudy}'
-                                : 'Year not set',
+                                ? strings
+                                    .t('profile.year.label')
+                                    .replaceFirst('{year}', profile.yearOfStudy.toString())
+                                : strings.t('profile.year.missing'),
                             style: theme.textTheme.bodyMedium,
                           ),
                         ],
@@ -183,19 +188,25 @@ class _ProfilePageState extends State<ProfilePage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Overview',
+                            strings.t('profile.overview'),
                             style: theme.textTheme.titleMedium,
                           ),
                           const SizedBox(height: 8),
                           ListTile(
                             leading: const Icon(Icons.email_outlined),
-                            title: const Text('Contact preferences'),
-                            subtitle: const Text('Add your course email later'),
+                            title: Text(strings.t('profile.contact')),
+                            subtitle: Text(strings.t('profile.contact.helper')),
                           ),
                           ListTile(
                             leading: const Icon(Icons.schedule_outlined),
-                            title: const Text('Daily reminder'),
-                            subtitle: const Text('Manage reminder time in settings'),
+                            title: Text(strings.t('profile.reminder')),
+                            subtitle: Text(strings.t('profile.reminder.helper')),
+                          ),
+                          ListTile(
+                            leading: const Icon(Icons.info_outline),
+                            title: Text(strings.t('about.title')),
+                            subtitle: Text(strings.t('about.subtitle')),
+                            onTap: _openAbout,
                           ),
                         ],
                       ),
@@ -205,13 +216,13 @@ class _ProfilePageState extends State<ProfilePage> {
                   FilledButton.icon(
                     onPressed: _openSettings,
                     icon: const Icon(Icons.settings),
-                    label: const Text('Open Settings'),
+                    label: Text(strings.t('profile.openSettings')),
                   ),
                   const SizedBox(height: 8),
                   OutlinedButton.icon(
                     onPressed: _logout,
                     icon: const Icon(Icons.logout),
-                    label: const Text('Log out'),
+                    label: Text(strings.t('profile.logout')),
                   ),
                 ],
               ),

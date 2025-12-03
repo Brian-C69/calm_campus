@@ -14,6 +14,7 @@ import 'pages/help_now_page.dart';
 import 'pages/history_page.dart';
 import 'pages/home_page.dart';
 import 'pages/journal_page.dart';
+import 'pages/about_page.dart';
 import 'pages/mood_page.dart';
 import 'pages/movement_page.dart';
 import 'pages/period_tracker_page.dart';
@@ -94,10 +95,11 @@ class MyApp extends StatelessWidget {
                 '/chat': (_) => const ChatPage(),
                 '/relax': (_) => const RelaxPage(),
                 '/breathing': (_) => const BreathingPage(),
-                '/profile': (_) => const ProfilePage(),
-                '/settings': (_) => const SettingsPage(),
-                '/help-now': (_) => const HelpNowPage(),
-                '/dsa-summary': (_) => const DsaSummaryPage(),
+                  '/profile': (_) => const ProfilePage(),
+                  '/settings': (_) => const SettingsPage(),
+                  '/about': (_) => const AboutPage(),
+                  '/help-now': (_) => const HelpNowPage(),
+                  '/dsa-summary': (_) => const DsaSummaryPage(),
                 '/challenges': (_) => const CommonChallengesPage(),
                 '/sleep': (_) => const SleepPage(),
                 '/period-tracker': (_) => const PeriodTrackerPage(),

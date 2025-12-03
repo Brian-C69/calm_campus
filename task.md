@@ -217,6 +217,7 @@ Status: reviewed 2025-12-02 after lint fixes; checklist kept in place unless cle
     - [x] Show loading indicator while waiting for reply
     - [x] Render `suggested_actions` as tappable chips/buttons
     - [x] (Nice-to-have) Persist minimal chat history locally
+- [x] Bugfix 2025-12-04: Buddy now receives consented profile/period/movement context so replies can stay personal without over-sharing.
 
 ---
 

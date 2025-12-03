@@ -29,6 +29,7 @@ Environment variables (optional):
 - `LLM_MODEL_FALLBACK` (e.g. `gemma3:4b`)
 - `LLM_TEMP` (default `0.5`)
 - `LLM_TIMEOUT_MS` (default `20000`)
+- `FCM_SERVER_KEY` (required for `/notify/announcement`; use legacy FCM server key)
 - `FCM_TOPIC` (default `announcements`)
 - `GOOGLE_APPLICATION_CREDENTIALS` path to Firebase service account JSON **or**
   `GOOGLE_APPLICATION_CREDENTIALS_JSON` with the JSON inline (required for FCM HTTP v1)

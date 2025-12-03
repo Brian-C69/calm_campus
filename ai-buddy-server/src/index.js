@@ -55,9 +55,6 @@ app.post('/notify/announcement', async (req, res) => {
   if (!title || !body) {
     return res.status(400).json({ error: 'title and body are required' });
   }
-  if (!fcmKey) {
-    return res.status(500).json({ error: 'FCM_SERVER_KEY not set' });
-  }
   const result = await sendFcmNotification({ title, body });
   if (!result.ok) {
     return res.status(500).json({ error: result.error || 'fcm_error' });

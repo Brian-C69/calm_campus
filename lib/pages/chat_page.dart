@@ -144,17 +144,22 @@ class _ChatPageState extends State<ChatPage> {
                   ),
                   if (_showSuggestions) ...[
                     const SizedBox(height: 4),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: _suggestedActions
-                          .map(
-                            (action) => ActionChip(
-                              label: Text(action),
-                              onPressed: _isSending ? null : () => _handleAction(action, strings),
-                            ),
-                          )
-                          .toList(),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      physics: const BouncingScrollPhysics(),
+                      child: Row(
+                        children: _suggestedActions
+                            .map(
+                              (action) => Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: ActionChip(
+                                  label: Text(action),
+                                  onPressed: _isSending ? null : () => _handleAction(action, strings),
+                                ),
+                              ),
+                            )
+                            .toList(),
+                      ),
                     ),
                   ],
                 ],
@@ -553,7 +558,6 @@ class _ChatPageState extends State<ChatPage> {
     return DateTimeRange(start: windowStart, end: windowEnd);
   }
 }
-
 class _CustomizationSheet extends StatelessWidget {
   const _CustomizationSheet({
     required this.tone,

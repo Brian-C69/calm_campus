@@ -49,6 +49,7 @@ class AnnouncementService {
 
   Future<void> deleteAnnouncement(int id) async {
     await _db.deleteAnnouncement(id);
+    _deleteAnnouncementFromSupabase(id);
   }
 
   Future<void> _seedDefaults() async {
@@ -157,6 +158,14 @@ If crowds feel heavy, it is okay to step outside for air or message a trusted fr
       });
     } catch (_) {
       // Silent fail: local cache remains, but remote sync will be attempted later.
+    }
+  }
+
+  Future<void> _deleteAnnouncementFromSupabase(int id) async {
+    try {
+      await _client.from('announcements').delete().eq('id', id);
+    } catch (_) {
+      // Silent fail: local cache keeps it removed; remote entries will stay if offline.
     }
   }
 

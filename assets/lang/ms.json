@@ -533,6 +533,26 @@
   "profile.openSettings": "Buka Tetapan",
   "profile.logout": "Log keluar",
   "profile.logout.title": "Anda telah log keluar",
-  "profile.logout.body": "Catatan mood, jadual, dan tugasan anda kekal di telefon ini walaupun selepas log keluar. Mulai sekarang, apa yang anda tambah akan kekal di peranti sahaja dan tidak disegerakkan. Jika mahu buang data tempatan, anda boleh padam aplikasi ini."
+  "profile.logout.body": "Catatan mood, jadual, dan tugasan anda kekal di telefon ini walaupun selepas log keluar. Mulai sekarang, apa yang anda tambah akan kekal di peranti sahaja dan tidak disegerakkan. Jika mahu buang data tempatan, anda boleh padam aplikasi ini.",
+  "fcmDebug.title": "Debug notifikasi",
+  "fcmDebug.note": "Guna ini untuk semak token Firebase, kebenaran, langganan topik, dan hantar push ujian melalui pelayan Buddy.",
+  "fcmDebug.permission": "Kebenaran notifikasi",
+  "fcmDebug.permission.granted": "Dibenarkan",
+  "fcmDebug.permission.denied": "Ditolak",
+  "fcmDebug.permission.provisional": "Sementara",
+  "fcmDebug.permission.notDetermined": "Belum ditentukan",
+  "fcmDebug.requestPermission": "Mohon kebenaran",
+  "fcmDebug.token": "Token FCM",
+  "fcmDebug.tokenMissing": "Token belum tersedia",
+  "fcmDebug.copy": "Salin",
+  "fcmDebug.refreshToken": "Segar semula token",
+  "fcmDebug.topic": "Topik pengumuman",
+  "fcmDebug.subscribe": "Langgan",
+  "fcmDebug.unsubscribe": "Nyahlanggan",
+  "fcmDebug.sendTest": "Hantar push ujian",
+  "fcmDebug.sendTest.desc": "Hantar push kecil melalui pelayan Buddy ke topik pengumuman. Pastikan pelayan boleh dicapai.",
+  "fcmDebug.lastMessage": "Keputusan terakhir",
+  "fcmDebug.sent": "Push ujian dihantar. Tunggu notifikasi.",
+  "fcmDebug.copied": "Disalin ke papan klip"
 }
 

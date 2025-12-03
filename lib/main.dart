@@ -15,6 +15,7 @@ import 'pages/history_page.dart';
 import 'pages/home_page.dart';
 import 'pages/journal_page.dart';
 import 'pages/about_page.dart';
+import 'pages/fcm_debug_page.dart';
 import 'pages/mood_page.dart';
 import 'pages/movement_page.dart';
 import 'pages/period_tracker_page.dart';
@@ -108,6 +109,7 @@ class MyApp extends StatelessWidget {
                 '/campus-map': (_) => const CampusMapPage(),
                 '/weather': (_) => const WeatherPage(),
                 '/announcements': (_) => const AnnouncementsPage(),
+                '/debug/fcm': (_) => const FcmDebugPage(),
               },
             );
           },

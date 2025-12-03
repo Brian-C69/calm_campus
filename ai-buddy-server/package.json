@@ -6,7 +6,8 @@
   "description": "Express server proxying Ollama for CalmCampus Buddy with safety guardrails",
   "main": "src/index.js",
   "scripts": {
-    "start": "node src/index.js"
+    "start": "node src/index.js",
+    "start:push": "node src/pushRelay.js"
   },
   "dependencies": {
     "cors": "^2.8.5",

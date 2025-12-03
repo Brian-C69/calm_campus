@@ -70,6 +70,7 @@ class _HomePageState extends State<HomePage> {
       _HomeRouteInfo(strings.t('home.card.help'), Icons.volunteer_activism, '/help-now'),
       _HomeRouteInfo(strings.t('home.card.dsa'), Icons.analytics, '/dsa-summary'),
       _HomeRouteInfo(strings.t('home.card.challenges'), Icons.menu_book, '/challenges'),
+      _HomeRouteInfo(strings.t('home.card.challenges'), Icons.bug_report, '/debug/fcm'),
     ];
 
     return Scaffold(

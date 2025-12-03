@@ -60,7 +60,7 @@ class _AuthPageState extends State<AuthPage> {
         response = await client.auth.signUp(
           email: email,
           password: password,
-          emailRedirectTo: 'https://luba-irrecusable-clayton.ngrok-free.dev',
+          emailRedirectTo: 'https://luba-irrecusable-clayton.ngrok-free.dev/confirm/',
           data: {
             'preferred_name': _nameController.text.trim(),
           },
@@ -69,6 +69,21 @@ class _AuthPageState extends State<AuthPage> {
       }
 
       final session = response.session ?? client.auth.currentSession;
+      final user = response.user ?? client.auth.currentUser;
+      final bool isConfirmed = user?.emailConfirmedAt != null;
+
+      if (!_isLogin && !isConfirmed) {
+        await client.auth.signOut();
+        await UserProfileService.instance.setLoggedIn(false);
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(strings.t('auth.signup.verifyEmail')),
+          ),
+        );
+        return;
+      }
+
       if (session == null) {
         await UserProfileService.instance.setLoggedIn(false);
         if (!mounted) return;

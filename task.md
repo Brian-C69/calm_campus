@@ -255,18 +255,18 @@ Status: reviewed 2025-12-02 after lint fixes; checklist kept in place unless cle
 
 ### 7.1 Per-Student DSA Summary (Opt-in)
 
-- [ ] Function to get mood entries for last N days:
-    - [ ] `getMoodEntriesForLastDays(int days)`
-- [ ] `calculateMoodStats(List<MoodEntry>)`:
-    - [ ] total days with entries
-    - [ ] moodCounts (per mood)
-    - [ ] topTags (themes)
-- [ ] `buildDsaSummaryText(MoodStats stats, int days)`:
-    - [ ] Human-readable summary for student to share
-- [ ] `DsaSummaryPage` UI:
-    - [ ] Select time range (e.g. 30 days)
-    - [ ] Show summary text
-    - [ ] “Copy summary” button
+- [x] Function to get mood entries for last N days:
+    - [x] `getMoodEntriesForLastDays(int days)`
+- [x] `calculateMoodStats(List<MoodEntry>)`:
+    - [x] total days with entries
+    - [x] moodCounts (per mood)
+    - [x] topTags (themes)
+- [x] `buildDsaSummaryText(MoodStats stats, int days)`:
+    - [x] Human-readable summary for student to share
+- [x] `DsaSummaryPage` UI:
+    - [x] Select time range (e.g. 30 days)
+    - [x] Show summary text
+    - [x] “Copy summary” button
 
 ### 7.2 (Optional / Future) Anonymous Campus Pulse
 

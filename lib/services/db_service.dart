@@ -265,6 +265,16 @@ class DbService {
     }).toList();
   }
 
+  Future<List<MoodEntry>> getMoodEntriesForLastDays(int days) {
+    final DateTime now = DateTime.now();
+    final int safeDays = days <= 0 ? 1 : days;
+    final DateTime start = DateTime(now.year, now.month, now.day)
+        .subtract(Duration(days: safeDays - 1));
+    final DateTime end =
+        DateTime(now.year, now.month, now.day).add(const Duration(days: 1));
+    return getMoodEntries(from: start, to: end);
+  }
+
   Future<MoodEntry?> getTodayMood() async {
     final DateTime now = DateTime.now();
     final DateTime startOfDay = DateTime(now.year, now.month, now.day);

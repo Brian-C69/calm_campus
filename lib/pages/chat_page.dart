@@ -529,7 +529,7 @@ class _ChatPageState extends State<ChatPage> {
     return {
       'name': c.name,
       'relationship': c.relationship,
-      'contactType': c.contactType,
+      'contactType': c.contactType.name,
     };
   }
 

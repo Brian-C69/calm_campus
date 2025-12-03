@@ -29,8 +29,9 @@ Environment variables (optional):
 - `LLM_MODEL_FALLBACK` (e.g. `gemma3:4b`)
 - `LLM_TEMP` (default `0.5`)
 - `LLM_TIMEOUT_MS` (default `20000`)
-- `FCM_SERVER_KEY` for announcement push
 - `FCM_TOPIC` (default `announcements`)
+- `GOOGLE_APPLICATION_CREDENTIALS` path to Firebase service account JSON **or**
+  `GOOGLE_APPLICATION_CREDENTIALS_JSON` with the JSON inline (required for FCM HTTP v1)
 
 ## API
 
@@ -74,7 +75,7 @@ Returns JSON:
 ```json
 { "title": "New announcement", "body": "Check Latest News" }
 ```
-Requires `FCM_SERVER_KEY`. Broadcasts to topic `/topics/${FCM_TOPIC}`.
+Requires Firebase service account credentials (`GOOGLE_APPLICATION_CREDENTIALS` or `GOOGLE_APPLICATION_CREDENTIALS_JSON`). Broadcasts to topic `/topics/${FCM_TOPIC}` via FCM HTTP v1.
 
 `GET /health` returns `{ status, model, fallbackModel }`.
 

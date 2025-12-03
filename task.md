@@ -438,7 +438,7 @@ Status: reviewed 2025-12-02 after lint fixes; checklist kept in place unless cle
     - [ ] Aggregated statistics (no names)
     - [ ] Filters by time range and theme (stress, sleep, social, etc.)
 - [ ] Mention possibility of integrating push notifications:
-    - [ ] Using FCM triggered when a new announcement is created
+    - [x] Using FCM triggered when a new announcement is created (announcements subscribe to `/topics/announcements`; see `fcm_push_notifications.md`)
     - [ ] Students tap notification → CalmCampus opens Announcement page
 
 ---

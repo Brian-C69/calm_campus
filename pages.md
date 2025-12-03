@@ -1,0 +1,55 @@
+# CalmCampus Screens (top-down)
+
+- Auth
+  - `AuthPage` (`/auth`): login/signup, Supabase auth, cloud sync kick-off
+- Home
+  - `HomePage` (`/home`): entry hub tiles for mood, tasks, relax, chat, sleep, period, support, help
+- Mood & History
+  - `MoodPage` (`/mood`): daily check-in form
+  - `HistoryPage` (`/history`): past moods list
+- Tasks & Timetable
+  - `TasksPage` (`/tasks`): study planner
+  - `TimetablePage` (`/timetable`): class schedule
+- Relax & Breathing
+  - `RelaxPage` (`/relax`): audio soundscapes + guided
+  - `BreathingPage` (`/breathing`): exercise list
+  - `BreathingSessionPage`: timed breathing session
+- Chat & Journal
+  - `ChatPage` (`/chat`): AI Buddy
+  - `JournalPage` (`/journal`): free-form notes
+- Wellbeing trackers
+  - `SleepPage` (`/sleep`)
+  - `MovementPage` (`/movement`)
+  - `PeriodTrackerPage` (`/period`)
+- Support & Safety
+  - `SupportPlanPage` (`/support-plan`): saved contacts
+  - `HelpNowPage` (`/help-now`): crisis and support links
+- Info & Summaries
+  - `CommonChallengesPage` (`/common-challenges`)
+  - `DsaSummaryPage` (`/dsa-summary`)
+  - `AnnouncementsPage` (`/announcements`)
+  - `CampusMapPage` (`/map`)
+  - `WeatherPage` (`/weather`)
+- Settings & Profile
+  - `SettingsPage` (`/settings`)
+  - `ProfilePage` (`/profile`)
+
+## Navigation map (start at Home)
+- Home (`/home`):
+  - Open Mood (`/mood`) → History (`/history`)
+  - Open Tasks (`/tasks`)
+  - Open Timetable (`/timetable`)
+  - Open Relax (`/relax`) → Breathing (`/breathing`) → Breathing Session
+  - Open Chat (`/chat`)
+  - Open Sleep (`/sleep`)
+  - Open Movement (`/movement`)
+  - Open Period Tracker (`/period`)
+  - Open Support Plan (`/support-plan`)
+  - Open Help Now (`/help-now`)
+  - Open DSA Summary (`/dsa-summary`)
+  - Open Common Challenges (`/common-challenges`)
+  - Open Announcements (`/announcements`)
+  - Open Campus Map (`/map`)
+  - Open Weather (`/weather`)
+  - Open Profile (`/profile`)
+  - Open Settings (`/settings`)

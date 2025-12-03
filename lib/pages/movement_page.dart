@@ -151,17 +151,6 @@ class _MovementPageState extends State<MovementPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(strings.t('movement.title')),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Text(
-              strings.t('movement.gentle'),
-              overflow: TextOverflow.fade,
-              softWrap: false,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          ),
-        ],
       ),
       body: FutureBuilder<List<MovementEntry>>(
         future: _entriesFuture,

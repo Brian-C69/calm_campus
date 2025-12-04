@@ -427,30 +427,49 @@ class _ChatPageState extends State<ChatPage> {
     final today = await DbService.instance.getClassesForDay(now.weekday);
     final all = await DbService.instance.getAllClasses();
     ClassEntry? nextClass;
+    DateTime? nextTime;
     for (final c in all) {
-      final start = DateTime.tryParse(c.startTime);
-      if (start != null && start.isAfter(now)) {
+      final dt = _nextOccurrenceForClass(c, now);
+      if (dt == null) continue;
+      if (nextTime == null || dt.isBefore(nextTime)) {
+        nextTime = dt;
         nextClass = c;
-        break;
       }
     }
-    return {
-      if (today.isNotEmpty) 'today': today.map((c) => _formatClass(c)).toList(),
-      if (nextClass != null) 'next': [_formatClass(nextClass)],
-    }.isEmpty
-        ? null
-        : {
-            if (today.isNotEmpty) 'today': today.map((c) => _formatClass(c)).toList(),
-            if (nextClass != null) 'next': [_formatClass(nextClass)],
-          };
+    final Map<String, dynamic> payload = {};
+    if (today.isNotEmpty) payload['today'] = today.map((c) => _formatClass(c)).toList();
+    if (nextClass != null) payload['next'] = [_formatClass(nextClass)];
+    return payload.isEmpty ? null : payload;
   }
 
   Map<String, dynamic> _formatClass(ClassEntry c) {
     return {
       'title': c.subject,
       'time': c.startTime,
+      'startTime': c.startTime,
+      'endTime': c.endTime,
       'location': c.location,
+      'lecturer': c.lecturer,
+      'classType': c.classType,
+      'dayOfWeek': c.dayOfWeek,
     };
+  }
+
+  DateTime? _nextOccurrenceForClass(ClassEntry c, DateTime now) {
+    final timeMatch = RegExp(r'(\d{1,2}):(\d{2})').firstMatch(c.startTime);
+    if (timeMatch == null) return null;
+    final hour = int.tryParse(timeMatch.group(1)!);
+    final minute = int.tryParse(timeMatch.group(2)!);
+    if (hour == null || minute == null) return null;
+    final target = DateTime(now.year, now.month, now.day, hour, minute);
+    final desiredDow =
+        (c.dayOfWeek < DateTime.monday || c.dayOfWeek > DateTime.sunday) ? target.weekday : c.dayOfWeek;
+    final currentDow = target.weekday;
+    int delta = desiredDow - currentDow;
+    if (delta < 0 || (delta == 0 && target.isBefore(now))) {
+      delta += 7;
+    }
+    return target.add(Duration(days: delta));
   }
 
   Future<Map<String, dynamic>?> _buildTasksSummary() async {

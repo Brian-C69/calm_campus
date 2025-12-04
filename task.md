@@ -218,6 +218,11 @@ Status: reviewed 2025-12-02 after lint fixes; checklist kept in place unless cle
     - [x] Render `suggested_actions` as tappable chips/buttons
     - [x] (Nice-to-have) Persist minimal chat history locally
 - [x] Bugfix 2025-12-04: Buddy now receives consented profile/period/movement context so replies can stay personal without over-sharing.
+- [x] Bugfix 2025-12-05: Buddy ignores generic identity questions (e.g. "who am I") and only shows your support contacts when you actually ask about a specific relationship.
+- [x] Bugfix 2025-12-05: Buddy now correctly parses JSON even when the model wraps it in ```json fences, preventing unnecessary fallbacks on simple questions (e.g. asking for the time).
+- [x] Bugfix 2025-12-05: Buddy no longer hijacks timetable questions like "who is the lecturer for my next class" into contact fallback, and class context now includes lecturer names.
+- [x] Bugfix 2025-12-05: Buddy now computes a simple countdown for the next class (using dayOfWeek + startTime) so it can answer "how long until my next class?".
+- [x] Bugfix 2025-12-05: Chat context now sends lecturer/day/time for the next class and picks the true next upcoming class using dayOfWeek+time strings, so lecturer/time-remaining answers are accurate.
 
 ---
 
@@ -310,6 +315,7 @@ Status: reviewed 2025-12-02 after lint fixes; checklist kept in place unless cle
 - [ ] Test AI chat (normal + crisis keywords)
 - [ ] Fix layout issues (different screen sizes)
 - [x] Fix timetable add-class refresh error
+- [x] Bugfix 2025-12-05: Timetable reminders stay on after restart so you don't have to set them every time.
 - [x] Hide login button on Home after successful sign-in
 - [x] Keep Home login indicator in sync after logout
 - [x] Fix Supabase signup backup error when email confirmation is pending (now asks you to verify email first)

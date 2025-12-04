@@ -16,6 +16,7 @@ class UserProfileService {
   final String _loggedInKey = 'is_logged_in';
   final String _themeKey = 'app_theme';
   final String _languageKey = 'app_language';
+  final String _timetableRemindersKey = 'timetable_reminders_enabled';
   final String _reminderTimeKey = 'daily_reminder_time';
   final String _chatShareAllKey = 'chat_share_all';
   final String _chatNoteSeenKey = 'chat_note_seen';
@@ -85,6 +86,16 @@ class UserProfileService {
   Future<void> saveLanguage(AppLanguage language) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString(_languageKey, language.name);
+  }
+
+  Future<void> setTimetableRemindersEnabled(bool enabled) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_timetableRemindersKey, enabled);
+  }
+
+  Future<bool> isTimetableRemindersEnabled() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_timetableRemindersKey) ?? false;
   }
 
   Future<AppLanguage> getLanguage() async {

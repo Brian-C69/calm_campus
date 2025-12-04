@@ -32,6 +32,20 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const confirmDir = path.join(__dirname, '..', '..', 'web', 'confirm');
 app.use('/confirm', express.static(confirmDir));
 
+const RELATION_MAP = [
+  { label: 'mother', keys: ['mother', 'mom', 'mum'] },
+  { label: 'father', keys: ['father', 'dad'] },
+  { label: 'parent', keys: ['parent', 'guardian', 'parents'] },
+  { label: 'sister', keys: ['sister'] },
+  { label: 'brother', keys: ['brother'] },
+  { label: 'grandparent', keys: ['grandma', 'grandpa', 'grandmother', 'grandfather', 'nan', 'nana'] },
+  { label: 'best friend', keys: ['best friend', 'bff'] },
+  { label: 'friend', keys: ['friend'] },
+  { label: 'partner', keys: ['partner', 'girlfriend', 'boyfriend', 'wife', 'husband'] },
+  { label: 'mentor', keys: ['mentor', 'lecturer', 'supervisor'] },
+  { label: 'roommate', keys: ['roommate', 'flatmate', 'housemate'] }
+];
+
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', model: primaryModel, fallbackModel: fallbackModel || null });
 });
@@ -155,6 +169,10 @@ function packContext({
       lines.push(`Today classes: ${timetable.today.map(formatClass).join(' ; ')}`);
     }
     if (Array.isArray(timetable.next) && timetable.next.length) {
+      const countdown = nextClassCountdown(timetable.next[0]);
+      if (countdown) {
+        lines.push(`Next class starts in ~${countdown}: ${formatClass(timetable.next[0])}`);
+      }
       lines.push(`Next classes: ${timetable.next.slice(0, 2).map(formatClass).join(' ; ')}`);
     }
   }
@@ -189,7 +207,13 @@ function packContext({
 }
 
 function formatClass(entry) {
-  return `${entry.title || entry.subject || 'Class'} @ ${entry.time || entry.startTime || ''} ${entry.location ? `(${entry.location})` : ''}`.trim();
+  if (!entry || typeof entry !== 'object') return 'Class';
+  const title = entry.title || entry.subject || 'Class';
+  const time = entry.time || entry.startTime || '';
+  const location = entry.location ? ` (${entry.location})` : '';
+  const lecturer = entry.lecturer ? ` — ${entry.lecturer}` : '';
+  const timePart = time ? ` @ ${time}` : '';
+  return `${title}${timePart}${location}${lecturer}`.trim();
 }
 
 function formatTask(task) {
@@ -418,7 +442,7 @@ function extractJsonContent(content) {
   // Direct parse
   attempts.push(raw);
   // Code fence ```json ... ```
-  const fencedMatch = raw.match(/```(?:json)?\\s*([\\s\\S]*?)```/i);
+  const fencedMatch = raw.match(/```(?:json)?\s*([\s\S]*?)```/i);
   if (fencedMatch?.[1]) attempts.push(fencedMatch[1]);
   // First JSON object substring
   const firstBrace = raw.indexOf('{');
@@ -437,8 +461,52 @@ function extractJsonContent(content) {
   return null;
 }
 
+function nextClassCountdown(entry) {
+  const target = resolveNextClassDate(entry);
+  if (!target) return '';
+  const now = new Date();
+  const diffMs = target.getTime() - now.getTime();
+  if (diffMs <= 0) return '';
+  const totalMinutes = Math.round(diffMs / 60000);
+  if (totalMinutes <= 90) {
+    const mins = Math.max(totalMinutes, 1);
+    return `${mins} min`;
+  }
+  const hours = Math.floor(totalMinutes / 60);
+  const mins = totalMinutes % 60;
+  if (mins === 0) return `${hours} hour${hours === 1 ? '' : 's'}`;
+  return `${hours}h ${mins}m`;
+}
+
+function resolveNextClassDate(entry) {
+  if (!entry) return null;
+  const startTime = entry.startTime || entry.time;
+  if (!startTime || typeof startTime !== 'string') return null;
+  const timeMatch = startTime.match(/(\\d{1,2}):(\\d{2})/);
+  if (!timeMatch) return null;
+  const hour = Number(timeMatch[1]);
+  const minute = Number(timeMatch[2]);
+  if (Number.isNaN(hour) || Number.isNaN(minute)) return null;
+  const now = new Date();
+  const target = new Date(now);
+  target.setHours(hour, minute, 0, 0);
+  const dayOfWeek = Number(entry.dayOfWeek);
+  if (!Number.isNaN(dayOfWeek)) {
+    const desired = dayOfWeek % 7; // treat 7 as Sunday
+    const current = now.getDay();
+    let delta = desired - current;
+    if (delta < 0) delta += 7;
+    target.setDate(now.getDate() + delta);
+  }
+  if (target.getTime() <= now.getTime()) {
+    target.setDate(target.getDate() + 7);
+  }
+  return target;
+}
+
 function buildRelationshipFallback(userMessage, contactsTop = [], contactsForActions = []) {
-  if (!userMessage) return null;
+  if (!userMessage || !Array.isArray(contactsTop) || !contactsTop.length) return null;
+  if (!hasRelationshipIntent(userMessage)) return null;
   const match = resolveContactFromQuery(userMessage, contactsTop);
   if (match?.contactDisplay) {
     const suggested = [`Reach out to ${match.contactDisplay}`];
@@ -472,20 +540,7 @@ function buildRelationshipFallback(userMessage, contactsTop = [], contactsForAct
 function resolveContactFromQuery(query, contactsTop = []) {
   if (!query || !Array.isArray(contactsTop) || !contactsTop.length) return null;
   const lower = query.toLowerCase();
-  const relationMap = [
-    { label: 'mother', keys: ['mother', 'mom', 'mum'] },
-    { label: 'father', keys: ['father', 'dad'] },
-    { label: 'parent', keys: ['parent', 'guardian', 'parents'] },
-    { label: 'sister', keys: ['sister'] },
-    { label: 'brother', keys: ['brother'] },
-    { label: 'grandparent', keys: ['grandma', 'grandpa', 'grandmother', 'grandfather', 'nan', 'nana'] },
-    { label: 'best friend', keys: ['best friend', 'bff'] },
-    { label: 'friend', keys: ['friend'] },
-    { label: 'partner', keys: ['partner', 'girlfriend', 'boyfriend', 'wife', 'husband'] },
-    { label: 'mentor', keys: ['mentor', 'lecturer', 'supervisor'] },
-    { label: 'roommate', keys: ['roommate', 'flatmate', 'housemate'] }
-  ];
-  const target = relationMap.find((rel) => rel.keys.some((k) => lower.includes(k)));
+  const target = RELATION_MAP.find((rel) => rel.keys.some((k) => lower.includes(k)));
   if (!target) return null;
   const contact = contactsTop.find((c) => {
     const relText = (c.relationship || '').toLowerCase();
@@ -496,6 +551,20 @@ function resolveContactFromQuery(query, contactsTop = []) {
     label: target.label,
     contactDisplay: formatContact(contact)
   };
+}
+
+function hasRelationshipIntent(text) {
+  if (!text) return false;
+  const lower = text.toLowerCase();
+  if (lower.includes('who am i') || lower.includes('what is my name') || lower.includes("what's my name")) {
+    return false;
+  }
+  if (/\bclass\b|\bcourse\b|\btimetable\b|\bschedule\b/.test(lower)) {
+    return false;
+  }
+  const mentionsRelation = RELATION_MAP.some((rel) => rel.keys.some((k) => lower.includes(k)));
+  if (!mentionsRelation) return false;
+  return ['who is', "who's", 'what is', 'name'].some((k) => lower.includes(k));
 }
 
 app.listen(port, () => {

@@ -62,26 +62,29 @@ class _TimetablePageState extends State<TimetablePage> {
       _isLoggedIn = refreshedLogin;
     });
 
-    await NotificationService.instance.scheduleClassRemindersForWeek(_classes);
-    await NotificationService.instance
-        .scheduleNightlyCheckIn(const TimeOfDay(hour: 21, minute: 0));
-    await NotificationService.instance.scheduleSleepPlanReminder(
-      const TimeOfDay(hour: 23, minute: 30),
-      plannedBedtimeLabel: '12:00am',
-    );
+    await UserProfileService.instance.setTimetableRemindersEnabled(true);
+    await _scheduleClassReminders(_classes);
+    await _scheduleWellbeingReminders();
   }
 
   Future<void> _loadState() async {
     final classes = await DbService.instance.getAllClasses();
     final bool loggedIn = await UserProfileService.instance.isLoggedIn();
+    final bool remindersOn = await UserProfileService.instance.isTimetableRemindersEnabled();
     final suggestions = _courseCodeHints(classes);
     if (!mounted) return;
     setState(() {
       _classes = classes;
       _isLoading = false;
       _isLoggedIn = loggedIn;
+      _remindersEnabled = remindersOn;
       _courseCodeSuggestions = suggestions;
     });
+
+    if (remindersOn) {
+      await _scheduleClassReminders(classes);
+      await _scheduleWellbeingReminders();
+    }
   }
 
   Future<void> _loadClasses() async {
@@ -126,6 +129,19 @@ class _TimetablePageState extends State<TimetablePage> {
         if (entry.subject.trim().isNotEmpty) entry.subject.trim()
     };
     return unique.take(6).toList();
+  }
+
+  Future<void> _scheduleClassReminders(List<ClassEntry> entries) async {
+    if (entries.isEmpty) return;
+    await NotificationService.instance.scheduleClassRemindersForWeek(entries);
+  }
+
+  Future<void> _scheduleWellbeingReminders() async {
+    await NotificationService.instance.scheduleNightlyCheckIn(const TimeOfDay(hour: 21, minute: 0));
+    await NotificationService.instance.scheduleSleepPlanReminder(
+      const TimeOfDay(hour: 23, minute: 30),
+      plannedBedtimeLabel: '12:00am',
+    );
   }
 
   Future<void> _openClassForm({ClassEntry? existing}) async {
@@ -334,8 +350,7 @@ class _TimetablePageState extends State<TimetablePage> {
                               Navigator.of(context).pop();
                               await _loadClasses();
                               if (_remindersEnabled) {
-                                await NotificationService.instance
-                                    .scheduleClassRemindersForWeek(_classes);
+                                await _scheduleClassReminders(_classes);
                               }
                               if (!mounted) return;
                               ScaffoldMessenger.of(context).showSnackBar(
@@ -437,7 +452,7 @@ class _TimetablePageState extends State<TimetablePage> {
     if (!mounted) return;
     await _loadClasses();
     if (_remindersEnabled) {
-      await NotificationService.instance.scheduleClassRemindersForWeek(_classes);
+      await _scheduleClassReminders(_classes);
     }
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(

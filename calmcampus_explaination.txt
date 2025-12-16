@@ -375,58 +375,64 @@ The idea is: not just track the crisis – help the nervous system settle.
 
 E. AI & Insights – Making sense, gently
 9) AI Buddy (planned, partly specced)
-We’ve scoped an AI chat system (with Ollama or other LLM) as:
-A friendly, non-clinical buddy that:
+ We’ve scoped an AI chat system (with Ollama or other LLM) as:
+ A friendly, non-clinical buddy that:
 
 
-Reflects feelings back
+ Reflects feelings back
 
 
-Helps break tasks into steps
+ Helps break tasks into steps
 
 
-Suggests related CalmCampus tools (Relax page, tasks, HelpNow, etc.)
+ Suggests related CalmCampus tools (Relax page, tasks, HelpNow, etc.)
 
 
-Backend endpoint /chat receives:
+ Backend endpoint /chat receives:
 
 
-Message
+ Message
 
 
-History
+ History
 
 
-Recent mood
+ Recent mood
 
 
-Sleep + timetable (optional)
+ Sleep + timetable (optional)
 
 
-Support contacts context (optional)
+ Support contacts context (optional)
 
 
-Returns:
+ Returns:
 
 
-message_for_user
+ message_for_user
 
 
-follow_up_question
+ follow_up_question
 
 
-suggested_actions (chips like “Open Relax Page”, “See HelpNow”, “Add task”, etc.)
+ suggested_actions (chips like “Open Relax Page”, “See HelpNow”, “Add task”, etc.)
 
 
-With strict rules:
-No diagnosis.
+ **Gemini Integration:**
+ The AI Buddy will leverage the Gemini API to provide intelligent and context-aware responses. This integration will enable:
+ -   **Advanced Natural Language Understanding:** Gemini's capabilities will allow for more nuanced interpretation of user input, leading to more relevant and empathetic interactions.
+ -   **Contextual Suggestions:** By analyzing the user's mood, sleep patterns, timetable, and other app data (if provided and consented), Gemini can offer highly personalized suggestions and coping strategies, such as recommending specific relaxation exercises or prompting the user to connect with their "safe people."
+ -   **Ethical AI Handling:** The integration will adhere to strict ethical guidelines, ensuring that Gemini's responses are non-diagnostic, non-judgmental, and always prioritize the user's well-being and safety. In crisis situations, Gemini will be programmed to gently redirect users to the HelpNow page and real-world human support, as per existing guidelines.
 
 
-No “I can keep you safe” promises.
+ With strict rules:
+ No diagnosis.
 
 
-In crisis language → signpost HelpNow & real humans.
+ No “I can keep you safe” promises.
 
+
+ In crisis language → signpost HelpNow & real humans.
 
 
 10) DSA Summary & analytics

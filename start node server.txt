@@ -1,2 +1,12 @@
 cd C:\xampp\htdocs\calm_campus\web\confirm
 npx http-server . -p 3000
+
+PS C:\Users\Bernard> cd C:\xampp\htdocs\calm_campus\ai-buddy-server
+PS C:\xampp\htdocs\calm_campus\ai-buddy-server> $env:GOOGLE_APPLICATION_CREDENTIALS="C:\Users\Bernard\Downloads\CalmCampus\calmcampus-4e3c4-292519c8d6e3.json"
+PS C:\xampp\htdocs\calm_campus\ai-buddy-server>   $env:FCM_TOPIC="announcements"
+PS C:\xampp\htdocs\calm_campus\ai-buddy-server>   npm run start:push
+
+> calm-campus-buddy-server@0.1.0 start:push
+> node src/pushRelay.js
+
+CalmCampus push relay listening on port 3000

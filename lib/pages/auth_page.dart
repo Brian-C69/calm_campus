@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/user_profile_service.dart';
 import '../services/supabase_sync_service.dart';
 import '../services/role_service.dart';
+import '../services/firebase_messaging_service.dart';
 import '../l10n/app_localizations.dart';
 
 class AuthPage extends StatefulWidget {
@@ -101,7 +102,8 @@ class _AuthPageState extends State<AuthPage> {
       }
 
       await UserProfileService.instance.setLoggedIn(true);
-      await RoleService.instance.refreshRoleFromSupabase();
+      final role = await RoleService.instance.refreshRoleFromSupabase();
+      await FirebaseMessagingService.instance.syncForRole(role);
 
       await SupabaseSyncService.instance.uploadAllData();
       try {

@@ -2,6 +2,9 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../models/user_role.dart';
 
 class FirebaseMessagingService {
   FirebaseMessagingService._();
@@ -9,6 +12,7 @@ class FirebaseMessagingService {
 
   FirebaseMessaging? _messaging;
   final FlutterLocalNotificationsPlugin _localNotifications = FlutterLocalNotificationsPlugin();
+  UserRole _role = UserRole.student;
 
   Future<void> init() async {
     await Firebase.initializeApp();
@@ -18,6 +22,11 @@ class FirebaseMessagingService {
     await _refreshTokenAndSubscribe();
     _messaging?.onTokenRefresh.listen(_handleToken);
     FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
+  }
+
+  Future<void> syncForRole(UserRole role) async {
+    _role = role;
+    await _refreshTokenAndSubscribe(role: role);
   }
 
   Future<void> _requestPermissions() async {
@@ -38,14 +47,19 @@ class FirebaseMessagingService {
     await _localNotifications.initialize(settings);
   }
 
-  Future<void> _refreshTokenAndSubscribe() async {
+  Future<void> _refreshTokenAndSubscribe({UserRole? role}) async {
     final messaging = _messaging;
     if (messaging == null) return;
     final String? token = await messaging.getToken();
     if (token != null && token.isNotEmpty) {
-      // Keep topic subscription fresh to avoid missing pushes when tokens rotate.
-      await messaging.subscribeToTopic('announcements');
-      debugPrint('FCM token ready: $token');
+      final UserRole effectiveRole = role ?? _role;
+      final topics = <String>{'announcements'};
+      topics.add(effectiveRole == UserRole.admin ? 'admin' : 'students');
+      for (final topic in topics) {
+        await messaging.subscribeToTopic(topic);
+      }
+      await _persistToken(token, effectiveRole);
+      debugPrint('FCM token ready: $token for role ${effectiveRole.label}');
     } else {
       debugPrint('FCM token missing');
     }
@@ -53,7 +67,7 @@ class FirebaseMessagingService {
 
   void _handleToken(String token) {
     // On rotation, re-subscribe to the topic and log for debugging.
-    _messaging?.subscribeToTopic('announcements');
+    _refreshTokenAndSubscribe(role: _role);
     debugPrint('FCM token refreshed: $token');
   }
 
@@ -75,5 +89,20 @@ class FirebaseMessagingService {
       notification.body,
       details,
     );
+  }
+
+  Future<void> _persistToken(String token, UserRole role) async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return;
+    try {
+      await Supabase.instance.client.from('fcm_tokens').upsert({
+        'user_id': user.id,
+        'token': token,
+        'role': role.label,
+        'updated_at': DateTime.now().toIso8601String(),
+      });
+    } catch (e) {
+      debugPrint('Failed to persist FCM token: $e');
+    }
   }
 }

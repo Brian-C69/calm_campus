@@ -63,7 +63,8 @@ Future<void> main() async {
   SupabaseSyncService.instance.startAutoUploadWatcher();
   try {
     await SupabaseSyncService.instance.restoreFromSupabaseIfSignedIn();
-    await RoleService.instance.refreshRoleFromSupabase();
+    final role = await RoleService.instance.refreshRoleFromSupabase();
+    await FirebaseMessagingService.instance.syncForRole(role);
   } catch (_) {
     // If offline at launch, the user can manually retry from Settings or on next start.
   }

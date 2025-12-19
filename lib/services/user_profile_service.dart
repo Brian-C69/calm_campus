@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../models/user_role.dart';
+
 enum AppThemeMode { system, light, dark }
 enum AppLanguage { englishUK, chineseCN, malayMY }
 
@@ -20,6 +22,10 @@ class UserProfileService {
   final String _reminderTimeKey = 'daily_reminder_time';
   final String _chatShareAllKey = 'chat_share_all';
   final String _chatNoteSeenKey = 'chat_note_seen';
+  final String _roleKey = 'app_role';
+  final String _displayNameKey = 'display_name';
+  final String _isConsultantKey = 'is_consultant';
+  final String _isOnlineKey = 'is_online';
 
   Future<bool> isLoggedIn() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -29,6 +35,51 @@ class UserProfileService {
   Future<void> setLoggedIn(bool loggedIn) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_loggedInKey, loggedIn);
+  }
+
+  Future<UserRole> getRole() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final String? stored = prefs.getString(_roleKey);
+    return UserRole.fromString(stored);
+  }
+
+  Future<void> saveRole(UserRole role) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_roleKey, role.label);
+  }
+
+  Future<void> saveDisplayName(String? name) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    if (name == null || name.trim().isEmpty) {
+      await prefs.remove(_displayNameKey);
+      return;
+    }
+    await prefs.setString(_displayNameKey, name.trim());
+  }
+
+  Future<String?> getDisplayName() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_displayNameKey);
+  }
+
+  Future<void> saveConsultantFlag(bool value) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_isConsultantKey, value);
+  }
+
+  Future<bool> isConsultant() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_isConsultantKey) ?? false;
+  }
+
+  Future<void> saveOnlineFlag(bool value) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_isOnlineKey, value);
+  }
+
+  Future<bool> isOnline() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_isOnlineKey) ?? false;
   }
 
   Future<String?> getNickname() async {

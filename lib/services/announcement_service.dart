@@ -5,6 +5,9 @@ import 'db_service.dart';
 import 'notification_service.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import '../models/user_role.dart';
+import 'role_service.dart';
+import 'user_profile_service.dart';
 
 class AnnouncementService {
   AnnouncementService._();
@@ -15,9 +18,20 @@ class AnnouncementService {
   SupabaseClient get _client => Supabase.instance.client;
 
   Future<List<Announcement>> loadAnnouncements() async {
+    final bool isLoggedIn = await UserProfileService.instance.isLoggedIn();
+    final UserRole role = isLoggedIn ? await RoleService.instance.getCachedRole() : UserRole.student;
+
     try {
-      final List<Announcement> remote = await _fetchAndCacheFromSupabase();
-      if (remote.isNotEmpty) return remote;
+      if (role == UserRole.admin) {
+        final List<Announcement> adminRemote = await _fetchAllAndCacheForAdmin();
+        if (adminRemote.isNotEmpty) return adminRemote;
+      } else if (isLoggedIn) {
+        final List<Announcement> studentRemote = await _fetchIncrementalForStudent();
+        if (studentRemote.isNotEmpty) return studentRemote;
+      } else {
+        final List<Announcement> guestRemote = await _fetchAndCacheFromSupabase();
+        if (guestRemote.isNotEmpty) return guestRemote;
+      }
     } catch (_) {
       // Ignore network errors and fall back to local cache.
     }
@@ -32,7 +46,15 @@ class AnnouncementService {
   Future<Announcement> publishAnnouncement(
     Announcement announcement, {
     bool sendNotification = false,
+    bool requireAdmin = true,
   }) async {
+    if (requireAdmin) {
+      final role = await RoleService.instance.getCachedRole();
+      if (role != UserRole.admin) {
+        throw StateError('Only admins can publish announcements.');
+      }
+    }
+
     final int id = await _db.insertAnnouncement(announcement);
     final Announcement saved = announcement.copyWith(id: id);
 
@@ -48,6 +70,11 @@ class AnnouncementService {
   }
 
   Future<void> deleteAnnouncement(int id) async {
+    final role = await RoleService.instance.getCachedRole();
+    if (role != UserRole.admin) {
+      throw StateError('Only admins can delete announcements.');
+    }
+
     await _db.deleteAnnouncement(id);
     _deleteAnnouncementFromSupabase(id);
   }
@@ -191,5 +218,144 @@ If crowds feel heavy, it is okay to step outside for air or message a trusted fr
     } catch (_) {
       // ignore network errors to keep local publish smooth
     }
+  }
+
+  Future<List<Announcement>> _fetchAllAndCacheForAdmin() async {
+    final List<dynamic> rows = await _client
+        .from('announcements')
+        .select()
+        .order('published_at', ascending: false);
+
+    final List<Announcement> announcements = rows
+        .map((row) => _mapSupabaseRow(row as Map<String, dynamic>))
+        .where((a) => a.title.isNotEmpty && a.body.isNotEmpty)
+        .toList();
+
+    if (announcements.isNotEmpty) {
+      await _db.replaceAnnouncements(announcements);
+    }
+
+    return announcements;
+  }
+
+  Future<List<Announcement>> _fetchIncrementalForStudent() async {
+    final user = _client.auth.currentUser;
+    if (user == null) return _db.getAnnouncements();
+
+    final Set<int> hiddenIds = await _fetchHiddenIds();
+    int lastSeen = await _fetchLastSeenId();
+
+    if (lastSeen == 0) {
+      final List<dynamic> maxRow = await _client
+          .from('announcements')
+          .select('id')
+          .order('id', ascending: false)
+          .limit(1);
+      if (maxRow.isNotEmpty && maxRow.first['id'] != null) {
+        lastSeen = maxRow.first['id'] as int;
+        await _updateLastSeenId(lastSeen);
+      }
+      final List<Announcement> existing = await _db.getAnnouncements();
+      return existing.where((a) => a.id != null && !hiddenIds.contains(a.id!)).toList();
+    }
+
+    final List<dynamic> rows = await _client
+        .from('announcements')
+        .select()
+        .gt('id', lastSeen)
+        .order('id', ascending: true);
+
+    final List<Announcement> newOnes = rows
+        .map((row) => _mapSupabaseRow(row as Map<String, dynamic>))
+        .where((a) => a.id != null && !hiddenIds.contains(a.id!))
+        .toList();
+
+    final List<Announcement> existing = await _db.getAnnouncements();
+    final List<Announcement> merged = [
+      ...existing.where((a) => a.id == null || !hiddenIds.contains(a.id!)),
+      ...newOnes,
+    ];
+    merged.sort((a, b) => b.publishedAt.compareTo(a.publishedAt));
+
+    if (merged.isNotEmpty) {
+      final int maxId = merged
+          .where((a) => a.id != null)
+          .map((a) => a.id!)
+          .fold<int>(lastSeen, (prev, val) => val > prev ? val : prev);
+      await _updateLastSeenId(maxId);
+    }
+
+    await _db.replaceAnnouncements(merged);
+    return merged;
+  }
+
+  Future<int> _fetchLastSeenId() async {
+    final user = _client.auth.currentUser;
+    if (user == null) return 0;
+    try {
+      final Map<String, dynamic>? row = await _client
+          .from('announcement_reads')
+          .select('last_seen_id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+      return row?['last_seen_id'] as int? ?? 0;
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  Future<void> _updateLastSeenId(int lastId) async {
+    final user = _client.auth.currentUser;
+    if (user == null) return;
+    try {
+      await _client.from('announcement_reads').upsert({
+        'user_id': user.id,
+        'last_seen_id': lastId,
+      });
+    } catch (_) {
+      // ignore
+    }
+  }
+
+  Future<Set<int>> _fetchHiddenIds() async {
+    final user = _client.auth.currentUser;
+    if (user == null) return <int>{};
+    try {
+      final List<dynamic> rows = await _client
+          .from('announcement_hides')
+          .select('announcement_id')
+          .eq('user_id', user.id);
+      return rows
+          .map((row) => row['announcement_id'] as int?)
+          .whereType<int>()
+          .toSet();
+    } catch (_) {
+      return <int>{};
+    }
+  }
+
+  Future<void> hideAnnouncement(int id) async {
+    final bool isLoggedIn = await UserProfileService.instance.isLoggedIn();
+    if (!isLoggedIn) {
+      await _db.deleteAnnouncement(id);
+      return;
+    }
+
+    final user = _client.auth.currentUser;
+    if (user == null) {
+      await _db.deleteAnnouncement(id);
+      return;
+    }
+
+    try {
+      await _client.from('announcement_hides').upsert({
+        'user_id': user.id,
+        'announcement_id': id,
+      });
+    } catch (_) {
+      // ignore best effort
+    }
+
+    await _db.deleteAnnouncement(id);
   }
 }

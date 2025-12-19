@@ -4,6 +4,9 @@ import 'package:intl/intl.dart';
 import '../models/announcement.dart';
 import '../services/announcement_service.dart';
 import '../l10n/app_localizations.dart';
+import '../services/role_service.dart';
+import '../models/user_role.dart';
+import '../services/user_profile_service.dart';
 
 class AnnouncementsPage extends StatefulWidget {
   const AnnouncementsPage({super.key});
@@ -15,11 +18,24 @@ class AnnouncementsPage extends StatefulWidget {
 class _AnnouncementsPageState extends State<AnnouncementsPage> {
   final List<Announcement> _announcements = [];
   bool _isLoading = true;
+  bool _canManage = false;
+  bool _canHide = false;
 
   @override
   void initState() {
     super.initState();
+    _loadRole();
     _loadAnnouncements();
+  }
+
+  Future<void> _loadRole() async {
+    final bool isLoggedIn = await UserProfileService.instance.isLoggedIn();
+    final UserRole role = isLoggedIn ? await RoleService.instance.getCachedRole() : UserRole.student;
+    if (!mounted) return;
+    setState(() {
+      _canManage = role == UserRole.admin;
+      _canHide = isLoggedIn && role != UserRole.admin;
+    });
   }
 
   Future<void> _loadAnnouncements() async {
@@ -35,6 +51,8 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
   }
 
   Future<void> _openComposer() async {
+    if (!_canManage) return;
+    final strings = AppLocalizations.of(context);
     final _AnnouncementDraft? draft = await showModalBottomSheet<_AnnouncementDraft>(
       context: context,
       isScrollControlled: true,
@@ -59,10 +77,24 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
     if (draft == null) return;
 
     setState(() => _isLoading = true);
-    final Announcement saved = await AnnouncementService.instance.publishAnnouncement(
-      draft.announcement,
-      sendNotification: draft.sendNotification,
-    );
+    Announcement saved;
+    try {
+      saved = await AnnouncementService.instance.publishAnnouncement(
+        draft.announcement,
+        sendNotification: draft.sendNotification,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '${strings.t('announcements.error')}\n$e',
+          ),
+        ),
+      );
+      setState(() => _isLoading = false);
+      return;
+    }
 
     if (!mounted) return;
 
@@ -72,7 +104,22 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
     });
   }
 
+  Future<void> _hideAnnouncement(Announcement announcement) async {
+    final strings = AppLocalizations.of(context);
+    if (announcement.id != null) {
+      await AnnouncementService.instance.hideAnnouncement(announcement.id!);
+    }
+    if (!mounted) return;
+    setState(() {
+      _announcements.removeWhere((a) => a.id == announcement.id);
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(strings.t('announcements.hidden'))),
+    );
+  }
+
   Future<void> _deleteAnnouncement(Announcement announcement) async {
+    if (!_canManage) return;
     final strings = AppLocalizations.of(context);
     final bool? confirmed = await showDialog<bool>(
       context: context,
@@ -94,7 +141,15 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
 
     if (confirmed != true) return;
     if (announcement.id != null) {
-      await AnnouncementService.instance.deleteAnnouncement(announcement.id!);
+      try {
+        await AnnouncementService.instance.deleteAnnouncement(announcement.id!);
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${strings.t('announcements.error')}\n$e')),
+        );
+        return;
+      }
     }
 
     if (!mounted) return;
@@ -137,7 +192,7 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
         child: _isLoading
             ? const Center(child: CircularProgressIndicator())
             : _announcements.isEmpty
-                ? _EmptyState(onCompose: _openComposer)
+                ? _EmptyState(onCompose: _canManage ? _openComposer : null, canManage: _canManage)
                 : ListView.separated(
                     padding: const EdgeInsets.all(16),
                     itemCount: _announcements.length,
@@ -197,7 +252,14 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
                                     label: const Text('Read'),
                                   ),
                                   const SizedBox(width: 8),
-                                  if (announcement.id != null)
+                                  if (_canHide && announcement.id != null)
+                                    TextButton.icon(
+                                      onPressed: () => _hideAnnouncement(announcement),
+                                      icon: const Icon(Icons.hide_source_outlined),
+                                      label: Text(strings.t('announcements.hide')),
+                                    ),
+                                  const SizedBox(width: 8),
+                                  if (announcement.id != null && _canManage)
                                     TextButton.icon(
                                       onPressed: () => _deleteAnnouncement(announcement),
                                       icon: const Icon(Icons.delete_outline),
@@ -212,11 +274,13 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
                     },
                   ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _openComposer,
-        icon: const Icon(Icons.add),
-        label: Text(strings.t('announcements.newPost')),
-      ),
+      floatingActionButton: _canManage
+          ? FloatingActionButton.extended(
+              onPressed: _openComposer,
+              icon: const Icon(Icons.add),
+              label: Text(strings.t('announcements.newPost')),
+            )
+          : null,
     );
   }
 }
@@ -462,9 +526,10 @@ class _MetaChip extends StatelessWidget {
 }
 
 class _EmptyState extends StatelessWidget {
-  const _EmptyState({required this.onCompose});
+  const _EmptyState({this.onCompose, this.canManage = false});
 
-  final VoidCallback onCompose;
+  final VoidCallback? onCompose;
+  final bool canManage;
 
   @override
   Widget build(BuildContext context) {
@@ -489,11 +554,12 @@ class _EmptyState extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        ElevatedButton.icon(
-          onPressed: onCompose,
-          icon: const Icon(Icons.add),
-          label: Text(strings.t('announcements.createFirst')),
-        ),
+        if (canManage && onCompose != null)
+          ElevatedButton.icon(
+            onPressed: onCompose,
+            icon: const Icon(Icons.add),
+            label: Text(strings.t('announcements.createFirst')),
+          ),
       ],
     );
   }

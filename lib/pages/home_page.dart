@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../services/user_profile_service.dart';
 import '../l10n/app_localizations.dart';
+import '../services/role_service.dart';
+import '../models/user_role.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -19,6 +21,7 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     _nicknameFuture = _loadNickname();
     _isLoggedInFuture = _loadLoginState();
+    _redirectIfAdmin();
   }
 
   void _refreshUserState() {
@@ -26,6 +29,14 @@ class _HomePageState extends State<HomePage> {
       _nicknameFuture = _loadNickname();
       _isLoggedInFuture = _loadLoginState();
     });
+  }
+
+  Future<void> _redirectIfAdmin() async {
+    final role = await RoleService.instance.getCachedRole();
+    if (!mounted) return;
+    if (role == UserRole.admin) {
+      Navigator.of(context).pushReplacementNamed('/admin');
+    }
   }
 
   Future<void> _openProfile() async {
@@ -55,8 +66,6 @@ class _HomePageState extends State<HomePage> {
     final routes = <_HomeRouteInfo>[
       _HomeRouteInfo(strings.t('home.card.mood'), Icons.favorite, '/mood'),
       _HomeRouteInfo(strings.t('home.card.news'), Icons.campaign, '/announcements'),
-      _HomeRouteInfo(strings.t('home.card.map'), Icons.map, '/campus-map'),
-      _HomeRouteInfo(strings.t('home.card.weather'), Icons.cloud, '/weather'),
       _HomeRouteInfo(strings.t('home.card.journal'), Icons.menu_book, '/journal'),
       _HomeRouteInfo(strings.t('home.card.profile'), Icons.person, '/profile'),
       _HomeRouteInfo(strings.t('home.card.timetable'), Icons.schedule, '/timetable'),
@@ -67,10 +76,10 @@ class _HomePageState extends State<HomePage> {
       _HomeRouteInfo(strings.t('home.card.movement'), Icons.directions_walk, '/movement'),
       _HomeRouteInfo(strings.t('home.card.period'), Icons.calendar_today, '/period-tracker'),
       _HomeRouteInfo(strings.t('home.card.support'), Icons.emoji_people, '/support-plan'),
+      _HomeRouteInfo(strings.t('home.card.consultation'), Icons.support_agent, '/consultation'),
       _HomeRouteInfo(strings.t('home.card.help'), Icons.volunteer_activism, '/help-now'),
       _HomeRouteInfo(strings.t('home.card.dsa'), Icons.analytics, '/dsa-summary'),
       _HomeRouteInfo(strings.t('home.card.challenges'), Icons.menu_book, '/challenges'),
-      _HomeRouteInfo(strings.t('home.card.challenges'), Icons.bug_report, '/debug/fcm'),
     ];
 
     return Scaffold(

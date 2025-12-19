@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../services/user_profile_service.dart';
 import '../l10n/app_localizations.dart';
@@ -82,6 +83,73 @@ class _ProfilePageState extends State<ProfilePage> {
         _profileFuture = _loadProfile();
       });
     });
+  }
+
+  Future<void> _changePassword() async {
+    final strings = AppLocalizations.of(context);
+    final TextEditingController newPass = TextEditingController();
+    final TextEditingController confirmPass = TextEditingController();
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(strings.t('auth.password.change')),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: newPass,
+              obscureText: true,
+              decoration: InputDecoration(labelText: strings.t('auth.password.new')),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: confirmPass,
+              obscureText: true,
+              decoration: InputDecoration(labelText: strings.t('auth.password.confirm')),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(strings.t('common.cancel')),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(strings.t('common.save')),
+          ),
+        ],
+      ),
+    );
+
+    if (!mounted) return;
+    if (confirmed != true) return;
+    if (newPass.text.isEmpty || newPass.text.length < 8 || newPass.text != confirmPass.text) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(strings.t('auth.password.short'))),
+      );
+      return;
+    }
+
+    try {
+      await Supabase.instance.client.auth.updateUser(
+        UserAttributes(password: newPass.text),
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(strings.t('auth.password.updated'))),
+      );
+    } on AuthException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message.isNotEmpty ? e.message : strings.t('auth.error.generic'))),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(strings.t('auth.error.generic'))),
+      );
+    }
   }
 
   @override
@@ -217,6 +285,12 @@ class _ProfilePageState extends State<ProfilePage> {
                     onPressed: _openSettings,
                     icon: const Icon(Icons.settings),
                     label: Text(strings.t('profile.openSettings')),
+                  ),
+                  const SizedBox(height: 8),
+                  FilledButton.icon(
+                    onPressed: _changePassword,
+                    icon: const Icon(Icons.lock_reset),
+                    label: Text(strings.t('auth.password.change')),
                   ),
                   const SizedBox(height: 8),
                   OutlinedButton.icon(

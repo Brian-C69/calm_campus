@@ -12,7 +12,6 @@ import 'pages/common_challenges_page.dart';
 import 'pages/dsa_summary_page.dart';
 import 'pages/help_now_page.dart';
 import 'pages/history_page.dart';
-import 'pages/home_page.dart';
 import 'pages/journal_page.dart';
 import 'pages/about_page.dart';
 import 'pages/fcm_debug_page.dart';
@@ -27,11 +26,24 @@ import 'pages/support_plan_page.dart';
 import 'pages/tasks_page.dart';
 import 'pages/timetable_page.dart';
 import 'pages/weather_page.dart';
+import 'pages/role_gate_page.dart';
+import 'pages/student_shell.dart';
+import 'pages/admin_dashboard_page.dart';
+import 'pages/consultation_page.dart';
+import 'pages/consultation_inbox_page.dart';
+import 'pages/consultation_chat_page.dart';
+import 'pages/admin_profile_page.dart';
+import 'pages/reset_password_page.dart';
+import 'pages/reset_request_page.dart';
+import 'pages/admin_mood_analytics_page.dart';
 import 'services/firebase_messaging_service.dart';
 import 'services/language_controller.dart';
 import 'services/notification_service.dart';
+import 'services/role_service.dart';
 import 'services/supabase_sync_service.dart';
 import 'services/theme_controller.dart';
+
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,6 +51,11 @@ Future<void> main() async {
     url: 'https://sfkefyqyuhicwbjnsdes.supabase.co',
     anonKey: 'sb_publishable_CQ9qwM0iWstuTJBrcH4eeQ_Th6W0TS4',
   );
+  Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+    if (data.event == AuthChangeEvent.passwordRecovery) {
+      navigatorKey.currentState?.pushNamed('/reset-password');
+    }
+  });
   await NotificationService.instance.initialize();
   await FirebaseMessagingService.instance.init();
   await LanguageController.instance.loadSavedLanguage();
@@ -46,6 +63,7 @@ Future<void> main() async {
   SupabaseSyncService.instance.startAutoUploadWatcher();
   try {
     await SupabaseSyncService.instance.restoreFromSupabaseIfSignedIn();
+    await RoleService.instance.refreshRoleFromSupabase();
   } catch (_) {
     // If offline at launch, the user can manually retry from Settings or on next start.
   }
@@ -65,6 +83,7 @@ class MyApp extends StatelessWidget {
           builder: (context, mode, _) {
             return MaterialApp(
               title: 'CalmCampus',
+              navigatorKey: navigatorKey,
               locale: locale,
               supportedLocales: AppLocalizations.supportedLocales,
               localizationsDelegates: const [
@@ -87,7 +106,9 @@ class MyApp extends StatelessWidget {
               initialRoute: '/home',
               routes: {
                 '/auth': (_) => const AuthPage(),
-                '/home': (_) => const MainNavigation(),
+                '/home': (_) => const RoleGatePage(),
+                '/student': (_) => const MainNavigation(),
+                '/admin': (_) => const AdminDashboardPage(),
                 '/mood': (_) => const MoodPage(),
                 '/history': (_) => const HistoryPage(),
                 '/journal': (_) => const JournalPage(),
@@ -109,79 +130,19 @@ class MyApp extends StatelessWidget {
                 '/campus-map': (_) => const CampusMapPage(),
                 '/weather': (_) => const WeatherPage(),
                 '/announcements': (_) => const AnnouncementsPage(),
+                '/consultation': (_) => const ConsultationPage(),
+                '/consultation/inbox': (_) => const ConsultationInboxPage(),
+                '/admin/profile': (_) => const AdminProfilePage(),
+                '/reset-password': (_) => const ResetPasswordPage(),
+                '/reset-request': (_) => const ResetRequestPage(),
+                '/admin/mood-analytics': (_) => const AdminMoodAnalyticsPage(),
                 '/debug/fcm': (_) => const FcmDebugPage(),
+                ConsultationChatPage.routeName: (_) => const ConsultationChatPage(),
               },
             );
           },
         );
       },
-    );
-  }
-}
-
-class MainNavigation extends StatefulWidget {
-  const MainNavigation({super.key});
-
-  @override
-  State<MainNavigation> createState() => _MainNavigationState();
-}
-
-class _MainNavigationState extends State<MainNavigation> {
-  int _currentIndex = 0;
-
-  final List<Widget> _pages = const [
-    HomePage(),
-    MoodPage(),
-    TasksPage(),
-    RelaxPage(),
-  ];
-
-  void _onItemTapped(int index) {
-    if (index == _currentIndex) return;
-    setState(() {
-      _currentIndex = index;
-    });
-  }
-
-  @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final strings = AppLocalizations.of(context);
-    return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _pages,
-      ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        onDestinationSelected: _onItemTapped,
-        destinations: [
-          NavigationDestination(
-            icon: const Icon(Icons.home_outlined),
-            selectedIcon: const Icon(Icons.home),
-            label: strings.t('nav.home'),
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.favorite_outline),
-            selectedIcon: const Icon(Icons.favorite),
-            label: strings.t('nav.mood'),
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.checklist_outlined),
-            selectedIcon: const Icon(Icons.checklist),
-            label: strings.t('nav.tasks'),
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.spa_outlined),
-            selectedIcon: const Icon(Icons.spa),
-            label: strings.t('nav.relax'),
-          ),
-        ],
-      ),
     );
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/user_profile_service.dart';
 import '../services/supabase_sync_service.dart';
+import '../services/role_service.dart';
 import '../l10n/app_localizations.dart';
 
 class AuthPage extends StatefulWidget {
@@ -63,9 +64,11 @@ class _AuthPageState extends State<AuthPage> {
           emailRedirectTo: 'https://luba-irrecusable-clayton.ngrok-free.dev/confirm/',
           data: {
             'preferred_name': _nameController.text.trim(),
+            'role': 'student',
           },
         );
         await UserProfileService.instance.saveNickname(_nameController.text);
+        await RoleService.instance.upsertStudentProfileOnSignup(_nameController.text.trim());
       }
 
       final session = response.session ?? client.auth.currentSession;
@@ -98,6 +101,7 @@ class _AuthPageState extends State<AuthPage> {
       }
 
       await UserProfileService.instance.setLoggedIn(true);
+      await RoleService.instance.refreshRoleFromSupabase();
 
       await SupabaseSyncService.instance.uploadAllData();
       try {
@@ -254,6 +258,10 @@ class _AuthPageState extends State<AuthPage> {
                                     if (!value.contains('@')) {
                                       return strings.t('auth.email.invalid');
                                     }
+                                    final email = value.trim().toLowerCase();
+                                    if (!_isLogin && !email.endsWith('@student.tarc.edu.my')) {
+                                      return strings.t('auth.email.studentOnly');
+                                    }
                                     return null;
                                   },
                                 ),
@@ -327,6 +335,13 @@ class _AuthPageState extends State<AuthPage> {
                                     minimumSize: const Size.fromHeight(48),
                                   ),
                                 ),
+                                if (_isLogin) ...[
+                                  const SizedBox(height: 8),
+                                  TextButton(
+                                    onPressed: () => Navigator.pushNamed(context, '/reset-request'),
+                                    child: Text(strings.t('auth.reset.cta')),
+                                  ),
+                                ],
                                 const SizedBox(height: 12),
                                 TextButton(
                                   onPressed: () => _toggleMode(!_isLogin),

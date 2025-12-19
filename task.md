@@ -687,3 +687,13 @@ So the app can remember “my safe people” and show them quickly in rough time
 
 
 
+---
+
+## 17. Admin Roles & Live Consultation
+
+- [x] Add Supabase profile role (`student` vs `admin`) with default student on signup and local caching.
+- [x] Route users to role-specific dashboards (student main nav vs DSA/admin dashboard).
+- [x] Restrict announcements composer/deletion to admin role only (UI + service guard).
+- [x] Add admin dashboard with availability toggle and quick links to announcements and consultation inbox.
+- [x] Add student consultation module (list online consultants, start chat).
+- [x] Add admin consultation inbox + chat with session end/clear.

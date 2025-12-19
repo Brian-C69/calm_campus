@@ -8,9 +8,11 @@ This is a lightweight feed so DSA/counselling updates reach every student, inclu
 - Sync: `lib/services/announcement_service.dart`
   - On load: tries to fetch from Supabase `announcements` table, caches locally, falls back to local cache, then seeds 2 starter posts if empty.
   - On publish: saves locally and attempts Supabase upsert; can also trigger a local notification.
-  - Notifications: `NotificationService.showAnnouncementAlert` shows a push alert with title + summary/body snippet.
+- Notifications: `NotificationService.showAnnouncementAlert` shows a push alert with title + summary/body snippet.
 - UI: `lib/pages/announcements_page.dart`
   - Lists posts, shows detail sheet, and has a simple composer (title, summary/body, author/category, optional notification toggle).
+  - Composer + delete controls appear only for admin role (from Supabase `profiles.role`).
+  - Students can hide a post (writes `announcement_hides`); hidden posts stay gone across devices.
   - Home tile “Latest news” opens this page; route `/announcements`.
 
 ## Supabase setup
@@ -32,12 +34,37 @@ alter table public.announcements enable row level security;
 create policy "Announcements are readable by anyone" on public.announcements
   for select using (true);
 ```
-Optionally let the app insert (if you want in-app posting to sync):
+Restrict posting/deleting to admins (`profiles.role = 'admin'`):
 ```sql
-create policy "Announcements can be added from app" on public.announcements
-  for insert with check (true);
+create policy "Announcements insert by admins" on public.announcements
+  for insert with check (exists (select 1 from profiles p where p.id = auth.uid() and p.role = 'admin'));
+create policy "Announcements delete by admins" on public.announcements
+  for delete using (exists (select 1 from profiles p where p.id = auth.uid() and p.role = 'admin'));
 ```
 Keep deletes restricted to trusted roles.
+
+### Per-user state (no historic flood, remember hides)
+
+Tables (see `sql.md` for full statements):
+- `announcement_reads`: tracks each user?s `last_seen_id`. When a student first opens announcements, we set this to the current max id so they don?t get flooded with history; afterward we fetch only ids greater than their last seen.
+- `announcement_hides`: per-user list of hidden post ids (never shown again, even on other devices).
+
+Policies:
+```sql
+alter table public.announcement_reads enable row level security;
+alter table public.announcement_hides enable row level security;
+create policy "Own reads" on public.announcement_reads
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "Own hides" on public.announcement_hides
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+```
+
+Fetch logic (students):
+- Read `last_seen_id`; if 0, set it to current max announcement id and return nothing (no historic flood).
+- Fetch announcements where `id > last_seen_id`, filter out any in `announcement_hides`, merge with local cache, and update `last_seen_id` to the highest id kept.
+- Hide action: insert into `announcement_hides` and drop from local cache (no server delete).
+
+Admins still fetch the full list and can delete.
 
 ## How it flows (guest-friendly)
 1) App opens Latest News → `AnnouncementService.loadAnnouncements()` tries Supabase fetch → caches to SQLite → displays.

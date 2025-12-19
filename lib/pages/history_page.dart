@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
 
 import '../models/mood_entry.dart';
 import '../services/db_service.dart';
@@ -32,6 +34,45 @@ class _HistoryPageState extends State<HistoryPage> {
       _moodEntriesFuture = future;
     });
     await future;
+  }
+
+  Future<void> _exportCsv() async {
+    final strings = AppLocalizations.of(context);
+    try {
+      final entries = await DbService.instance.getMoodEntries();
+      if (entries.isEmpty) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(strings.t('history.export.empty'))),
+        );
+        return;
+      }
+
+      final buffer = StringBuffer();
+      buffer.writeln('id,date_time,overall_mood,main_theme,note');
+      for (final e in entries) {
+        final date = e.dateTime.toIso8601String();
+        final mood = e.overallMood.name;
+        final theme = e.mainThemeTag.name;
+        final note = (e.note ?? '').replaceAll('"', '""');
+        buffer.writeln('${e.id ?? ''},"$date","$mood","$theme","$note"');
+      }
+
+      final dir = await getApplicationDocumentsDirectory();
+      final ts = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
+      final file = File('${dir.path}/mood_history_$ts.csv');
+      await file.writeAsString(buffer.toString());
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(strings.t('history.export.saved').replaceFirst('{path}', file.path))),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${strings.t('history.export.error')}\n$e')),
+      );
+    }
   }
 
   String _emojiForMood(MoodLevel mood) {
@@ -72,7 +113,16 @@ class _HistoryPageState extends State<HistoryPage> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: Text(strings.t('history.title'))),
+      appBar: AppBar(
+        title: Text(strings.t('history.title')),
+        actions: [
+          IconButton(
+            tooltip: strings.t('history.export'),
+            onPressed: _exportCsv,
+            icon: const Icon(Icons.download_outlined),
+          ),
+        ],
+      ),
       body: FutureBuilder<List<MoodEntry>>(
         future: _moodEntriesFuture,
         builder: (context, snapshot) {

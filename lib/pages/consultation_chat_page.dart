@@ -34,6 +34,7 @@ class _ConsultationChatPageState extends State<ConsultationChatPage> {
   final ConsultationService _service = ConsultationService.instance;
   final TextEditingController _controller = TextEditingController();
   StreamSubscription<List<Map<String, dynamic>>>? _subscription;
+  Timer? _pollTimer;
   List<ConsultationMessage> _messages = [];
   bool _loading = true;
   late ConsultationSession _session;
@@ -52,6 +53,7 @@ class _ConsultationChatPageState extends State<ConsultationChatPage> {
   @override
   void dispose() {
     _subscription?.cancel();
+    _pollTimer?.cancel();
     _controller.dispose();
     super.dispose();
   }
@@ -69,6 +71,7 @@ class _ConsultationChatPageState extends State<ConsultationChatPage> {
     await _loadRole();
     await _loadMessages();
     _startRealtime();
+    _startPolling();
   }
 
   Future<void> _loadRole() async {
@@ -77,12 +80,14 @@ class _ConsultationChatPageState extends State<ConsultationChatPage> {
     setState(() => _role = role);
   }
 
-  Future<void> _loadMessages() async {
+  Future<void> _loadMessages({bool background = false}) async {
     final messages = await _service.fetchMessages(_session.id);
     if (!mounted) return;
     setState(() {
       _messages = messages;
-      _loading = false;
+      if (!background) {
+        _loading = false;
+      }
     });
   }
 
@@ -110,6 +115,17 @@ class _ConsultationChatPageState extends State<ConsultationChatPage> {
       setState(() {
         _messages = messages;
       });
+    });
+  }
+
+  void _startPolling() {
+    _pollTimer?.cancel();
+    _pollTimer = Timer.periodic(const Duration(seconds: 3), (_) async {
+      try {
+        await _loadMessages(background: true);
+      } catch (_) {
+        // ignore transient errors during polling
+      }
     });
   }
 

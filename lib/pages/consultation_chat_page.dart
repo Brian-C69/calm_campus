@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../l10n/app_localizations.dart';
 import '../models/consultation.dart';
@@ -30,6 +33,7 @@ class ConsultationChatPage extends StatefulWidget {
 class _ConsultationChatPageState extends State<ConsultationChatPage> {
   final ConsultationService _service = ConsultationService.instance;
   final TextEditingController _controller = TextEditingController();
+  StreamSubscription<List<Map<String, dynamic>>>? _subscription;
   List<ConsultationMessage> _messages = [];
   bool _loading = true;
   late ConsultationSession _session;
@@ -45,18 +49,14 @@ class _ConsultationChatPageState extends State<ConsultationChatPage> {
     });
   }
 
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    _controller.dispose();
+    super.dispose();
+  }
+
   Future<void> _bootstrap() async {
-    await _loadRole();
-    await _loadMessages();
-  }
-
-  Future<void> _loadRole() async {
-    final role = await RoleService.instance.getCachedRole();
-    if (!mounted) return;
-    setState(() => _role = role);
-  }
-
-  Future<void> _loadMessages() async {
     final args = ModalRoute.of(context)?.settings.arguments;
     if (args is ConsultationChatArgs) {
       _session = args.session;
@@ -66,11 +66,50 @@ class _ConsultationChatPageState extends State<ConsultationChatPage> {
       return;
     }
 
+    await _loadRole();
+    await _loadMessages();
+    _startRealtime();
+  }
+
+  Future<void> _loadRole() async {
+    final role = await RoleService.instance.getCachedRole();
+    if (!mounted) return;
+    setState(() => _role = role);
+  }
+
+  Future<void> _loadMessages() async {
     final messages = await _service.fetchMessages(_session.id);
     if (!mounted) return;
     setState(() {
       _messages = messages;
       _loading = false;
+    });
+  }
+
+  void _startRealtime() {
+    _subscription?.cancel();
+    _subscription = Supabase.instance.client
+        .from('consultation_messages')
+        .stream(primaryKey: ['id'])
+        .eq('session_id', _session.id)
+        .order('sent_at', ascending: true)
+        .listen((rows) {
+      final messages = rows
+          .map(
+            (row) => ConsultationMessage(
+              id: row['id'] as int,
+              sessionId: row['session_id'] as int,
+              senderId: row['sender_id'] as String,
+              senderRole: row['sender_role'] as String? ?? 'student',
+              content: row['content'] as String? ?? '',
+              sentAt: DateTime.parse(row['sent_at'] as String),
+            ),
+          )
+          .toList();
+      if (!mounted) return;
+      setState(() {
+        _messages = messages;
+      });
     });
   }
 

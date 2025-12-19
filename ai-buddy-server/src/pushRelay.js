@@ -26,22 +26,23 @@ app.get('/health', async (_req, res) => {
 });
 
 app.post('/notify/announcement', async (req, res) => {
-  const { title, body } = req.body || {};
+  const { title, body, topic } = req.body || {};
   if (!title || !body) {
     return res.status(400).json({ error: 'title and body are required' });
   }
+  const targetTopic = topic || fcmTopic;
   try {
-    const result = await sendFcmNotification({ title, body });
+    const result = await sendFcmNotification({ title, body, topic: targetTopic });
     if (!result.ok) {
       return res.status(500).json({ error: result.error || 'fcm_error' });
     }
-    return res.json({ status: 'sent' });
+    return res.json({ status: 'sent', topic: targetTopic });
   } catch (error) {
     return res.status(500).json({ error: error?.message || 'fcm_error' });
   }
 });
 
-async function sendFcmNotification({ title, body }) {
+async function sendFcmNotification({ title, body, topic = fcmTopic }) {
   try {
     const client = await auth.getClient();
     const projectId = await auth.getProjectId();
@@ -59,7 +60,7 @@ async function sendFcmNotification({ title, body }) {
       },
       body: JSON.stringify({
         message: {
-          topic: fcmTopic,
+          topic,
           notification: { title, body }
         }
       })

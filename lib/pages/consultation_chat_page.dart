@@ -120,7 +120,7 @@ class _ConsultationChatPageState extends State<ConsultationChatPage> {
 
   void _startPolling() {
     _pollTimer?.cancel();
-    _pollTimer = Timer.periodic(const Duration(seconds: 3), (_) async {
+    _pollTimer = Timer.periodic(const Duration(seconds: 1), (_) async {
       try {
         await _loadMessages(background: true);
       } catch (_) {

@@ -209,7 +209,12 @@ If crowds feel heavy, it is okay to step outside for air or message a trusted fr
           .post(
             url,
             headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({'title': announcement.title, 'body': announcement.summary}),
+            body: jsonEncode({
+              'title': announcement.title,
+              'body': announcement.summary,
+              // Use the shared topic that all roles subscribe to.
+              'topic': 'announcements',
+            }),
           )
           .timeout(const Duration(seconds: 10));
       if (response.statusCode != 200) {

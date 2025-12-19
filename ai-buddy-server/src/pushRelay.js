@@ -3,7 +3,7 @@ import express from 'express';
 import { GoogleAuth } from 'google-auth-library';
 
 const app = express();
-const port = Number(process.env.PORT || 3000);
+const port = Number(process.env.PORT || 3002);
 const fcmTopic = process.env.FCM_TOPIC || 'announcements';
 
 // Allow inline JSON creds for local dev, otherwise fall back to GOOGLE_APPLICATION_CREDENTIALS file.

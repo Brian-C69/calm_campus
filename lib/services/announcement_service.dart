@@ -201,7 +201,7 @@ If crowds feel heavy, it is okay to step outside for air or message a trusted fr
     const String chatEnv = String.fromEnvironment('CHAT_BASE_URL');
     final String baseUrl = pushEnv.isNotEmpty
         ? pushEnv
-        : (chatEnv.isNotEmpty ? chatEnv : 'http://bernard.onthewifi.com:3000');
+        : (chatEnv.isNotEmpty ? chatEnv : 'http://bernard.onthewifi.com:3002');
     final Uri url = Uri.parse('$baseUrl/notify/announcement');
 
     try {

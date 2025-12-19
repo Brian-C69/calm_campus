@@ -93,7 +93,7 @@ class _FcmDebugPageState extends State<FcmDebugPage> {
     const String pushEnv = String.fromEnvironment('PUSH_BASE_URL');
     const String chatEnv = String.fromEnvironment('CHAT_BASE_URL');
     final String baseUrl =
-        pushEnv.isNotEmpty ? pushEnv : (chatEnv.isNotEmpty ? chatEnv : 'http://bernard.onthewifi.com:3000');
+        pushEnv.isNotEmpty ? pushEnv : (chatEnv.isNotEmpty ? chatEnv : 'http://bernard.onthewifi.com:3002');
 
     try {
       final response = await http

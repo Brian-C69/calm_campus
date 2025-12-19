@@ -34,10 +34,39 @@ app.post('/notify/announcement', async (req, res) => {
   try {
     const result = await sendFcmNotification({ title, body, topic: targetTopic });
     if (!result.ok) {
+      // eslint-disable-next-line no-console
+      console.error('FCM send failed', { topic: targetTopic, error: result.error });
       return res.status(500).json({ error: result.error || 'fcm_error' });
     }
+    // eslint-disable-next-line no-console
+    console.log('FCM sent', { topic: targetTopic, title });
     return res.json({ status: 'sent', topic: targetTopic });
   } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error('FCM send exception', { topic: targetTopic, error: error?.message || error });
+    return res.status(500).json({ error: error?.message || 'fcm_error' });
+  }
+});
+
+// Direct send to a specific device token (useful for debugging delivery issues).
+app.post('/notify/token', async (req, res) => {
+  const { title, body, token } = req.body || {};
+  if (!title || !body || !token) {
+    return res.status(400).json({ error: 'title, body and token are required' });
+  }
+  try {
+    const result = await sendFcmNotification({ title, body, token });
+    if (!result.ok) {
+      // eslint-disable-next-line no-console
+      console.error('FCM token send failed', { token: token.slice(0, 12), error: result.error });
+      return res.status(500).json({ error: result.error || 'fcm_error' });
+    }
+    // eslint-disable-next-line no-console
+    console.log('FCM sent to token', { token: token.slice(0, 12), title });
+    return res.json({ status: 'sent', token });
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error('FCM token send exception', { token: token.slice(0, 12), error: error?.message || error });
     return res.status(500).json({ error: error?.message || 'fcm_error' });
   }
 });
@@ -60,7 +89,8 @@ async function sendFcmNotification({ title, body, topic = fcmTopic }) {
       },
       body: JSON.stringify({
         message: {
-          topic,
+          ...(topic ? { topic } : {}),
+          ...(topic ? {} : { token }),
           notification: { title, body }
         }
       })
@@ -70,6 +100,7 @@ async function sendFcmNotification({ title, body, topic = fcmTopic }) {
       const text = await resp.text();
       return { ok: false, error: text || `HTTP ${resp.status}` };
     }
+    // Successful HTTP response
     return { ok: true };
   } catch (error) {
     return { ok: false, error: error?.message || 'fcm_error' };

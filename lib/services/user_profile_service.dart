@@ -130,7 +130,7 @@ class UserProfileService {
 
   Future<void> saveThemeColor(Color color) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(_themeColorKey, color.value);
+    await prefs.setInt(_themeColorKey, color.toARGB32());
   }
 
   Future<Color> getThemeColor() async {

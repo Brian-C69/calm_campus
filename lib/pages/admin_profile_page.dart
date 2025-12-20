@@ -191,7 +191,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                     spacing: 8,
                     runSpacing: 8,
                     children: _colorOptions.map((option) {
-                      final bool selected = _themeSeedColor.value == option.color.value;
+                      final bool selected = _themeSeedColor == option.color;
                       return ChoiceChip(
                         label: Text(strings.t(option.labelKey)),
                         selected: selected,

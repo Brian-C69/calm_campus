@@ -43,6 +43,7 @@ import 'services/notification_service.dart';
 import 'services/role_service.dart';
 import 'services/supabase_sync_service.dart';
 import 'services/theme_controller.dart';
+import 'services/text_scale_controller.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -61,6 +62,7 @@ Future<void> main() async {
   await FirebaseMessagingService.instance.init();
   await LanguageController.instance.loadSavedLanguage();
   await ThemeController.instance.loadSavedTheme();
+  await TextScaleController.instance.loadSavedScale();
   SupabaseSyncService.instance.startAutoUploadWatcher();
   try {
     await SupabaseSyncService.instance.restoreFromSupabaseIfSignedIn();
@@ -86,64 +88,76 @@ class MyApp extends StatelessWidget {
             return ValueListenableBuilder<Color>(
               valueListenable: ThemeController.instance.colorSeedNotifier,
               builder: (context, seedColor, __) {
-                return MaterialApp(
-                  title: 'CalmCampus',
-                  navigatorKey: navigatorKey,
-                  locale: locale,
-                  supportedLocales: AppLocalizations.supportedLocales,
-                  localizationsDelegates: const [
-                    AppLocalizations.delegate,
-                    GlobalMaterialLocalizations.delegate,
-                    GlobalWidgetsLocalizations.delegate,
-                    GlobalCupertinoLocalizations.delegate,
-                  ],
-                  themeMode: mode,
-                  theme: ThemeData(
-                    colorSchemeSeed: seedColor,
-                    useMaterial3: true,
-                    brightness: Brightness.light,
-                  ),
-                  darkTheme: ThemeData(
-                    colorSchemeSeed: seedColor,
-                    useMaterial3: true,
-                    brightness: Brightness.dark,
-                  ),
-                  initialRoute: '/home',
-                  routes: {
-                    '/auth': (_) => const AuthPage(),
-                    '/home': (_) => const RoleGatePage(),
-                    '/student': (_) => const MainNavigation(),
-                    '/admin': (_) => const AdminDashboardPage(),
-                    '/onboarding': (_) => const OnboardingPage(),
-                    '/mood': (_) => const MoodPage(),
-                    '/history': (_) => const HistoryPage(),
-                    '/journal': (_) => const JournalPage(),
-                    '/timetable': (_) => const TimetablePage(),
-                    '/tasks': (_) => const TasksPage(),
-                    '/chat': (_) => const ChatPage(),
-                    '/relax': (_) => const RelaxPage(),
-                    '/breathing': (_) => const BreathingPage(),
-                      '/profile': (_) => const ProfilePage(),
-                      '/settings': (_) => const SettingsPage(),
-                      '/about': (_) => const AboutPage(),
-                      '/help-now': (_) => const HelpNowPage(),
-                      '/dsa-summary': (_) => const DsaSummaryPage(),
-                    '/challenges': (_) => const CommonChallengesPage(),
-                    '/sleep': (_) => const SleepPage(),
-                    '/period-tracker': (_) => const PeriodTrackerPage(),
-                    '/support-plan': (_) => const SupportPlanPage(),
-                    '/movement': (_) => const MovementPage(),
-                    '/campus-map': (_) => const CampusMapPage(),
-                    '/weather': (_) => const WeatherPage(),
-                    '/announcements': (_) => const AnnouncementsPage(),
-                    '/consultation': (_) => const ConsultationPage(),
-                    '/consultation/inbox': (_) => const ConsultationInboxPage(),
-                    '/admin/profile': (_) => const AdminProfilePage(),
-                    '/reset-password': (_) => const ResetPasswordPage(),
-                    '/reset-request': (_) => const ResetRequestPage(),
-                    '/admin/mood-analytics': (_) => const AdminMoodAnalyticsPage(),
-                    '/debug/fcm': (_) => const FcmDebugPage(),
-                    ConsultationChatPage.routeName: (_) => const ConsultationChatPage(),
+                return ValueListenableBuilder<double>(
+                  valueListenable: TextScaleController.instance.textScaleNotifier,
+                  builder: (context, textScale, ___) {
+                    return MaterialApp(
+                      title: 'CalmCampus',
+                      navigatorKey: navigatorKey,
+                      locale: locale,
+                      supportedLocales: AppLocalizations.supportedLocales,
+                      localizationsDelegates: const [
+                        AppLocalizations.delegate,
+                        GlobalMaterialLocalizations.delegate,
+                        GlobalWidgetsLocalizations.delegate,
+                        GlobalCupertinoLocalizations.delegate,
+                      ],
+                      themeMode: mode,
+                      theme: ThemeData(
+                        colorSchemeSeed: seedColor,
+                        useMaterial3: true,
+                        brightness: Brightness.light,
+                      ),
+                      darkTheme: ThemeData(
+                        colorSchemeSeed: seedColor,
+                        useMaterial3: true,
+                        brightness: Brightness.dark,
+                      ),
+                      builder: (context, child) {
+                        final media = MediaQuery.of(context);
+                        return MediaQuery(
+                          data: media.copyWith(textScaler: TextScaler.linear(textScale)),
+                          child: child ?? const SizedBox.shrink(),
+                        );
+                      },
+                      initialRoute: '/home',
+                      routes: {
+                        '/auth': (_) => const AuthPage(),
+                        '/home': (_) => const RoleGatePage(),
+                        '/student': (_) => const MainNavigation(),
+                        '/admin': (_) => const AdminDashboardPage(),
+                        '/onboarding': (_) => const OnboardingPage(),
+                        '/mood': (_) => const MoodPage(),
+                        '/history': (_) => const HistoryPage(),
+                        '/journal': (_) => const JournalPage(),
+                        '/timetable': (_) => const TimetablePage(),
+                        '/tasks': (_) => const TasksPage(),
+                        '/chat': (_) => const ChatPage(),
+                        '/relax': (_) => const RelaxPage(),
+                        '/breathing': (_) => const BreathingPage(),
+                        '/profile': (_) => const ProfilePage(),
+                        '/settings': (_) => const SettingsPage(),
+                        '/about': (_) => const AboutPage(),
+                        '/help-now': (_) => const HelpNowPage(),
+                        '/dsa-summary': (_) => const DsaSummaryPage(),
+                        '/challenges': (_) => const CommonChallengesPage(),
+                        '/sleep': (_) => const SleepPage(),
+                        '/period-tracker': (_) => const PeriodTrackerPage(),
+                        '/support-plan': (_) => const SupportPlanPage(),
+                        '/movement': (_) => const MovementPage(),
+                        '/campus-map': (_) => const CampusMapPage(),
+                        '/weather': (_) => const WeatherPage(),
+                        '/announcements': (_) => const AnnouncementsPage(),
+                        '/consultation': (_) => const ConsultationPage(),
+                        '/consultation/inbox': (_) => const ConsultationInboxPage(),
+                        '/admin/profile': (_) => const AdminProfilePage(),
+                        '/reset-password': (_) => const ResetPasswordPage(),
+                        '/reset-request': (_) => const ResetRequestPage(),
+                        '/admin/mood-analytics': (_) => const AdminMoodAnalyticsPage(),
+                        '/debug/fcm': (_) => const FcmDebugPage(),
+                        ConsultationChatPage.routeName: (_) => const ConsultationChatPage(),
+                      },
+                    );
                   },
                 );
               },

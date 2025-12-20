@@ -5,6 +5,7 @@ import '../models/user_role.dart';
 
 enum AppThemeMode { system, light, dark }
 enum AppLanguage { englishUK, chineseCN, malayMY }
+enum AppTextScale { small, medium, large }
 
 class UserProfileService {
   UserProfileService._();
@@ -27,6 +28,7 @@ class UserProfileService {
   final String _displayNameKey = 'display_name';
   final String _isConsultantKey = 'is_consultant';
   final String _isOnlineKey = 'is_online';
+  final String _textScaleKey = 'app_text_scale';
 
   Future<bool> isLoggedIn() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -150,6 +152,18 @@ class UserProfileService {
   Future<void> saveLanguage(AppLanguage language) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString(_languageKey, language.name);
+  }
+
+  Future<void> saveTextScale(AppTextScale scale) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_textScaleKey, scale.name);
+  }
+
+  Future<AppTextScale> getTextScale() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final stored = prefs.getString(_textScaleKey);
+    if (stored == null) return AppTextScale.medium;
+    return AppTextScale.values.byName(stored);
   }
 
   Future<void> setTimetableRemindersEnabled(bool enabled) async {

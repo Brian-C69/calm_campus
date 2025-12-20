@@ -5,6 +5,7 @@ import '../l10n/app_localizations.dart';
 import '../services/role_service.dart';
 import '../services/theme_controller.dart';
 import '../services/language_controller.dart';
+import '../services/text_scale_controller.dart';
 import '../services/user_profile_service.dart';
 
 class AdminProfilePage extends StatefulWidget {
@@ -22,6 +23,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
   bool _loading = true;
   AppThemeMode _themeMode = AppThemeMode.system;
   AppLanguage _language = AppLanguage.englishUK;
+  AppTextScale _textScale = AppTextScale.medium;
   Color _themeSeedColor = Colors.teal;
   final List<_ThemeColorOption> _colorOptions = const [
     _ThemeColorOption(color: Colors.teal, labelKey: 'settings.themeColor.teal'),
@@ -49,6 +51,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
     try {
       final savedTheme = await UserProfileService.instance.getTheme();
       final savedLanguage = await UserProfileService.instance.getLanguage();
+      final savedTextScale = await UserProfileService.instance.getTextScale();
       final savedColor = await UserProfileService.instance.getThemeColor();
       final Map<String, dynamic>? row = await Supabase.instance.client
           .from('profiles')
@@ -65,6 +68,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
         _tagsController.text = tags.map((e) => '$e').join(', ');
         _themeMode = savedTheme;
         _language = savedLanguage;
+        _textScale = savedTextScale;
         _themeSeedColor = savedColor;
         _loading = false;
       });
@@ -102,6 +106,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
       await ThemeController.instance.updateTheme(_themeMode);
       await ThemeController.instance.updateColorSeed(_themeSeedColor);
       await LanguageController.instance.updateLanguage(_language);
+      await TextScaleController.instance.updateScale(_textScale);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(strings.t('admin.profile.saved'))),
@@ -220,6 +225,31 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                       },
                     ),
                   ),
+                  const SizedBox(height: 12),
+                  Text(strings.t('settings.textSize.title'), style: theme.textTheme.titleSmall),
+                  const SizedBox(height: 4),
+                  Slider(
+                    value: _textScaleIndex(_textScale).toDouble(),
+                    min: 0,
+                    max: 2,
+                    divisions: 2,
+                    label: strings.t(_textScaleLabelKey(_textScale)),
+                    onChanged: (value) {
+                      final selected = _textScaleFromIndex(value);
+                      setState(() => _textScale = selected);
+                      TextScaleController.instance.updateScale(selected);
+                    },
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(strings.t('settings.textSize.small')),
+                      Text(strings.t('settings.textSize.medium')),
+                      Text(strings.t('settings.textSize.large')),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(strings.t('settings.textSize.helper'), style: theme.textTheme.bodySmall),
                   const SizedBox(height: 16),
                   FilledButton.icon(
                     onPressed: _save,
@@ -260,4 +290,39 @@ class _ThemeColorOption {
 
   final Color color;
   final String labelKey;
+}
+
+int _textScaleIndex(AppTextScale scale) {
+  switch (scale) {
+    case AppTextScale.small:
+      return 0;
+    case AppTextScale.medium:
+      return 1;
+    case AppTextScale.large:
+      return 2;
+  }
+}
+
+AppTextScale _textScaleFromIndex(double value) {
+  final int rounded = value.round().clamp(0, 2);
+  switch (rounded) {
+    case 0:
+      return AppTextScale.small;
+    case 2:
+      return AppTextScale.large;
+    case 1:
+    default:
+      return AppTextScale.medium;
+  }
+}
+
+String _textScaleLabelKey(AppTextScale scale) {
+  switch (scale) {
+    case AppTextScale.small:
+      return 'settings.textSize.small';
+    case AppTextScale.medium:
+      return 'settings.textSize.medium';
+    case AppTextScale.large:
+      return 'settings.textSize.large';
+  }
 }

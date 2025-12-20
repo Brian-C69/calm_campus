@@ -66,6 +66,7 @@ class _HomePageState extends State<HomePage> {
     final strings = AppLocalizations.of(context);
     final routes = <_HomeRouteInfo>[
       _HomeRouteInfo(strings.t('home.card.mood'), Icons.favorite, '/mood'),
+      _HomeRouteInfo(strings.t('home.card.snapshot'), Icons.today, '/snapshot'),
       _HomeRouteInfo(strings.t('home.card.news'), Icons.campaign, '/announcements'),
       _HomeRouteInfo(strings.t('home.card.journal'), Icons.menu_book, '/journal'),
       _HomeRouteInfo(strings.t('home.card.profile'), Icons.person, '/profile'),

@@ -26,6 +26,7 @@ import 'pages/support_plan_page.dart';
 import 'pages/tasks_page.dart';
 import 'pages/timetable_page.dart';
 import 'pages/weather_page.dart';
+import 'pages/daily_snapshot_page.dart';
 import 'pages/role_gate_page.dart';
 import 'pages/student_shell.dart';
 import 'pages/admin_dashboard_page.dart';
@@ -133,10 +134,11 @@ class MyApp extends StatelessWidget {
                         '/timetable': (_) => const TimetablePage(),
                         '/tasks': (_) => const TasksPage(),
                         '/chat': (_) => const ChatPage(),
-                        '/relax': (_) => const RelaxPage(),
-                        '/breathing': (_) => const BreathingPage(),
-                        '/profile': (_) => const ProfilePage(),
-                        '/settings': (_) => const SettingsPage(),
+                    '/relax': (_) => const RelaxPage(),
+                    '/breathing': (_) => const BreathingPage(),
+                    '/snapshot': (_) => const DailySnapshotPage(),
+                    '/profile': (_) => const ProfilePage(),
+                    '/settings': (_) => const SettingsPage(),
                         '/about': (_) => const AboutPage(),
                         '/help-now': (_) => const HelpNowPage(),
                         '/dsa-summary': (_) => const DsaSummaryPage(),

@@ -5,6 +5,8 @@ import '../l10n/app_localizations.dart';
 import '../services/role_service.dart';
 import '../models/user_role.dart';
 import '../widgets/guide_overlay.dart';
+import '../services/home_layout_service.dart';
+import 'home_customize_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -16,12 +18,14 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   late Future<String?> _nicknameFuture;
   late Future<bool> _isLoggedInFuture;
+  late Future<HomeLayoutState> _layoutFuture;
 
   @override
   void initState() {
     super.initState();
     _nicknameFuture = _loadNickname();
     _isLoggedInFuture = _loadLoginState();
+    _layoutFuture = HomeLayoutService.instance.loadLayout();
     _redirectIfAdmin();
   }
 
@@ -29,6 +33,7 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       _nicknameFuture = _loadNickname();
       _isLoggedInFuture = _loadLoginState();
+      _layoutFuture = HomeLayoutService.instance.loadLayout();
     });
   }
 
@@ -64,25 +69,6 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context);
-    final routes = <_HomeRouteInfo>[
-      _HomeRouteInfo(strings.t('home.card.mood'), Icons.favorite, '/mood'),
-      _HomeRouteInfo(strings.t('home.card.snapshot'), Icons.today, '/snapshot'),
-      _HomeRouteInfo(strings.t('home.card.news'), Icons.campaign, '/announcements'),
-      _HomeRouteInfo(strings.t('home.card.journal'), Icons.menu_book, '/journal'),
-      _HomeRouteInfo(strings.t('home.card.profile'), Icons.person, '/profile'),
-      _HomeRouteInfo(strings.t('home.card.timetable'), Icons.schedule, '/timetable'),
-      _HomeRouteInfo(strings.t('home.card.tasks'), Icons.checklist, '/tasks'),
-      _HomeRouteInfo(strings.t('home.card.chat'), Icons.chat, '/chat'),
-      _HomeRouteInfo(strings.t('home.card.relax'), Icons.spa, '/relax'),
-      _HomeRouteInfo(strings.t('home.card.sleep'), Icons.nights_stay, '/sleep'),
-      _HomeRouteInfo(strings.t('home.card.movement'), Icons.directions_walk, '/movement'),
-      _HomeRouteInfo(strings.t('home.card.period'), Icons.calendar_today, '/period-tracker'),
-      _HomeRouteInfo(strings.t('home.card.support'), Icons.emoji_people, '/support-plan'),
-      _HomeRouteInfo(strings.t('home.card.consultation'), Icons.support_agent, '/consultation'),
-      _HomeRouteInfo(strings.t('home.card.help'), Icons.volunteer_activism, '/help-now'),
-      _HomeRouteInfo(strings.t('home.card.dsa'), Icons.analytics, '/dsa-summary'),
-      _HomeRouteInfo(strings.t('home.card.challenges'), Icons.menu_book, '/challenges'),
-    ];
 
     return GuideOverlay(
       pageId: 'home',
@@ -100,6 +86,19 @@ class _HomePageState extends State<HomePage> {
         appBar: AppBar(
           title: Text(strings.t('app.title')),
           actions: [
+            IconButton(
+              onPressed: () async {
+                await Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const HomeCustomizePage()),
+                );
+                if (!mounted) return;
+                setState(() {
+                  _layoutFuture = HomeLayoutService.instance.loadLayout();
+                });
+              },
+              icon: const Icon(Icons.tune),
+              tooltip: strings.t('home.customize'),
+            ),
             FutureBuilder<bool>(
               future: _isLoggedInFuture,
               builder: (context, snapshot) {
@@ -160,20 +159,37 @@ class _HomePageState extends State<HomePage> {
               ),
               const SizedBox(height: 16),
               Expanded(
-                child: GridView.builder(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                    childAspectRatio: 1.1,
-                  ),
-                  itemCount: routes.length,
-                  itemBuilder: (context, index) {
-                    final item = routes[index];
-                    return _HomeCard(
-                      title: item.title,
-                      icon: item.icon,
-                      onTap: () => Navigator.pushNamed(context, item.route),
+                child: FutureBuilder<HomeLayoutState>(
+                  future: _layoutFuture,
+                  builder: (context, snapshot) {
+                    final layout = snapshot.data;
+                    final defaults = HomeLayoutService.instance.defaults;
+                    List<HomeTileConfig> visible = defaults;
+                    if (layout != null) {
+                      final map = {for (var c in defaults) c.id: c};
+                      visible = layout.order
+                          .where((id) => !layout.hidden.contains(id))
+                          .map((id) => map[id])
+                          .whereType<HomeTileConfig>()
+                          .toList();
+                    }
+
+                    return GridView.builder(
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                        childAspectRatio: 1.1,
+                      ),
+                      itemCount: visible.length,
+                      itemBuilder: (context, index) {
+                        final item = visible[index];
+                        return _HomeCard(
+                          title: strings.t(item.labelKey),
+                          icon: item.icon,
+                          onTap: () => Navigator.pushNamed(context, item.route),
+                        );
+                      },
                     );
                   },
                 ),

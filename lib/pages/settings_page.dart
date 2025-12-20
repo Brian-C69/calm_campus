@@ -23,6 +23,15 @@ class _SettingsPageState extends State<SettingsPage> {
   AppLanguage _language = AppLanguage.englishUK;
   TimeOfDay? _reminderTime;
   bool _chatShareAll = false;
+  Color _themeSeedColor = Colors.teal;
+  final List<_ThemeColorOption> _colorOptions = const [
+    _ThemeColorOption(color: Colors.teal, labelKey: 'settings.themeColor.teal'),
+    _ThemeColorOption(color: Colors.blue, labelKey: 'settings.themeColor.blue'),
+    _ThemeColorOption(color: Colors.green, labelKey: 'settings.themeColor.green'),
+    _ThemeColorOption(color: Colors.purple, labelKey: 'settings.themeColor.purple'),
+    _ThemeColorOption(color: Colors.orange, labelKey: 'settings.themeColor.orange'),
+    _ThemeColorOption(color: Colors.pink, labelKey: 'settings.themeColor.pink'),
+  ];
 
   @override
   void initState() {
@@ -38,6 +47,7 @@ class _SettingsPageState extends State<SettingsPage> {
     final language = await UserProfileService.instance.getLanguage();
     final reminder = await UserProfileService.instance.getDailyReminderTime();
     final shareAll = await UserProfileService.instance.getChatShareAll();
+    final colorSeed = await UserProfileService.instance.getThemeColor();
 
     setState(() {
       _nicknameController.text = nickname ?? '';
@@ -47,6 +57,7 @@ class _SettingsPageState extends State<SettingsPage> {
       _language = language;
       _reminderTime = reminder;
       _chatShareAll = shareAll;
+      _themeSeedColor = colorSeed;
     });
   }
 
@@ -82,6 +93,7 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<void> _saveAll() async {
     await _saveProfile();
     await ThemeController.instance.updateTheme(_themeMode);
+    await ThemeController.instance.updateColorSeed(_themeSeedColor);
     await LanguageController.instance.updateLanguage(_language);
     await _saveReminder();
     await UserProfileService.instance.setChatShareAll(_chatShareAll);
@@ -228,6 +240,30 @@ class _SettingsPageState extends State<SettingsPage> {
                         },
                       ),
                     ),
+                    const SizedBox(height: 12),
+                    Text(strings.t('settings.themeColor.title'), style: theme.textTheme.titleSmall),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: _colorOptions.map((option) {
+                        final bool selected = _themeSeedColor.value == option.color.value;
+                        return ChoiceChip(
+                          label: Text(strings.t(option.labelKey)),
+                          selected: selected,
+                          avatar: CircleAvatar(
+                            backgroundColor: option.color,
+                            radius: 10,
+                          ),
+                          onSelected: (_) => _onSelectColor(option.color),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      strings.t('settings.themeColor.helper'),
+                      style: theme.textTheme.bodySmall,
+                    ),
                   ],
                 ),
               ),
@@ -351,4 +387,16 @@ class _SettingsPageState extends State<SettingsPage> {
         return strings.t('settings.language.ms');
     }
   }
+
+  void _onSelectColor(Color color) {
+    setState(() => _themeSeedColor = color);
+    ThemeController.instance.updateColorSeed(color);
+  }
+}
+
+class _ThemeColorOption {
+  const _ThemeColorOption({required this.color, required this.labelKey});
+
+  final Color color;
+  final String labelKey;
 }

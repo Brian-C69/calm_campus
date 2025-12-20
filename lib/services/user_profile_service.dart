@@ -17,6 +17,7 @@ class UserProfileService {
   final String _firstRunKey = 'is_first_run';
   final String _loggedInKey = 'is_logged_in';
   final String _themeKey = 'app_theme';
+  final String _themeColorKey = 'app_theme_color';
   final String _languageKey = 'app_language';
   final String _timetableRemindersKey = 'timetable_reminders_enabled';
   final String _reminderTimeKey = 'daily_reminder_time';
@@ -125,6 +126,18 @@ class UserProfileService {
   Future<void> saveTheme(AppThemeMode theme) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString(_themeKey, theme.name);
+  }
+
+  Future<void> saveThemeColor(Color color) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_themeColorKey, color.value);
+  }
+
+  Future<Color> getThemeColor() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final int? stored = prefs.getInt(_themeColorKey);
+    if (stored == null) return Colors.teal;
+    return Color(stored);
   }
 
   Future<AppThemeMode> getTheme() async {

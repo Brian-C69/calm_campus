@@ -205,100 +205,102 @@ class _ProfilePageState extends State<ProfilePage> {
             top: false,
             child: Padding(
               padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Card(
-                    elevation: 0,
-                    color: theme.colorScheme.surfaceContainerHighest,
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        children: [
-                          CircleAvatar(
-                            radius: 32,
-                            backgroundColor: theme.colorScheme.primaryContainer,
-                            child: Text(
-                              profile.initials,
-                              style: theme.textTheme.headlineSmall?.copyWith(
-                                color: theme.colorScheme.onPrimaryContainer,
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Card(
+                      elevation: 0,
+                      color: theme.colorScheme.surfaceContainerHighest,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          children: [
+                            CircleAvatar(
+                              radius: 32,
+                              backgroundColor: theme.colorScheme.primaryContainer,
+                              child: Text(
+                                profile.initials,
+                                style: theme.textTheme.headlineSmall?.copyWith(
+                                  color: theme.colorScheme.onPrimaryContainer,
+                                ),
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            profile.nickname ?? strings.t('profile.nickname.missing'),
-                            style: theme.textTheme.titleLarge,
-                          ),
-                          Text(
-                            profile.course ?? strings.t('profile.course.missing'),
-                            style: theme.textTheme.bodyMedium,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            profile.yearOfStudy != null
-                                ? strings
-                                    .t('profile.year.label')
-                                    .replaceFirst('{year}', profile.yearOfStudy.toString())
-                                : strings.t('profile.year.missing'),
-                            style: theme.textTheme.bodyMedium,
-                          ),
-                        ],
+                            const SizedBox(height: 12),
+                            Text(
+                              profile.nickname ?? strings.t('profile.nickname.missing'),
+                              style: theme.textTheme.titleLarge,
+                            ),
+                            Text(
+                              profile.course ?? strings.t('profile.course.missing'),
+                              style: theme.textTheme.bodyMedium,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              profile.yearOfStudy != null
+                                  ? strings
+                                      .t('profile.year.label')
+                                      .replaceFirst('{year}', profile.yearOfStudy.toString())
+                                  : strings.t('profile.year.missing'),
+                              style: theme.textTheme.bodyMedium,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  Card(
-                    elevation: 0,
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            strings.t('profile.overview'),
-                            style: theme.textTheme.titleMedium,
-                          ),
-                          const SizedBox(height: 8),
-                          ListTile(
-                            leading: const Icon(Icons.email_outlined),
-                            title: Text(strings.t('profile.contact')),
-                            subtitle: Text(strings.t('profile.contact.helper')),
-                          ),
-                          ListTile(
-                            leading: const Icon(Icons.schedule_outlined),
-                            title: Text(strings.t('profile.reminder')),
-                            subtitle: Text(strings.t('profile.reminder.helper')),
-                          ),
-                          ListTile(
-                            leading: const Icon(Icons.info_outline),
-                            title: Text(strings.t('about.title')),
-                            subtitle: Text(strings.t('about.subtitle')),
-                            onTap: _openAbout,
-                          ),
-                        ],
+                    const SizedBox(height: 16),
+                    Card(
+                      elevation: 0,
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              strings.t('profile.overview'),
+                              style: theme.textTheme.titleMedium,
+                            ),
+                            const SizedBox(height: 8),
+                            ListTile(
+                              leading: const Icon(Icons.email_outlined),
+                              title: Text(strings.t('profile.contact')),
+                              subtitle: Text(strings.t('profile.contact.helper')),
+                            ),
+                            ListTile(
+                              leading: const Icon(Icons.schedule_outlined),
+                              title: Text(strings.t('profile.reminder')),
+                              subtitle: Text(strings.t('profile.reminder.helper')),
+                            ),
+                            ListTile(
+                              leading: const Icon(Icons.info_outline),
+                              title: Text(strings.t('about.title')),
+                              subtitle: Text(strings.t('about.subtitle')),
+                              onTap: _openAbout,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                  const Spacer(),
-                  FilledButton.icon(
-                    onPressed: _openSettings,
-                    icon: const Icon(Icons.settings),
-                    label: Text(strings.t('profile.openSettings')),
-                  ),
-                  const SizedBox(height: 8),
-                  FilledButton.icon(
-                    onPressed: _changePassword,
-                    icon: const Icon(Icons.lock_reset),
-                    label: Text(strings.t('auth.password.change')),
-                  ),
-                  const SizedBox(height: 8),
-                  OutlinedButton.icon(
-                    onPressed: _logout,
-                    icon: const Icon(Icons.logout),
-                    label: Text(strings.t('profile.logout')),
-                  ),
-                ],
+                    const SizedBox(height: 16),
+                    FilledButton.icon(
+                      onPressed: _openSettings,
+                      icon: const Icon(Icons.settings),
+                      label: Text(strings.t('profile.openSettings')),
+                    ),
+                    const SizedBox(height: 8),
+                    FilledButton.icon(
+                      onPressed: _changePassword,
+                      icon: const Icon(Icons.lock_reset),
+                      label: Text(strings.t('auth.password.change')),
+                    ),
+                    const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      onPressed: _logout,
+                      icon: const Icon(Icons.logout),
+                      label: Text(strings.t('profile.logout')),
+                    ),
+                  ],
+                ),
               ),
             ),
           );

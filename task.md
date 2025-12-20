@@ -121,8 +121,8 @@ Status: reviewed 2025-12-02 after lint fixes; checklist kept in place unless cle
 - [ ] Onboarding / intro screens
 - [ ] Simple profile setup (optional)
 - [x] `HomePage`:
-    - [x] Show today’s mood (or “no check-in yet”)
-    - [x] Show next class (from timetable)
+    - [ ] Show today’s mood (or “no check-in yet”)
+    - [ ] Show next class (from timetable)
     - [x] Quick actions:
         - [x] “Check in now”
         - [x] “Talk to Buddy”

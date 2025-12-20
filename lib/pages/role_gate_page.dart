@@ -19,7 +19,16 @@ class _RoleGatePageState extends State<RoleGatePage> {
   @override
   void initState() {
     super.initState();
+    _maybeShowOnboarding();
     _roleFuture = _loadRole();
+  }
+
+  Future<void> _maybeShowOnboarding() async {
+    final bool firstRun = await UserProfileService.instance.isFirstRun();
+    if (!mounted) return;
+    if (firstRun) {
+      Navigator.of(context).pushReplacementNamed('/onboarding');
+    }
   }
 
   Future<UserRole> _loadRole() async {

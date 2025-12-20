@@ -36,6 +36,7 @@ import 'pages/admin_profile_page.dart';
 import 'pages/reset_password_page.dart';
 import 'pages/reset_request_page.dart';
 import 'pages/admin_mood_analytics_page.dart';
+import 'pages/onboarding_page.dart';
 import 'services/firebase_messaging_service.dart';
 import 'services/language_controller.dart';
 import 'services/notification_service.dart';
@@ -110,6 +111,7 @@ class MyApp extends StatelessWidget {
                 '/home': (_) => const RoleGatePage(),
                 '/student': (_) => const MainNavigation(),
                 '/admin': (_) => const AdminDashboardPage(),
+                '/onboarding': (_) => const OnboardingPage(),
                 '/mood': (_) => const MoodPage(),
                 '/history': (_) => const HistoryPage(),
                 '/journal': (_) => const JournalPage(),

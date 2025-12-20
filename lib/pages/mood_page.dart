@@ -6,6 +6,7 @@ import '../services/login_nudge_service.dart';
 import '../services/user_profile_service.dart';
 import '../l10n/app_localizations.dart';
 import '../utils/mood_labels.dart';
+import '../widgets/guide_overlay.dart';
 
 class MoodOption {
   const MoodOption({
@@ -150,102 +151,115 @@ class _MoodPageState extends State<MoodPage> {
     final TextTheme textTheme = Theme.of(context).textTheme;
     final moodOptions = _moodOptions(strings);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(strings.t('mood.title')),
-        actions: [
-          IconButton(
-            tooltip: strings.t('mood.history'),
-            onPressed: () => Navigator.pushNamed(context, '/history'),
-            icon: const Icon(Icons.timeline),
-          ),
-        ],
-      ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '${_timeGreeting(strings)}, $_userName!',
-                style: textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(strings.t('mood.subtitle'), style: textTheme.bodyMedium),
-              const SizedBox(height: 24),
-              Text(strings.t('mood.prompt'), style: textTheme.titleLarge),
-              const SizedBox(height: 8),
-              Text(
-                strings.t('mood.instruction'),
-                style: textTheme.bodyMedium?.copyWith(color: Colors.grey[700]),
-              ),
-              const SizedBox(height: 12),
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Wrap(
-                        spacing: 12,
-                        runSpacing: 12,
-                        children:
-                            moodOptions
-                                .map(
-                                  (option) => ChoiceChip(
-                                    label: Text(
-                                      '${option.emoji} ${option.label}',
-                                    ),
-                                    selected: _selectedMood == option.level,
-                                    onSelected: (_) async {
-                                      await _handleLoginNudge();
-                                      if (!mounted) return;
-                                      setState(() {
-                                        _selectedMood = option.level;
-                                      });
-                                    },
-                                  ),
-                                )
-                                .toList(),
-                      ),
-                      const SizedBox(height: 20),
-                      TextField(
-                        controller: _noteController,
-                        decoration: InputDecoration(
-                          labelText: strings.t('mood.note.label'),
-                          hintText: strings.t('mood.note.hint'),
-                          border: const OutlineInputBorder(),
-                        ),
-                        maxLines: 4,
-                        textInputAction: TextInputAction.done,
-                      ),
-                    ],
+    return GuideOverlay(
+      pageId: 'mood',
+      steps: const [
+        GuideStep(
+          title: 'Pick your mood',
+          body: 'Choose the emoji/label that fits you right now.',
+        ),
+        GuideStep(
+          title: 'Add context',
+          body: 'Select a tag like stress, social, or sleep to see patterns later.',
+        ),
+        GuideStep(
+          title: 'Optional note',
+          body: 'Add a short note for yourself, then tap save.',
+        ),
+      ],
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(strings.t('mood.title')),
+          actions: [
+            IconButton(
+              tooltip: strings.t('mood.history'),
+              onPressed: () => Navigator.pushNamed(context, '/history'),
+              icon: const Icon(Icons.timeline),
+            ),
+          ],
+        ),
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${_timeGreeting(strings)}, $_userName!',
+                  style: textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: _isSaving ? null : _saveMood,
-                  icon:
-                      _isSaving
-                          ? const SizedBox(
+                const SizedBox(height: 4),
+                Text(strings.t('mood.subtitle'), style: textTheme.bodyMedium),
+                const SizedBox(height: 24),
+                Text(strings.t('mood.prompt'), style: textTheme.titleLarge),
+                const SizedBox(height: 8),
+                Text(
+                  strings.t('mood.instruction'),
+                  style: textTheme.bodyMedium?.copyWith(color: Colors.grey[700]),
+                ),
+                const SizedBox(height: 12),
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Wrap(
+                          spacing: 12,
+                          runSpacing: 12,
+                          children: moodOptions
+                              .map(
+                                (option) => ChoiceChip(
+                                  label: Text(
+                                    '${option.emoji} ${option.label}',
+                                  ),
+                                  selected: _selectedMood == option.level,
+                                  onSelected: (_) async {
+                                    await _handleLoginNudge();
+                                    if (!mounted) return;
+                                    setState(() {
+                                      _selectedMood = option.level;
+                                    });
+                                  },
+                                ),
+                              )
+                              .toList(),
+                        ),
+                        const SizedBox(height: 20),
+                        TextField(
+                          controller: _noteController,
+                          decoration: InputDecoration(
+                            labelText: strings.t('mood.note.label'),
+                            hintText: strings.t('mood.note.hint'),
+                            border: const OutlineInputBorder(),
+                          ),
+                          maxLines: 4,
+                          textInputAction: TextInputAction.done,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: _isSaving ? null : _saveMood,
+                    icon: _isSaving
+                        ? const SizedBox(
                             height: 20,
                             width: 20,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                          : const Icon(Icons.check),
-                  label: Text(
-                    _isSaving
-                        ? strings.t('mood.saving')
-                        : strings.t('mood.save'),
+                        : const Icon(Icons.check),
+                    label: Text(
+                      _isSaving ? strings.t('mood.saving') : strings.t('mood.save'),
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

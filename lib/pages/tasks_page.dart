@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../models/task.dart';
 import '../services/db_service.dart';
 import '../l10n/app_localizations.dart';
+import '../widgets/guide_overlay.dart';
 
 class TasksPage extends StatefulWidget {
   const TasksPage({super.key});
@@ -37,80 +38,97 @@ class _TasksPageState extends State<TasksPage> {
     final pendingCount = _tasks.where((task) => task.status == TaskStatus.pending).length;
     final completedCount = _tasks.length - pendingCount;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(strings.t('tasks.title')),
-        actions: [
-          IconButton(
-            tooltip: strings.t('tasks.clearCompleted'),
-            onPressed: completedCount > 0 ? _clearCompleted : null,
-            icon: const Icon(Icons.clear_all),
-          ),
-        ],
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _TaskSummary(pendingCount: pendingCount, completedCount: completedCount),
-            const SizedBox(height: 12),
-            _FilterRow(
-              selected: _selectedFilter,
-              onSelected: (filter) => setState(() => _selectedFilter = filter),
-            ),
-            const SizedBox(height: 12),
-            _SortRow(
-              selected: _selectedSort,
-              onSelected: (sort) => setState(() => _selectedSort = sort),
-            ),
-            const SizedBox(height: 12),
-            Expanded(
-              child: _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : filteredTasks.isEmpty
-                      ? _EmptyState(onAdd: _openTaskComposer)
-                      : _selectedSort == _TaskSort.custom
-                          ? ReorderableListView.builder(
-                              buildDefaultDragHandles: false,
-                              itemCount: filteredTasks.length,
-                              onReorder: (oldIndex, newIndex) =>
-                                  _reorderTasks(filteredTasks, oldIndex, newIndex),
-                              itemBuilder: (context, index) {
-                                final task = filteredTasks[index];
-                                return ReorderableDelayedDragStartListener(
-                                  key: ValueKey(task),
-                                  index: index,
-                                  child: Padding(
-                                    padding: const EdgeInsets.only(bottom: 12),
-                                    child: _TaskCard(
-                                      task: task,
-                                      onToggle: () => _toggleTask(task),
-                                      showDragHandle: true,
-                                    ),
-                                  ),
-                                );
-                              },
-                            )
-                          : ListView.separated(
-                              itemCount: filteredTasks.length,
-                              separatorBuilder: (_, __) => const SizedBox(height: 12),
-                              itemBuilder: (context, index) {
-                                final task = filteredTasks[index];
-                                return _TaskCard(
-                                  task: task,
-                                  onToggle: () => _toggleTask(task),
-                                );
-                              },
-                            ),
+    return GuideOverlay(
+      pageId: 'tasks',
+      steps: const [
+        GuideStep(
+          title: 'Add tasks quickly',
+          body: 'Tap the + button to add what you need to do and set a due date.',
+        ),
+        GuideStep(
+          title: 'Mark done or edit',
+          body: 'Use the checkbox to mark complete. Tap a task to edit or delete.',
+        ),
+        GuideStep(
+          title: 'Filter your list',
+          body: 'Use the filter and sort rows to focus on what matters.',
+        ),
+      ],
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(strings.t('tasks.title')),
+          actions: [
+            IconButton(
+              tooltip: strings.t('tasks.clearCompleted'),
+              onPressed: completedCount > 0 ? _clearCompleted : null,
+              icon: const Icon(Icons.clear_all),
             ),
           ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _openTaskComposer,
-        icon: const Icon(Icons.add_task),
-        label: Text(strings.t('tasks.new')),
+        body: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _TaskSummary(pendingCount: pendingCount, completedCount: completedCount),
+              const SizedBox(height: 12),
+              _FilterRow(
+                selected: _selectedFilter,
+                onSelected: (filter) => setState(() => _selectedFilter = filter),
+              ),
+              const SizedBox(height: 12),
+              _SortRow(
+                selected: _selectedSort,
+                onSelected: (sort) => setState(() => _selectedSort = sort),
+              ),
+              const SizedBox(height: 12),
+              Expanded(
+                child: _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : filteredTasks.isEmpty
+                        ? _EmptyState(onAdd: _openTaskComposer)
+                        : _selectedSort == _TaskSort.custom
+                            ? ReorderableListView.builder(
+                                buildDefaultDragHandles: false,
+                                itemCount: filteredTasks.length,
+                                onReorder: (oldIndex, newIndex) =>
+                                    _reorderTasks(filteredTasks, oldIndex, newIndex),
+                                itemBuilder: (context, index) {
+                                  final task = filteredTasks[index];
+                                  return ReorderableDelayedDragStartListener(
+                                    key: ValueKey(task),
+                                    index: index,
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(bottom: 12),
+                                      child: _TaskCard(
+                                        task: task,
+                                        onToggle: () => _toggleTask(task),
+                                        showDragHandle: true,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              )
+                            : ListView.separated(
+                                itemCount: filteredTasks.length,
+                                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                                itemBuilder: (context, index) {
+                                  final task = filteredTasks[index];
+                                  return _TaskCard(
+                                    task: task,
+                                    onToggle: () => _toggleTask(task),
+                                  );
+                                },
+                              ),
+              ),
+            ],
+          ),
+        ),
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: _openTaskComposer,
+          icon: const Icon(Icons.add_task),
+          label: Text(strings.t('tasks.new')),
+        ),
       ),
     );
   }

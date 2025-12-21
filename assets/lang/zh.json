@@ -471,5 +471,11 @@
   "search.hint": "搜索任务、日记或心情备注",
   "search.empty": "暂无结果，换个关键词试试。",
   "search.journal": "日记",
-  "search.mood": "心情备注"
+  "search.mood": "心情备注",
+  "relax.guide.ambient.title": "选择环境音",
+  "relax.guide.ambient.body": "点选一个音景，调整到舒服的音量。",
+  "relax.guide.guided.title": "引导练习",
+  "relax.guide.guided.body": "专注或冥想的引导音轨，可与环境音同时播放。",
+  "relax.guide.player.title": "浮动播放器",
+  "relax.guide.player.body": "底部控件方便随时暂停或切换。"
 }

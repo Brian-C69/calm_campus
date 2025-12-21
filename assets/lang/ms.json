@@ -695,5 +695,11 @@
   "search.mood": "Nota mood",
   "tasks.priority.low": "Rendah",
   "tasks.priority.medium": "Sederhana",
-  "tasks.priority.high": "Tinggi"
+  "tasks.priority.high": "Tinggi",
+  "relax.guide.ambient.title": "Pilih suasana bunyi",
+  "relax.guide.ambient.body": "Ketik bunyi dan laraskan volum mengikut keselesaan.",
+  "relax.guide.guided.title": "Treks panduan",
+  "relax.guide.guided.body": "Fokus atau meditasi dengan treks panduan. Anda boleh lapiskan dengan bunyi ambient.",
+  "relax.guide.player.title": "Pemain terapung",
+  "relax.guide.player.body": "Kawalan di bawah supaya mudah jeda atau tukar."
 }

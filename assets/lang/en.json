@@ -696,5 +696,11 @@
   "journal.deleted": "Journal entry deleted",
   "common.undo": "Undo",
   "mood.duplicate.done": "Copied your last note",
-  "mood.duplicate.none": "No previous note to copy"
+  "mood.duplicate.none": "No previous note to copy",
+  "relax.guide.ambient.title": "Pick your ambience",
+  "relax.guide.ambient.body": "Tap a soundscape and adjust volumes to your liking.",
+  "relax.guide.guided.title": "Guided tracks",
+  "relax.guide.guided.body": "Focus or meditate with guided tracks. You can layer them with ambience.",
+  "relax.guide.player.title": "Floating player",
+  "relax.guide.player.body": "Controls stay at the bottom so you can pause or switch quickly."
 }

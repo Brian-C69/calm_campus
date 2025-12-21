@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 
 import '../l10n/app_localizations.dart';
+import '../widgets/guide_overlay.dart';
 import '../models/relax_track.dart';
 import 'breathing_page.dart';
 
@@ -338,47 +339,64 @@ class _RelaxPageState extends State<RelaxPage> {
       appBar: AppBar(title: Text(strings.t('relax.title'))),
       body: Stack(
         children: [
-          ListView(
-            padding: EdgeInsets.fromLTRB(
-              16,
-              16,
-              16,
-              playerPadding + safeBottom,
-            ),
-            children: [
-              _buildBreathingCard(context),
-              const SizedBox(height: 12),
-              Text(strings.t('relax.intro')),
-              const SizedBox(height: 16),
-              StreamBuilder<PlayerState>(
-                stream: _ambientPlayer.playerStateStream,
-                builder: (context, snapshot) {
-                  final ambientState = snapshot.data;
-                  return _buildSection(
-                    title: strings.t('relax.section.ambient.title'),
-                    description: strings.t('relax.section.ambient.desc'),
-                    tracks: _ambientTracks,
-                    playerState: ambientState,
-                    isAmbient: true,
-                  );
-                },
+          GuideOverlay(
+            pageId: 'relax',
+            steps: [
+              GuideStep(
+                title: strings.t('relax.guide.ambient.title'),
+                body: strings.t('relax.guide.ambient.body'),
               ),
-              const SizedBox(height: 12),
-              StreamBuilder<PlayerState>(
-                stream: _guidedPlayer.playerStateStream,
-                builder: (context, snapshot) {
-                  final guidedState = snapshot.data;
-                  return _buildSection(
-                    title: strings.t('relax.section.guided.title'),
-                    description: strings.t('relax.section.guided.desc'),
-                    tracks: _guidedTracks,
-                    playerState: guidedState,
-                    isAmbient: false,
-                    groupByCategory: true,
-                  );
-                },
+              GuideStep(
+                title: strings.t('relax.guide.guided.title'),
+                body: strings.t('relax.guide.guided.body'),
+              ),
+              GuideStep(
+                title: strings.t('relax.guide.player.title'),
+                body: strings.t('relax.guide.player.body'),
               ),
             ],
+            child: ListView(
+              padding: EdgeInsets.fromLTRB(
+                16,
+                16,
+                16,
+                playerPadding + safeBottom,
+              ),
+              children: [
+                _buildBreathingCard(context),
+                const SizedBox(height: 12),
+                Text(strings.t('relax.intro')),
+                const SizedBox(height: 16),
+                StreamBuilder<PlayerState>(
+                  stream: _ambientPlayer.playerStateStream,
+                  builder: (context, snapshot) {
+                    final ambientState = snapshot.data;
+                    return _buildSection(
+                      title: strings.t('relax.section.ambient.title'),
+                      description: strings.t('relax.section.ambient.desc'),
+                      tracks: _ambientTracks,
+                      playerState: ambientState,
+                      isAmbient: true,
+                    );
+                  },
+                ),
+                const SizedBox(height: 12),
+                StreamBuilder<PlayerState>(
+                  stream: _guidedPlayer.playerStateStream,
+                  builder: (context, snapshot) {
+                    final guidedState = snapshot.data;
+                    return _buildSection(
+                      title: strings.t('relax.section.guided.title'),
+                      description: strings.t('relax.section.guided.desc'),
+                      tracks: _guidedTracks,
+                      playerState: guidedState,
+                      isAmbient: false,
+                      groupByCategory: true,
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
           Positioned(
             left: 16,

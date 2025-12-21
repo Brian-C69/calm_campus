@@ -524,12 +524,14 @@ class _TaskCard extends StatelessWidget {
     required this.task,
     required this.onToggle,
     this.onDelete,
+    this.onLongPress,
     this.showDragHandle = false,
   });
 
   final Task task;
   final VoidCallback onToggle;
   final VoidCallback? onDelete;
+  final VoidCallback? onLongPress;
   final bool showDragHandle;
 
   @override
@@ -540,61 +542,64 @@ class _TaskCard extends StatelessWidget {
 
     return Card(
       elevation: 0,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Checkbox(
-              value: task.status == TaskStatus.done,
-              onChanged: (_) => onToggle(),
-              shape: const CircleBorder(),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          task.title,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                decoration: task.status == TaskStatus.done
-                                    ? TextDecoration.lineThrough
-                                    : TextDecoration.none,
-                            ),
-                        ),
-                      ),
-                      _PriorityBadge(priority: task.priority),
-                      IconButton(
-                        icon: const Icon(Icons.delete_outline),
-                        tooltip: AppLocalizations.of(context).t('common.delete'),
-                        onPressed: onDelete,
-                      ),
-                      if (showDragHandle) ...[
-                        const SizedBox(width: 6),
-                        Icon(
-                          Icons.drag_indicator_rounded,
-                          color: colorScheme.outline,
-                        ),
-                      ],
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(task.subject, style: Theme.of(context).textTheme.bodyMedium),
-                  const SizedBox(height: 4),
-                  Text(
-                    dueText,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: isOverdue ? colorScheme.error : colorScheme.onSurfaceVariant,
-                        ),
-                  ),
-                ],
+      child: InkWell(
+        onLongPress: onLongPress,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Checkbox(
+                value: task.status == TaskStatus.done,
+                onChanged: (_) => onToggle(),
+                shape: const CircleBorder(),
               ),
-            ),
-          ],
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            task.title,
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  decoration: task.status == TaskStatus.done
+                                      ? TextDecoration.lineThrough
+                                      : TextDecoration.none,
+                              ),
+                          ),
+                        ),
+                        _PriorityBadge(priority: task.priority),
+                        IconButton(
+                          icon: const Icon(Icons.delete_outline),
+                          tooltip: AppLocalizations.of(context).t('common.delete'),
+                          onPressed: onDelete,
+                        ),
+                        if (showDragHandle) ...[
+                          const SizedBox(width: 6),
+                          Icon(
+                            Icons.drag_indicator_rounded,
+                            color: colorScheme.outline,
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(task.subject, style: Theme.of(context).textTheme.bodyMedium),
+                    const SizedBox(height: 4),
+                    Text(
+                      dueText,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: isOverdue ? colorScheme.error : colorScheme.onSurfaceVariant,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

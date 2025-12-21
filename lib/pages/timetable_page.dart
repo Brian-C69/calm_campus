@@ -452,11 +452,6 @@ class _TimetablePageState extends State<TimetablePage> {
     }
 
     if (!mounted) return;
-    await _loadClasses();
-    if (_remindersEnabled) {
-      await _scheduleClassReminders(_classes);
-    }
-    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         behavior: SnackBarBehavior.floating,
@@ -472,11 +467,9 @@ class _TimetablePageState extends State<TimetablePage> {
           textColor: theme.colorScheme.primary,
           onPressed: () async {
             final restoredId = await DbService.instance.restoreClassEntry(entry);
-            await _loadClasses();
             if (!mounted) return;
+            final restored = entry.copyWith(id: restoredId);
             setState(() {
-              final restored = entry.copyWith(id: restoredId);
-              _classes.removeWhere((c) => c.id == restored.id);
               _classes.insert(removedIndex.clamp(0, _classes.length), restored);
             });
             if (_remindersEnabled) {

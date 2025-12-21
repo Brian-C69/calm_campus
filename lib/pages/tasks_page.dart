@@ -303,7 +303,7 @@ class _TasksPageState extends State<TasksPage> {
             child: _TaskComposer(
               onSubmit: (task) async {
                 await _addTask(task);
-                if (Navigator.of(context).canPop()) {
+                if (Navigator.canPop(context)) {
                   Navigator.of(context).pop();
                 }
               },

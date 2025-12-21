@@ -52,5 +52,6 @@ flutter:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/photo/CalmCampus-App-Icon.png"
-  adaptive_icon_foreground: "assets/photo/CalmCampus-App-Icon.png"
+  image_path: "assets/photo/CalmCampus-App-Icon-Dark.png"
+  adaptive_icon_foreground: "assets/photo/CalmCampus-App-Icon-Dark.png"
+  adaptive_icon_background: "#FFFFFF"

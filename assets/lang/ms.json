@@ -684,5 +684,8 @@
   "snapshot.health.movement": "Pergerakan hari ini: {minutes} minit",
   "snapshot.health.movementNone": "Belum ada pergerakan direkod hari ini.",
   "journal.deleted": "Catatan jurnal dipadam",
-  "common.undo": "Batal"
+  "common.undo": "Batal",
+  "tasks.priority.next": "Tetapkan keutamaan kepada {priority}",
+  "mood.duplicate.done": "Salin nota terakhir",
+  "mood.duplicate.none": "Tiada nota terdahulu untuk disalin"
 }

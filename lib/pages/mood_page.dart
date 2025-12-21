@@ -34,11 +34,13 @@ class _MoodPageState extends State<MoodPage> {
   String _userName = 'Friend';
   bool _isSaving = false;
   bool _hasPromptedForLogin = false;
+  String? _previousNote;
 
   @override
   void initState() {
     super.initState();
     _loadUserName();
+    _loadPreviousNote();
   }
 
   @override
@@ -137,6 +139,24 @@ class _MoodPageState extends State<MoodPage> {
         .t('mood.note.append')
         .replaceFirst('{note}', note)
         .replaceFirst('{name}', name);
+  }
+
+  Future<void> _loadPreviousNote() async {
+    final last = await DbService.instance.getLatestMoodEntry();
+    if (!mounted) return;
+    setState(() {
+      _previousNote = last?.note;
+    });
+  }
+
+  void _duplicatePreviousNote() {
+    final strings = AppLocalizations.of(context);
+    if (_previousNote == null || _previousNote!.trim().isEmpty) {
+      _showMessage(strings.t('mood.duplicate.none'));
+      return;
+    }
+    _noteController.text = _previousNote!;
+    _showMessage(strings.t('mood.duplicate.done'));
   }
 
   void _showMessage(String message) {
@@ -246,6 +266,7 @@ class _MoodPageState extends State<MoodPage> {
                   width: double.infinity,
                   child: ElevatedButton.icon(
                     onPressed: _isSaving ? null : _saveMood,
+                    onLongPress: _isSaving ? null : _duplicatePreviousNote,
                     icon: _isSaving
                         ? const SizedBox(
                             height: 20,

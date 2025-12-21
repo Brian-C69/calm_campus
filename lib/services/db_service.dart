@@ -265,6 +265,21 @@ class DbService {
     }).toList();
   }
 
+  Future<MoodEntry?> getLatestMoodEntry() async {
+    final Database db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      _moodsTable,
+      orderBy: 'dateTime DESC',
+      limit: 1,
+    );
+    if (maps.isEmpty) return null;
+    final List<dynamic> decodedTags = jsonDecode(maps.first['extraTags'] as String? ?? '[]') as List<dynamic>;
+    return MoodEntry.fromMap({
+      ...maps.first,
+      'extraTags': decodedTags,
+    });
+  }
+
   Future<List<MoodEntry>> getMoodEntriesForLastDays(int days) {
     final DateTime now = DateTime.now();
     final int safeDays = days <= 0 ? 1 : days;
@@ -420,6 +435,18 @@ class DbService {
     final int updated = await db.update(
       _tasksTable,
       {'status': status.name},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+    await _notifyChange();
+    return updated;
+  }
+
+  Future<int> updateTaskPriority(int id, TaskPriority priority) async {
+    final Database db = await database;
+    final int updated = await db.update(
+      _tasksTable,
+      {'priority': priority.name},
       where: 'id = ?',
       whereArgs: [id],
     );

@@ -288,6 +288,7 @@
   "tasks.due.tomorrow": "Due tomorrow",
   "tasks.due.on": "Due",
   "tasks.deleted": "Task deleted",
+  "tasks.priority.next": "Set priority to {priority}",
   "mood.title": "Mood Check-in",
   "mood.subtitle": "We will personalise this check-in using your saved name.",
   "mood.prompt": "How are you feeling today?",
@@ -685,5 +686,7 @@
   "snapshot.health.movement": "Movement today: {minutes} min",
   "snapshot.health.movementNone": "No movement logged yet today.",
   "journal.deleted": "Journal entry deleted",
-  "common.undo": "Undo"
+  "common.undo": "Undo",
+  "mood.duplicate.done": "Copied your last note",
+  "mood.duplicate.none": "No previous note to copy"
 }

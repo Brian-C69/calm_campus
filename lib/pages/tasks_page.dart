@@ -93,22 +93,23 @@ class _TasksPageState extends State<TasksPage> {
                                 itemCount: filteredTasks.length,
                                 onReorder: (oldIndex, newIndex) =>
                                     _reorderTasks(filteredTasks, oldIndex, newIndex),
-                              itemBuilder: (context, index) {
-                                    final task = filteredTasks[index];
-                                    return ReorderableDelayedDragStartListener(
-                                      key: ValueKey(task),
-                                      index: index,
-                                      child: Padding(
-                                        padding: const EdgeInsets.only(bottom: 12),
-                                        child: _TaskCard(
-                                          task: task,
-                                          onToggle: () => _toggleTask(task),
-                                          onDelete: () => _deleteTaskWithUndo(task),
-                                          showDragHandle: true,
-                                        ),
+                                itemBuilder: (context, index) {
+                                  final task = filteredTasks[index];
+                                  return ReorderableDelayedDragStartListener(
+                                    key: ValueKey(task),
+                                    index: index,
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(bottom: 12),
+                                      child: _TaskCard(
+                                        task: task,
+                                        onToggle: () => _toggleTask(task),
+                                        onDelete: () => _deleteTaskWithUndo(task),
+                                        onLongPress: () => _showTaskQuickActions(task),
+                                        showDragHandle: true,
                                       ),
-                                    );
-                                  },
+                                    ),
+                                  );
+                                },
                               )
                             : ListView.separated(
                               itemCount: filteredTasks.length,
@@ -119,6 +120,7 @@ class _TasksPageState extends State<TasksPage> {
                                   task: task,
                                   onToggle: () => _toggleTask(task),
                                   onDelete: () => _deleteTaskWithUndo(task),
+                                  onLongPress: () => _showTaskQuickActions(task),
                                 );
                               },
                             ),
@@ -324,6 +326,73 @@ class _TasksPageState extends State<TasksPage> {
       _selectedFilter = _TaskFilter.all;
       _isLoading = false;
     });
+  }
+
+  Future<void> _showTaskQuickActions(Task task) async {
+    final strings = AppLocalizations.of(context);
+    final TaskStatus toggledStatus =
+        task.status == TaskStatus.pending ? TaskStatus.done : TaskStatus.pending;
+    final TaskPriority nextPriority = switch (task.priority) {
+      TaskPriority.low => TaskPriority.medium,
+      TaskPriority.medium => TaskPriority.high,
+      TaskPriority.high => TaskPriority.low,
+    };
+    final nextPriorityLabel = switch (nextPriority) {
+      TaskPriority.low => strings.t('tasks.priority.low'),
+      TaskPriority.medium => strings.t('tasks.priority.medium'),
+      TaskPriority.high => strings.t('tasks.priority.high'),
+    };
+
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: Icon(toggledStatus == TaskStatus.done ? Icons.undo : Icons.check_circle),
+              title: Text(
+                toggledStatus == TaskStatus.done
+                    ? strings.t('tasks.markPending')
+                    : strings.t('tasks.markDone'),
+              ),
+              onTap: () => Navigator.of(context).pop('toggle'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.flag),
+              title: Text(
+                strings
+                    .t('tasks.priority.next')
+                    .replaceFirst('{priority}', nextPriorityLabel),
+              ),
+              onTap: () => Navigator.of(context).pop('priority'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete_outline),
+              title: Text(strings.t('common.delete')),
+              onTap: () => Navigator.of(context).pop('delete'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (action == 'toggle') {
+      await _toggleTask(task);
+    } else if (action == 'priority') {
+      final updated = task.copyWith(priority: nextPriority);
+      if (task.id != null) {
+        await DbService.instance.updateTaskPriority(task.id!, nextPriority);
+      }
+      if (!mounted) return;
+      setState(() {
+        final idx = _tasks.indexOf(task);
+        if (idx != -1) _tasks[idx] = updated;
+      });
+    } else if (action == 'delete') {
+      await _deleteTaskWithUndo(task);
+    }
   }
 }
 

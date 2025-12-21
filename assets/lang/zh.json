@@ -463,5 +463,8 @@
   "snapshot.health.movement": "?????{minutes} ??",
   "snapshot.health.movementNone": "??????????",
   "journal.deleted": "日记已删除",
-  "common.undo": "撤销"
+  "common.undo": "撤销",
+  "tasks.priority.next": "设置优先级为 {priority}",
+  "mood.duplicate.done": "已复制上一次的备注",
+  "mood.duplicate.none": "没有可复制的上一次备注"
 }

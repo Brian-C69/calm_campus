@@ -365,6 +365,13 @@ class DbService {
     return deleted;
   }
 
+  Future<int> restoreClassEntry(ClassEntry entry) async {
+    final Database db = await database;
+    final int id = await db.insert(_classesTable, entry.toMap());
+    await _notifyChange();
+    return id;
+  }
+
   Future<int> insertTask(Task task) async {
     final Database db = await database;
     final int id = await db.insert(_tasksTable, task.toMap());
@@ -431,11 +438,29 @@ class DbService {
     return deleted;
   }
 
+  Future<int> restoreTask(Task task) async {
+    final Database db = await database;
+    final int id = await db.insert(_tasksTable, task.toMap());
+    await _notifyChange();
+    return id;
+  }
+
   Future<int> insertJournalEntry(JournalEntry entry) async {
     final Database db = await database;
     final int id = await db.insert(_journalTable, entry.toMap());
     await _notifyChange();
     return id;
+  }
+
+  Future<int> deleteJournalEntry(int id) async {
+    final Database db = await database;
+    final int deleted = await db.delete(
+      _journalTable,
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+    await _notifyChange();
+    return deleted;
   }
 
   Future<List<JournalEntry>> getJournalEntries() async {

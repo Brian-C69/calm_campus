@@ -216,6 +216,11 @@ class _JournalPageState extends State<JournalPage> {
                                       _formatDate(entry.createdAt),
                                     ),
                               ),
+                              trailing: IconButton(
+                                icon: const Icon(Icons.delete_outline),
+                                tooltip: strings.t('common.delete'),
+                                onPressed: () => _deleteEntry(entry, index),
+                              ),
                             ),
                           );
                         },
@@ -233,5 +238,42 @@ class _JournalPageState extends State<JournalPage> {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')} '
         '${displayHour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')} '
         '${time.period == DayPeriod.am ? 'AM' : 'PM'}';
+  }
+
+  Future<void> _deleteEntry(JournalEntry entry, int index) async {
+    final deletedId = entry.id;
+    if (deletedId != null) {
+      await DbService.instance.deleteJournalEntry(deletedId);
+    }
+    if (!mounted) return;
+    setState(() {
+      _entries.remove(entry);
+    });
+    final strings = AppLocalizations.of(context);
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
+        content: Text(
+          strings.t('journal.deleted'),
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+        ),
+        action: SnackBarAction(
+          label: strings.t('common.undo'),
+          textColor: Theme.of(context).colorScheme.primary,
+          onPressed: () async {
+            final restored = entry.copyWith(id: null, createdAt: DateTime.now());
+            final newId = await DbService.instance.insertJournalEntry(restored);
+            if (!mounted) return;
+            setState(() {
+              _entries.insert(index.clamp(0, _entries.length), restored.copyWith(id: newId));
+            });
+          },
+        ),
+      ),
+    );
   }
 }

@@ -144,6 +144,7 @@
   "timetable.actions.cancel": "Cancel",
   "timetable.delete.title": "Remove this class?",
   "timetable.delete.message": "Delete {subject} ({type}) from your timetable?",
+  "timetable.deleted": "Class removed",
   "settings.title": "Settings",
   "settings.profile": "Profile",
   "settings.nickname": "Nickname",
@@ -286,6 +287,7 @@
   "tasks.due.overdue": "Overdue",
   "tasks.due.tomorrow": "Due tomorrow",
   "tasks.due.on": "Due",
+  "tasks.deleted": "Task deleted",
   "mood.title": "Mood Check-in",
   "mood.subtitle": "We will personalise this check-in using your saved name.",
   "mood.prompt": "How are you feeling today?",
@@ -681,5 +683,7 @@
   "snapshot.health.sleep": "Last night: {hours}h, restfulness {rest}/5",
   "snapshot.health.sleepNone": "No sleep logged for yesterday.",
   "snapshot.health.movement": "Movement today: {minutes} min",
-  "snapshot.health.movementNone": "No movement logged yet today."
+  "snapshot.health.movementNone": "No movement logged yet today.",
+  "journal.deleted": "Journal entry deleted",
+  "common.undo": "Undo"
 }

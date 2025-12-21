@@ -443,6 +443,8 @@ class _TimetablePageState extends State<TimetablePage> {
 
     if (confirmed != true) return;
 
+    final removedIndex = _classes.indexOf(entry);
+    final theme = Theme.of(context);
     if (entry.id != null) {
       await DbService.instance.deleteClassEntry(entry.id!);
     } else {
@@ -456,7 +458,33 @@ class _TimetablePageState extends State<TimetablePage> {
     }
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(strings.t('timetable.removed'))),
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        backgroundColor: theme.colorScheme.surfaceContainerHigh,
+        content: Text(
+          strings.t('timetable.deleted'),
+          style: TextStyle(color: theme.colorScheme.onSurface),
+        ),
+        action: SnackBarAction(
+          label: strings.t('common.undo'),
+          textColor: theme.colorScheme.primary,
+          onPressed: () async {
+            final restoredId = await DbService.instance.restoreClassEntry(entry);
+            await _loadClasses();
+            if (!mounted) return;
+            setState(() {
+              final restored = entry.copyWith(id: restoredId);
+              _classes.removeWhere((c) => c.id == restored.id);
+              _classes.insert(removedIndex.clamp(0, _classes.length), restored);
+            });
+            if (_remindersEnabled) {
+              await _scheduleClassReminders(_classes);
+            }
+          },
+        ),
+      ),
     );
   }
 

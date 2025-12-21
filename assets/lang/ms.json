@@ -140,6 +140,7 @@
   "timetable.actions.cancel": "Batal",
   "timetable.delete.title": "Buang kelas ini?",
   "timetable.delete.message": "Padam {subject} ({type}) dari jadual?",
+  "timetable.deleted": "Kelas dipadam",
   "settings.title": "Tetapan",
   "settings.profile": "Profil",
   "settings.nickname": "Nama panggilan",
@@ -282,6 +283,7 @@
   "tasks.due.overdue": "Lewat",
   "tasks.due.tomorrow": "Siap esok",
   "tasks.due.on": "Siap",
+  "tasks.deleted": "Tugas dipadam",
   "mood.title": "Semakan mood",
   "mood.subtitle": "Kami akan gunakan nama yang anda simpan untuk sapaan.",
   "mood.prompt": "Bagaimana perasaan anda hari ini?",
@@ -680,5 +682,7 @@
   "snapshot.health.sleep": "Malam tadi: {hours}j, rehat {rest}/5",
   "snapshot.health.sleepNone": "Tiada log tidur untuk semalam.",
   "snapshot.health.movement": "Pergerakan hari ini: {minutes} minit",
-  "snapshot.health.movementNone": "Belum ada pergerakan direkod hari ini."
+  "snapshot.health.movementNone": "Belum ada pergerakan direkod hari ini.",
+  "journal.deleted": "Catatan jurnal dipadam",
+  "common.undo": "Batal"
 }

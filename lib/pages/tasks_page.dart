@@ -93,33 +93,35 @@ class _TasksPageState extends State<TasksPage> {
                                 itemCount: filteredTasks.length,
                                 onReorder: (oldIndex, newIndex) =>
                                     _reorderTasks(filteredTasks, oldIndex, newIndex),
-                                itemBuilder: (context, index) {
-                                  final task = filteredTasks[index];
-                                  return ReorderableDelayedDragStartListener(
-                                    key: ValueKey(task),
-                                    index: index,
-                                    child: Padding(
-                                      padding: const EdgeInsets.only(bottom: 12),
-                                      child: _TaskCard(
-                                        task: task,
-                                        onToggle: () => _toggleTask(task),
-                                        showDragHandle: true,
+                              itemBuilder: (context, index) {
+                                    final task = filteredTasks[index];
+                                    return ReorderableDelayedDragStartListener(
+                                      key: ValueKey(task),
+                                      index: index,
+                                      child: Padding(
+                                        padding: const EdgeInsets.only(bottom: 12),
+                                        child: _TaskCard(
+                                          task: task,
+                                          onToggle: () => _toggleTask(task),
+                                          onDelete: () => _deleteTaskWithUndo(task),
+                                          showDragHandle: true,
+                                        ),
                                       ),
-                                    ),
-                                  );
-                                },
+                                    );
+                                  },
                               )
                             : ListView.separated(
-                                itemCount: filteredTasks.length,
-                                separatorBuilder: (_, __) => const SizedBox(height: 12),
-                                itemBuilder: (context, index) {
-                                  final task = filteredTasks[index];
-                                  return _TaskCard(
-                                    task: task,
-                                    onToggle: () => _toggleTask(task),
-                                  );
-                                },
-                              ),
+                              itemCount: filteredTasks.length,
+                              separatorBuilder: (_, __) => const SizedBox(height: 12),
+                              itemBuilder: (context, index) {
+                                final task = filteredTasks[index];
+                                return _TaskCard(
+                                  task: task,
+                                  onToggle: () => _toggleTask(task),
+                                  onDelete: () => _deleteTaskWithUndo(task),
+                                );
+                              },
+                            ),
               ),
             ],
           ),
@@ -177,6 +179,43 @@ class _TasksPageState extends State<TasksPage> {
     setState(() {
       _tasks.removeWhere((task) => task.status == TaskStatus.done);
     });
+  }
+
+  Future<void> _deleteTaskWithUndo(Task task) async {
+    if (task.id == null) return;
+    final theme = Theme.of(context);
+    final removed = _tasks.indexOf(task);
+    final removedTask = task;
+    await DbService.instance.deleteTask(task.id!);
+    if (!mounted) return;
+    setState(() {
+      _tasks.remove(task);
+    });
+    final strings = AppLocalizations.of(context);
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        backgroundColor: theme.colorScheme.surfaceContainerHigh,
+        content: Text(
+          strings.t('tasks.deleted'),
+          style: TextStyle(color: theme.colorScheme.onSurface),
+        ),
+        action: SnackBarAction(
+          label: strings.t('common.undo'),
+          textColor: theme.colorScheme.primary,
+          onPressed: () async {
+            final newId = await DbService.instance.restoreTask(removedTask);
+            if (!mounted) return;
+            setState(() {
+              _tasks.insert(removed, removedTask.copyWith(id: newId));
+            });
+          },
+        ),
+      ),
+    );
   }
 
   List<Task> _filteredTasks() {
@@ -259,7 +298,14 @@ class _TasksPageState extends State<TasksPage> {
               right: 16,
               top: 16,
             ),
-            child: _TaskComposer(onSubmit: _addTask),
+            child: _TaskComposer(
+              onSubmit: (task) async {
+                await _addTask(task);
+                if (Navigator.of(context).canPop()) {
+                  Navigator.of(context).pop();
+                }
+              },
+            ),
           ),
         );
       },
@@ -278,8 +324,6 @@ class _TasksPageState extends State<TasksPage> {
       _selectedFilter = _TaskFilter.all;
       _isLoading = false;
     });
-
-    Navigator.of(context).pop();
   }
 }
 
@@ -410,11 +454,13 @@ class _TaskCard extends StatelessWidget {
   const _TaskCard({
     required this.task,
     required this.onToggle,
+    this.onDelete,
     this.showDragHandle = false,
   });
 
   final Task task;
   final VoidCallback onToggle;
+  final VoidCallback? onDelete;
   final bool showDragHandle;
 
   @override
@@ -453,6 +499,11 @@ class _TaskCard extends StatelessWidget {
                         ),
                       ),
                       _PriorityBadge(priority: task.priority),
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline),
+                        tooltip: AppLocalizations.of(context).t('common.delete'),
+                        onPressed: onDelete,
+                      ),
                       if (showDragHandle) ...[
                         const SizedBox(width: 6),
                         Icon(

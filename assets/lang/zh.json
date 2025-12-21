@@ -83,6 +83,7 @@
   "timetable.actions.cancel": "取消",
   "timetable.delete.title": "删除这节课？",
   "timetable.delete.message": "从课程表中删除 {subject} ({type})？",
+  "timetable.deleted": "课程已删除",
   "settings.title": "设置",
   "settings.profile": "个人资料",
   "settings.nickname": "昵称",
@@ -460,5 +461,7 @@
   "snapshot.health.sleep": "???{hours} ??????? {rest}/5",
   "snapshot.health.sleepNone": "?????????",
   "snapshot.health.movement": "?????{minutes} ??",
-  "snapshot.health.movementNone": "??????????"
+  "snapshot.health.movementNone": "??????????",
+  "journal.deleted": "日记已删除",
+  "common.undo": "撤销"
 }

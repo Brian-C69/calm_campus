@@ -236,11 +236,3 @@ class _HomeCard extends StatelessWidget {
     );
   }
 }
-
-class _HomeRouteInfo {
-  const _HomeRouteInfo(this.title, this.icon, this.route);
-
-  final String title;
-  final IconData icon;
-  final String route;
-}

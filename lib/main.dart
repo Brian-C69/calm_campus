@@ -28,6 +28,7 @@ import 'pages/timetable_page.dart';
 import 'pages/weather_page.dart';
 import 'pages/daily_snapshot_page.dart';
 import 'pages/role_gate_page.dart';
+import 'pages/search_page.dart';
 import 'pages/student_shell.dart';
 import 'pages/admin_dashboard_page.dart';
 import 'pages/consultation_page.dart';
@@ -136,6 +137,7 @@ class MyApp extends StatelessWidget {
                         '/chat': (_) => const ChatPage(),
                     '/relax': (_) => const RelaxPage(),
                     '/breathing': (_) => const BreathingPage(),
+                    '/search': (_) => const SearchPage(),
                     '/snapshot': (_) => const DailySnapshotPage(),
                     '/profile': (_) => const ProfilePage(),
                     '/settings': (_) => const SettingsPage(),

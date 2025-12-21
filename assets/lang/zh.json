@@ -466,5 +466,10 @@
   "common.undo": "撤销",
   "tasks.priority.next": "设置优先级为 {priority}",
   "mood.duplicate.done": "已复制上一次的备注",
-  "mood.duplicate.none": "没有可复制的上一次备注"
+  "mood.duplicate.none": "没有可复制的上一次备注",
+  "search.title": "搜索",
+  "search.hint": "搜索任务、日记或心情备注",
+  "search.empty": "暂无结果，换个关键词试试。",
+  "search.journal": "日记",
+  "search.mood": "心情备注"
 }

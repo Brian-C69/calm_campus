@@ -687,5 +687,13 @@
   "common.undo": "Batal",
   "tasks.priority.next": "Tetapkan keutamaan kepada {priority}",
   "mood.duplicate.done": "Salin nota terakhir",
-  "mood.duplicate.none": "Tiada nota terdahulu untuk disalin"
+  "mood.duplicate.none": "Tiada nota terdahulu untuk disalin",
+  "search.title": "Cari",
+  "search.hint": "Cari tugas, jurnal, atau nota mood",
+  "search.empty": "Tiada hasil. Cuba perkataan lain.",
+  "search.journal": "Catatan jurnal",
+  "search.mood": "Nota mood",
+  "tasks.priority.low": "Rendah",
+  "tasks.priority.medium": "Sederhana",
+  "tasks.priority.high": "Tinggi"
 }

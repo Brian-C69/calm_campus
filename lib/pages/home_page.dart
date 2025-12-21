@@ -88,6 +88,13 @@ class _HomePageState extends State<HomePage> {
           actions: [
             IconButton(
               onPressed: () async {
+                await Navigator.of(context).pushNamed('/search');
+              },
+              icon: const Icon(Icons.search),
+              tooltip: strings.t('search.title'),
+            ),
+            IconButton(
+              onPressed: () async {
                 await Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const HomeCustomizePage()),
                 );

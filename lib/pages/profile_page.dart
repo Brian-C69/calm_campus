@@ -1,10 +1,12 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:crop_your_image/crop_your_image.dart';
 
 import '../services/user_profile_service.dart';
 import '../l10n/app_localizations.dart';
@@ -19,6 +21,7 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   late Future<_ProfileData> _profileFuture;
   final ImagePicker _picker = ImagePicker();
+  final _cropController = CropController();
 
   @override
   void initState() {
@@ -206,11 +209,46 @@ class _ProfilePageState extends State<ProfilePage> {
       );
       if (picked == null) return;
 
+      final Uint8List originalBytes = await File(picked.path).readAsBytes();
+
+      final Uint8List? croppedBytes = await showDialog<Uint8List?>(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) {
+          return AlertDialog(
+            title: Text(strings.t('profile.avatar.change')),
+            content: SizedBox(
+              width: 320,
+              height: 320,
+              child: Crop(
+                controller: _cropController,
+                image: originalBytes,
+                baseColor: Theme.of(context).colorScheme.surface,
+                maskColor: Colors.black45,
+                onCropped: (data) {
+                  Navigator.of(context).pop(data);
+                },
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(null),
+                child: Text(strings.t('common.cancel')),
+              ),
+              FilledButton(
+                onPressed: () => _cropController.crop(),
+                child: Text(strings.t('common.save')),
+              ),
+            ],
+          );
+        },
+      );
+      if (croppedBytes == null) return;
+
       final Directory dir = await getApplicationDocumentsDirectory();
-      final String ext = p.extension(picked.path).isNotEmpty ? p.extension(picked.path) : '.jpg';
+      final String ext = '.jpg';
       final String localPath = p.join(dir.path, 'avatar$ext');
-      final bytes = await File(picked.path).readAsBytes();
-      await File(localPath).writeAsBytes(bytes, flush: true);
+      await File(localPath).writeAsBytes(croppedBytes, flush: true);
       await UserProfileService.instance.saveAvatarPath(localPath);
 
       String? publicUrl;
@@ -219,7 +257,7 @@ class _ProfilePageState extends State<ProfilePage> {
         final String storagePath = '${user.id}/avatar$ext';
         await Supabase.instance.client.storage.from('avatars').uploadBinary(
               storagePath,
-              bytes,
+              croppedBytes,
               fileOptions: const FileOptions(
                 upsert: true,
                 contentType: 'image/jpeg',

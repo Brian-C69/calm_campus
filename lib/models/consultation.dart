@@ -5,6 +5,7 @@ class Consultant {
     this.tags = const [],
     this.isOnline = false,
     this.isConsultant = false,
+    this.avatarUrl,
   });
 
   final String id;
@@ -12,6 +13,7 @@ class Consultant {
   final List<String> tags;
   final bool isOnline;
   final bool isConsultant;
+  final String? avatarUrl;
 }
 
 class ConsultationSession {

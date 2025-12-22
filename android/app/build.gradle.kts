@@ -27,6 +27,21 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        ndk {
+            // Include 32-bit x86 for emulators like MEmu alongside common ABIs.
+            abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
+        }
+    }
+
+    // Build per-ABI APKs so 32-bit emulators pull the right libflutter.so
+    splits {
+        abi {
+            isEnable = true
+            reset()
+            include("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
+            // Build per-ABI only to avoid 64-bit libs being picked on 32-bit emulators.
+            isUniversalApk = true
+        }
     }
 
     buildTypes {

@@ -1,4 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../services/user_profile_service.dart';
@@ -13,6 +18,7 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   late Future<_ProfileData> _profileFuture;
+  final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
@@ -29,11 +35,15 @@ class _ProfilePageState extends State<ProfilePage> {
     final nickname = await UserProfileService.instance.getNickname();
     final course = await UserProfileService.instance.getCourse();
     final year = await UserProfileService.instance.getYearOfStudy();
+    final avatarPath = await UserProfileService.instance.getAvatarPath();
+    final avatarUrl = await UserProfileService.instance.getAvatarUrl();
     return _ProfileData(
       isLoggedIn: true,
       nickname: nickname,
       course: course,
       yearOfStudy: year,
+      avatarPath: avatarPath,
+      avatarUrl: avatarUrl,
     );
   }
 
@@ -152,6 +162,92 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
+  Future<void> _showAvatarSheet() async {
+    final strings = AppLocalizations.of(context);
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_camera_outlined),
+                title: Text(strings.t('profile.avatar.camera')),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickAvatar(ImageSource.camera);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library_outlined),
+                title: Text(strings.t('profile.avatar.gallery')),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickAvatar(ImageSource.gallery);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _pickAvatar(ImageSource source) async {
+    final strings = AppLocalizations.of(context);
+    try {
+      final XFile? picked = await _picker.pickImage(
+        source: source,
+        maxWidth: 500,
+        maxHeight: 500,
+        imageQuality: 85,
+      );
+      if (picked == null) return;
+
+      final Directory dir = await getApplicationDocumentsDirectory();
+      final String ext = p.extension(picked.path).isNotEmpty ? p.extension(picked.path) : '.jpg';
+      final String localPath = p.join(dir.path, 'avatar$ext');
+      final bytes = await File(picked.path).readAsBytes();
+      await File(localPath).writeAsBytes(bytes, flush: true);
+      await UserProfileService.instance.saveAvatarPath(localPath);
+
+      String? publicUrl;
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user != null) {
+        final String storagePath = '${user.id}/avatar$ext';
+        await Supabase.instance.client.storage.from('avatars').uploadBinary(
+              storagePath,
+              bytes,
+              fileOptions: const FileOptions(
+                upsert: true,
+                contentType: 'image/jpeg',
+              ),
+            );
+        publicUrl = Supabase.instance.client.storage.from('avatars').getPublicUrl(storagePath);
+        await Supabase.instance.client.from('profiles').upsert({
+          'id': user.id,
+          'avatar_url': publicUrl,
+        });
+        await UserProfileService.instance.saveAvatarUrl(publicUrl);
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _profileFuture = _loadProfile();
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(strings.t('profile.avatar.updated'))),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(strings.t('profile.avatar.error'))),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context);
@@ -168,6 +264,16 @@ class _ProfilePageState extends State<ProfilePage> {
 
           final profile = snapshot.data!;
           final theme = Theme.of(context);
+          ImageProvider? avatarImage;
+          if (profile.avatarUrl != null && profile.avatarUrl!.isNotEmpty) {
+            avatarImage = NetworkImage(profile.avatarUrl!);
+          }
+          if (avatarImage == null &&
+              profile.avatarPath != null &&
+              profile.avatarPath!.isNotEmpty &&
+              File(profile.avatarPath!).existsSync()) {
+            avatarImage = FileImage(File(profile.avatarPath!));
+          }
 
           if (!profile.isLoggedIn) {
             return Padding(
@@ -216,24 +322,43 @@ class _ProfilePageState extends State<ProfilePage> {
                         padding: const EdgeInsets.all(16),
                         child: Column(
                           children: [
-                            CircleAvatar(
-                              radius: 32,
-                              backgroundColor: theme.colorScheme.primaryContainer,
-                              child: Text(
-                                profile.initials,
-                                style: theme.textTheme.headlineSmall?.copyWith(
-                                  color: theme.colorScheme.onPrimaryContainer,
+                            Stack(
+                              alignment: Alignment.bottomRight,
+                              children: [
+                                CircleAvatar(
+                                  radius: 40,
+                                  backgroundColor: theme.colorScheme.primaryContainer,
+                                  backgroundImage: avatarImage,
+                                  child: avatarImage == null
+                                      ? Text(
+                                          profile.initials,
+                                          style: theme.textTheme.headlineSmall?.copyWith(
+                                            color: theme.colorScheme.onPrimaryContainer,
+                                          ),
+                                        )
+                                      : null,
                                 ),
-                              ),
+                                IconButton.filled(
+                                  onPressed: _showAvatarSheet,
+                                  icon: const Icon(Icons.camera_alt_outlined),
+                                  tooltip: strings.t('profile.avatar.change'),
+                                ),
+                              ],
                             ),
                             const SizedBox(height: 12),
                             Text(
-                              profile.nickname ?? strings.t('profile.nickname.missing'),
+                              (profile.nickname?.trim().isNotEmpty ?? false)
+                                  ? profile.nickname!
+                                  : strings.t('profile.nickname.missing'),
                               style: theme.textTheme.titleLarge,
+                              textAlign: TextAlign.center,
                             ),
                             Text(
-                              profile.course ?? strings.t('profile.course.missing'),
+                              (profile.course?.trim().isNotEmpty ?? false)
+                                  ? profile.course!
+                                  : strings.t('profile.course.missing'),
                               style: theme.textTheme.bodyMedium,
+                              textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: 8),
                             Text(
@@ -243,6 +368,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                       .replaceFirst('{year}', profile.yearOfStudy.toString())
                                   : strings.t('profile.year.missing'),
                               style: theme.textTheme.bodyMedium,
+                              textAlign: TextAlign.center,
                             ),
                           ],
                         ),
@@ -311,12 +437,21 @@ class _ProfilePageState extends State<ProfilePage> {
 }
 
 class _ProfileData {
-  const _ProfileData({required this.isLoggedIn, this.nickname, this.course, this.yearOfStudy});
+  const _ProfileData({
+    required this.isLoggedIn,
+    this.nickname,
+    this.course,
+    this.yearOfStudy,
+    this.avatarPath,
+    this.avatarUrl,
+  });
 
   final bool isLoggedIn;
   final String? nickname;
   final String? course;
   final int? yearOfStudy;
+  final String? avatarPath;
+  final String? avatarUrl;
 
   String get initials {
     if (nickname == null || nickname!.trim().isEmpty) {

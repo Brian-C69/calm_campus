@@ -89,6 +89,31 @@ class _ConsultationPageState extends State<ConsultationPage> {
     );
   }
 
+  Widget _buildAvatar(String? url, {bool isOnline = false}) {
+    return Stack(
+      children: [
+        CircleAvatar(
+          backgroundImage: url != null && url.isNotEmpty ? NetworkImage(url) : null,
+          child: (url == null || url.isEmpty) ? const Icon(Icons.person) : null,
+        ),
+        if (isOnline)
+          Positioned(
+            right: 0,
+            bottom: 0,
+            child: Container(
+              width: 10,
+              height: 10,
+              decoration: BoxDecoration(
+                color: Colors.green,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 1),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context);
@@ -136,7 +161,17 @@ class _ConsultationPageState extends State<ConsultationPage> {
                     ..._sessions.map(
                       (session) => Card(
                         child: ListTile(
-                          leading: const Icon(Icons.chat_outlined),
+                          leading: _buildAvatar(
+                            _consultants
+                                .firstWhere(
+                                  (c) => c.id == session.consultantId,
+                                  orElse: () => Consultant(
+                                    id: session.consultantId,
+                                    displayName: strings.t('consultation.consultant'),
+                                  ),
+                                )
+                                .avatarUrl,
+                          ),
                           title: Text(strings.t('consultation.session')),
                           subtitle: Text(
                             strings.t('consultation.session.status').replaceFirst('{status}', session.status),
@@ -163,10 +198,7 @@ class _ConsultationPageState extends State<ConsultationPage> {
                     (consultant) => Card(
                       elevation: 0,
                       child: ListTile(
-                        leading: Icon(
-                          consultant.isOnline ? Icons.circle : Icons.circle_outlined,
-                          color: consultant.isOnline ? Colors.green : color.onSurfaceVariant,
-                        ),
+                        leading: _buildAvatar(consultant.avatarUrl, isOnline: consultant.isOnline),
                         title: Text(consultant.displayName),
                         subtitle: Text(
                           consultant.tags.isNotEmpty

@@ -29,6 +29,8 @@ class UserProfileService {
   final String _isConsultantKey = 'is_consultant';
   final String _isOnlineKey = 'is_online';
   final String _textScaleKey = 'app_text_scale';
+  final String _avatarPathKey = 'avatar_path';
+  final String _avatarUrlKey = 'avatar_url';
 
   Future<bool> isLoggedIn() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -226,5 +228,33 @@ class UserProfileService {
   Future<void> setChatNoteSeen() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_chatNoteSeenKey, true);
+  }
+
+  Future<void> saveAvatarPath(String? path) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    if (path == null || path.trim().isEmpty) {
+      await prefs.remove(_avatarPathKey);
+      return;
+    }
+    await prefs.setString(_avatarPathKey, path);
+  }
+
+  Future<String?> getAvatarPath() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_avatarPathKey);
+  }
+
+  Future<void> saveAvatarUrl(String? url) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    if (url == null || url.trim().isEmpty) {
+      await prefs.remove(_avatarUrlKey);
+      return;
+    }
+    await prefs.setString(_avatarUrlKey, url);
+  }
+
+  Future<String?> getAvatarUrl() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_avatarUrlKey);
   }
 }

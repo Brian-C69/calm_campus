@@ -14,7 +14,7 @@ class ConsultationService {
   Future<List<Consultant>> fetchConsultants() async {
     final List<dynamic> rows = await _client
         .from('profiles')
-        .select('id,display_name,tags,is_online,is_consultant,role')
+        .select('id,display_name,tags,is_online,is_consultant,role,avatar_url')
         .eq('role', 'admin')
         .order('is_online', ascending: false);
 
@@ -29,6 +29,7 @@ class ConsultationService {
         tags: tags,
         isOnline: data['is_online'] as bool? ?? false,
         isConsultant: data['is_consultant'] as bool? ?? false,
+        avatarUrl: data['avatar_url'] as String?,
       );
     }).toList();
   }

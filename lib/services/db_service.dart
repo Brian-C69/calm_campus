@@ -479,6 +479,30 @@ class DbService {
     return deleted;
   }
 
+  Future<void> deleteAllMoods() async {
+    final Database db = await database;
+    await db.delete(_moodsTable);
+    await _notifyChange();
+  }
+
+  Future<void> clearAllData() async {
+    final Database db = await database;
+    for (final table in [
+      _moodsTable,
+      _classesTable,
+      _tasksTable,
+      _journalTable,
+      _sleepTable,
+      _periodCyclesTable,
+      _supportContactsTable,
+      _movementEntriesTable,
+      _announcementsTable,
+    ]) {
+      await db.delete(table);
+    }
+    await _notifyChange();
+  }
+
   Future<int> restoreTask(Task task) async {
     final Database db = await database;
     final int id = await db.insert(_tasksTable, task.toMap());

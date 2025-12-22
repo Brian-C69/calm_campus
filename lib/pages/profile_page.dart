@@ -9,6 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:crop_your_image/crop_your_image.dart';
 
 import '../services/user_profile_service.dart';
+import '../services/db_service.dart';
 import '../l10n/app_localizations.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -22,6 +23,7 @@ class _ProfilePageState extends State<ProfilePage> {
   late Future<_ProfileData> _profileFuture;
   final ImagePicker _picker = ImagePicker();
   final _cropController = CropController();
+  bool _isDeletingAccount = false;
 
   @override
   void initState() {
@@ -96,6 +98,83 @@ class _ProfilePageState extends State<ProfilePage> {
         _profileFuture = _loadProfile();
       });
     });
+  }
+
+  Future<void> _confirmDeleteAccount() async {
+    final strings = AppLocalizations.of(context);
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null || user.email == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(strings.t('profile.delete.error'))),
+      );
+      return;
+    }
+    final controller = TextEditingController();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(strings.t('profile.delete')),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(strings.t('profile.delete.desc')),
+            const SizedBox(height: 12),
+            TextField(
+              controller: controller,
+              decoration: InputDecoration(labelText: strings.t('profile.delete.email')),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(strings.t('common.cancel')),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(strings.t('history.clearAll.confirm')),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    if (controller.text.trim().toLowerCase() != user.email!.toLowerCase()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(strings.t('profile.delete.mismatch'))),
+      );
+      return;
+    }
+
+    setState(() {
+      _isDeletingAccount = true;
+    });
+    try {
+      await DbService.instance.clearAllData();
+      await UserProfileService.instance.clearAll();
+      await Supabase.instance.client.from('profiles').delete().eq('id', user.id);
+      try {
+        await Supabase.instance.client.auth.admin.deleteUser(user.id);
+      } catch (_) {
+        // If admin delete is not permitted, proceed after data purge.
+      }
+      await Supabase.instance.client.auth.signOut();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(strings.t('profile.delete.success'))),
+      );
+      Navigator.pushNamedAndRemoveUntil(context, '/auth', (route) => false);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(strings.t('profile.delete.error'))),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isDeletingAccount = false;
+        });
+      }
+    }
   }
 
   Future<void> _changePassword() async {

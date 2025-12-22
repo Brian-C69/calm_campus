@@ -350,16 +350,14 @@ class _TasksPageState extends State<TasksPage> {
 
   Future<void> _showTaskQuickActions(Task task) async {
     final strings = AppLocalizations.of(context);
-    final TaskStatus toggledStatus =
-        task.status == TaskStatus.pending ? TaskStatus.done : TaskStatus.pending;
+    final bool isPending = task.status == TaskStatus.pending;
+    final TaskStatus toggledStatus = isPending ? TaskStatus.done : TaskStatus.pending;
     final TaskPriority nextPriority = switch (task.priority) {
       TaskPriority.low => TaskPriority.medium,
       TaskPriority.medium => TaskPriority.high,
       TaskPriority.high => TaskPriority.low,
     };
-    final toggledLabel = toggledStatus == TaskStatus.done
-        ? strings.t('tasks.markPending')
-        : strings.t('tasks.markDone');
+    final toggledLabel = isPending ? strings.t('tasks.markDone') : strings.t('tasks.markPending');
     final nextPriorityLabel = switch (nextPriority) {
       TaskPriority.low => strings.t('tasks.priority.low'),
       TaskPriority.medium => strings.t('tasks.priority.medium'),
@@ -374,7 +372,7 @@ class _TasksPageState extends State<TasksPage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: Icon(toggledStatus == TaskStatus.done ? Icons.undo : Icons.check_circle),
+              leading: Icon(isPending ? Icons.check_circle : Icons.undo),
               title: Text(toggledLabel),
               onTap: () => Navigator.of(context).pop('toggle'),
             ),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-
 import '../services/user_profile_service.dart';
 import '../services/supabase_sync_service.dart';
+import '../services/db_service.dart';
 import '../services/theme_controller.dart';
 import '../services/language_controller.dart';
 import '../services/text_scale_controller.dart';
@@ -19,6 +19,7 @@ class _SettingsPageState extends State<SettingsPage> {
   final _nicknameController = TextEditingController();
   final _courseController = TextEditingController();
   final _yearController = TextEditingController();
+  final _deleteEmailController = TextEditingController();
 
   AppThemeMode _themeMode = AppThemeMode.system;
   AppLanguage _language = AppLanguage.englishUK;
@@ -26,6 +27,7 @@ class _SettingsPageState extends State<SettingsPage> {
   TimeOfDay? _reminderTime;
   bool _chatShareAll = false;
   Color _themeSeedColor = Colors.teal;
+  bool _isDeletingAccount = false;
   final List<_ThemeColorOption> _colorOptions = const [
     _ThemeColorOption(color: Colors.teal, labelKey: 'settings.themeColor.teal'),
     _ThemeColorOption(color: Colors.blue, labelKey: 'settings.themeColor.blue'),
@@ -108,6 +110,81 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
+  Future<void> _confirmDeleteAccount() async {
+    final strings = AppLocalizations.of(context);
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null || user.email == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(strings.t('profile.delete.error'))),
+      );
+      return;
+    }
+    _deleteEmailController.clear();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(strings.t('profile.delete')),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(strings.t('profile.delete.desc')),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _deleteEmailController,
+              decoration: InputDecoration(labelText: strings.t('profile.delete.email')),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(strings.t('common.cancel')),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(strings.t('history.clearAll.confirm')),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    if (_deleteEmailController.text.trim().toLowerCase() != user.email!.toLowerCase()) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(strings.t('profile.delete.mismatch'))),
+      );
+      return;
+    }
+
+    setState(() => _isDeletingAccount = true);
+    try {
+      await DbService.instance.clearAllData();
+      await UserProfileService.instance.clearAll();
+      await Supabase.instance.client.from('profiles').delete().eq('id', user.id);
+      try {
+        await Supabase.instance.client.auth.admin.deleteUser(user.id);
+      } catch (_) {
+        // if admin deletion not allowed, proceed with sign-out after data purge
+      }
+      await Supabase.instance.client.auth.signOut();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(strings.t('profile.delete.success'))),
+      );
+      Navigator.pushNamedAndRemoveUntil(context, '/auth', (route) => false);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(strings.t('profile.delete.error'))),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isDeletingAccount = false);
+      }
+    }
+  }
+
   Future<void> _backupToSupabase() async {
     final strings = AppLocalizations.of(context);
     final client = Supabase.instance.client;
@@ -146,6 +223,7 @@ class _SettingsPageState extends State<SettingsPage> {
     _nicknameController.dispose();
     _courseController.dispose();
     _yearController.dispose();
+    _deleteEmailController.dispose();
     super.dispose();
   }
 
@@ -389,6 +467,35 @@ class _SettingsPageState extends State<SettingsPage> {
               onPressed: _saveAll,
               icon: const Icon(Icons.check),
               label: Text(strings.t('settings.save')),
+            ),
+            const SizedBox(height: 16),
+            Card(
+              elevation: 0,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      strings.t('profile.delete'),
+                      style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.error),
+                    ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: _isDeletingAccount ? null : _confirmDeleteAccount,
+                        icon: const Icon(Icons.delete_forever),
+                        label: Text(strings.t('profile.delete')),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: theme.colorScheme.error,
+                          side: BorderSide(color: theme.colorScheme.error),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ],
         ),

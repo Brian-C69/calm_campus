@@ -635,17 +635,9 @@ class _RelaxPageState extends State<RelaxPage> {
             final guidedState = guidedSnapshot.data;
 
             final collapsedTitle = [
-              if (showAmbient) '${strings.t('"'
-                "'relax.category.ambient'"
-                '')}: ${_currentAmbientTrack!.title}',
-              if (showGuided) '${strings.t('"'
-                "'relax.category.guided'"
-                '')}: ${_currentGuidedTrack!.title}',
-            ].join(
-              '"'
-              "'  ?  '"
-              '"',
-            );
+              if (showAmbient) '${strings.t('relax.category.ambient')}: ${_currentAmbientTrack!.title}',
+              if (showGuided) '${strings.t('relax.category.guided')}: ${_currentGuidedTrack!.title}',
+            ].join(showAmbient && showGuided ? '  |  ' : '');
 
             return SafeArea(
               child: Card(
@@ -672,11 +664,7 @@ class _RelaxPageState extends State<RelaxPage> {
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              strings.t(
-                                '"'
-                                "'relax.nowPlaying'"
-                                '"',
-                              ),
+                              strings.t('relax.nowPlaying'),
                               style: Theme.of(context).textTheme.titleMedium,
                             ),
                           ),

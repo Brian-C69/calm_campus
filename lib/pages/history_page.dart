@@ -121,6 +121,11 @@ class _HistoryPageState extends State<HistoryPage> {
             onPressed: _exportCsv,
             icon: const Icon(Icons.download_outlined),
           ),
+          IconButton(
+            tooltip: strings.t('history.clearAll'),
+            onPressed: _confirmClearAll,
+            icon: const Icon(Icons.delete_sweep_outlined),
+          ),
         ],
       ),
       body: FutureBuilder<List<MoodEntry>>(
@@ -224,6 +229,36 @@ class _HistoryPageState extends State<HistoryPage> {
           );
         },
       ),
+    );
+  }
+
+  Future<void> _confirmClearAll() async {
+    final strings = AppLocalizations.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(strings.t('history.clearAll')),
+        content: Text(strings.t('history.clearAll.desc')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(strings.t('common.cancel')),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(strings.t('history.clearAll.confirm')),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    await DbService.instance.deleteAllMoods();
+    await _refreshEntries();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(strings.t('history.empty'))),
     );
   }
 }

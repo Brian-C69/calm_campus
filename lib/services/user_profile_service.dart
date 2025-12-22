@@ -230,6 +230,11 @@ class UserProfileService {
     await prefs.setBool(_chatNoteSeenKey, true);
   }
 
+  Future<void> clearAll() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
+  }
+
   Future<void> saveAvatarPath(String? path) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     if (path == null || path.trim().isEmpty) {

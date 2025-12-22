@@ -357,6 +357,9 @@ class _TasksPageState extends State<TasksPage> {
       TaskPriority.medium => TaskPriority.high,
       TaskPriority.high => TaskPriority.low,
     };
+    final toggledLabel = toggledStatus == TaskStatus.done
+        ? strings.t('tasks.markPending')
+        : strings.t('tasks.markDone');
     final nextPriorityLabel = switch (nextPriority) {
       TaskPriority.low => strings.t('tasks.priority.low'),
       TaskPriority.medium => strings.t('tasks.priority.medium'),
@@ -372,11 +375,7 @@ class _TasksPageState extends State<TasksPage> {
           children: [
             ListTile(
               leading: Icon(toggledStatus == TaskStatus.done ? Icons.undo : Icons.check_circle),
-              title: Text(
-                toggledStatus == TaskStatus.done
-                    ? strings.t('tasks.markPending')
-                    : strings.t('tasks.markDone'),
-              ),
+              title: Text(toggledLabel),
               onTap: () => Navigator.of(context).pop('toggle'),
             ),
             ListTile(

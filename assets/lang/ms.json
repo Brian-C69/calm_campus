@@ -702,6 +702,8 @@
   "tasks.priority.low": "Rendah",
   "tasks.priority.medium": "Sederhana",
   "tasks.priority.high": "Tinggi",
+  "tasks.markDone": "Tanda selesai",
+  "tasks.markPending": "Tanda belum selesai",
   "relax.guide.ambient.title": "Pilih suasana bunyi",
   "relax.guide.ambient.body": "Ketik bunyi dan laraskan volum mengikut keselesaan.",
   "relax.guide.guided.title": "Treks panduan",

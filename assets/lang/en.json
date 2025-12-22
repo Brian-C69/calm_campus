@@ -296,6 +296,8 @@
   "tasks.priority.low": "Low",
   "tasks.priority.medium": "Medium",
   "tasks.priority.high": "High",
+  "tasks.markDone": "Mark done",
+  "tasks.markPending": "Mark as pending",
   "tasks.priority.next": "Set priority to {priority}",
   "mood.title": "Mood Check-in",
   "mood.subtitle": "We will personalise this check-in using your saved name.",

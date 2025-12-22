@@ -18,7 +18,7 @@ class DbService {
 
   static final DbService instance = DbService._();
 
-  Future<void> Function()? _onChange;
+  final List<Future<void> Function()> _changeHandlers = [];
 
   static const String _databaseName = 'calm_campus.db';
   static const int _databaseVersion = 9;
@@ -36,13 +36,27 @@ class DbService {
   Database? _database;
 
   void setOnChangeHandler(Future<void> Function()? handler) {
-    _onChange = handler;
+    _changeHandlers.clear();
+    if (handler != null) {
+      _changeHandlers.add(handler);
+    }
+  }
+
+  void addChangeListener(Future<void> Function() handler) {
+    _changeHandlers.add(handler);
+  }
+
+  void removeChangeListener(Future<void> Function() handler) {
+    _changeHandlers.remove(handler);
   }
 
   Future<void> _notifyChange() async {
-    final handler = _onChange;
-    if (handler != null) {
-      await handler();
+    for (final handler in List.of(_changeHandlers)) {
+      try {
+        await handler();
+      } catch (_) {
+        // ignore listener errors
+      }
     }
   }
 

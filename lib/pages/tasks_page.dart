@@ -2,6 +2,7 @@ import 'dart:collection';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/task.dart';
 import '../services/db_service.dart';
@@ -21,6 +22,8 @@ enum _TaskSort { custom, newestFirst, oldestFirst, urgency }
 class _TasksPageState extends State<TasksPage> {
   final List<Task> _tasks = [];
   bool _isLoading = true;
+  bool _isAddingTask = false;
+  Future<void> Function()? _dbListener;
 
   _TaskFilter _selectedFilter = _TaskFilter.all;
   _TaskSort _selectedSort = _TaskSort.custom;
@@ -29,6 +32,16 @@ class _TasksPageState extends State<TasksPage> {
   void initState() {
     super.initState();
     _loadTasks();
+    _dbListener = _loadTasks;
+    DbService.instance.addChangeListener(_loadTasks);
+  }
+
+  @override
+  void dispose() {
+    if (_dbListener != null) {
+      DbService.instance.removeChangeListener(_loadTasks);
+    }
+    super.dispose();
   }
 
   @override
@@ -189,6 +202,18 @@ class _TasksPageState extends State<TasksPage> {
     final removed = _tasks.indexOf(task);
     final removedTask = task;
     await DbService.instance.deleteTask(task.id!);
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user != null) {
+      try {
+        await Supabase.instance.client
+            .from('tasks')
+            .delete()
+            .eq('user_id', user.id)
+            .eq('local_id', task.id!);
+      } catch (_) {
+        // best-effort; will be cleaned up on next sync if still present locally
+      }
+    }
     if (!mounted) return;
     setState(() {
       _tasks.remove(task);
@@ -315,17 +340,12 @@ class _TasksPageState extends State<TasksPage> {
   }
 
   Future<void> _addTask(Task task) async {
+    if (_isAddingTask) return;
+    _isAddingTask = true;
     setState(() => _isLoading = true);
-    final id = await DbService.instance.insertTask(task);
-    final created = task.copyWith(id: id);
-
-    if (!mounted) return;
-
-    setState(() {
-      _tasks.add(created);
-      _selectedFilter = _TaskFilter.all;
-      _isLoading = false;
-    });
+    await DbService.instance.insertTask(task);
+    await _loadTasks();
+    _isAddingTask = false;
   }
 
   Future<void> _showTaskQuickActions(Task task) async {

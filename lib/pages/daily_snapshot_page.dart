@@ -5,6 +5,7 @@ import '../models/class_entry.dart';
 import '../models/mood_entry.dart';
 import '../models/movement_entry.dart';
 import '../models/sleep_entry.dart';
+import '../utils/mood_labels.dart';
 import '../models/task.dart';
 import '../services/db_service.dart';
 
@@ -160,11 +161,13 @@ class _DailySnapshotPageState extends State<DailySnapshotPage> {
                   ),
                   const SizedBox(height: 12),
                   _SnapshotCard(
-                    title: strings.t('snapshot.health.title'),
-                    child: _HealthSection(
-                      sleep: data.lastSleep,
-                      movementToday: data.movementToday,
-                    ),
+                    title: strings.t('snapshot.health.sleepTitle'),
+                    child: _SleepSection(sleep: data.lastSleep),
+                  ),
+                  const SizedBox(height: 12),
+                  _SnapshotCard(
+                    title: strings.t('snapshot.health.movementTitle'),
+                    child: _MovementSection(movementToday: data.movementToday),
                   ),
                 ],
               ),
@@ -368,13 +371,15 @@ class _MoodSection extends StatelessWidget {
     }
 
     final time = TimeOfDay.fromDateTime(mood!.dateTime).format(context);
+    final label = moodLabel(mood!.overallMood, strings);
+    final emoji = moodEmojis[mood!.overallMood] ?? '';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(strings.t('snapshot.mood.logged'), style: theme.textTheme.bodyMedium),
         const SizedBox(height: 6),
         Text(
-          '${mood!.overallMood} • $time',
+          '$emoji $label • $time',
           style: theme.textTheme.bodyLarge,
         ),
         if (mood!.note != null && mood!.note!.isNotEmpty) ...[
@@ -386,10 +391,31 @@ class _MoodSection extends StatelessWidget {
   }
 }
 
-class _HealthSection extends StatelessWidget {
-  const _HealthSection({required this.sleep, required this.movementToday});
+class _SleepSection extends StatelessWidget {
+  const _SleepSection({required this.sleep});
 
   final SleepEntry? sleep;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+
+    return Text(
+      sleep != null
+          ? strings
+              .t('snapshot.health.sleep')
+              .replaceFirst('{hours}', sleep!.durationHours.toStringAsFixed(1))
+              .replaceFirst('{rest}', sleep!.restfulness.toString())
+          : strings.t('snapshot.health.sleepNone'),
+      style: theme.textTheme.bodyMedium,
+    );
+  }
+}
+
+class _MovementSection extends StatelessWidget {
+  const _MovementSection({required this.movementToday});
+
   final List<MovementEntry> movementToday;
 
   @override
@@ -398,26 +424,11 @@ class _HealthSection extends StatelessWidget {
     final theme = Theme.of(context);
     final totalMinutes = movementToday.fold<int>(0, (sum, entry) => sum + entry.minutes);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          sleep != null
-              ? strings
-                  .t('snapshot.health.sleep')
-                  .replaceFirst('{hours}', sleep!.durationHours.toStringAsFixed(1))
-                  .replaceFirst('{rest}', sleep!.restfulness.toString())
-              : strings.t('snapshot.health.sleepNone'),
-          style: theme.textTheme.bodyMedium,
-        ),
-        const SizedBox(height: 4),
-        Text(
-          totalMinutes > 0
-              ? strings.t('snapshot.health.movement').replaceFirst('{minutes}', totalMinutes.toString())
-              : strings.t('snapshot.health.movementNone'),
-          style: theme.textTheme.bodyMedium,
-        ),
-      ],
+    return Text(
+      totalMinutes > 0
+          ? strings.t('snapshot.health.movement').replaceFirst('{minutes}', totalMinutes.toString())
+          : strings.t('snapshot.health.movementNone'),
+      style: theme.textTheme.bodyMedium,
     );
   }
 }

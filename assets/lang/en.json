@@ -721,5 +721,10 @@
   "relax.guide.guided.title": "Guided tracks",
   "relax.guide.guided.body": "Focus or meditate with guided tracks. You can layer them with ambience.",
   "relax.guide.player.title": "Floating player",
-  "relax.guide.player.body": "Controls stay at the bottom so you can pause or switch quickly."
+  "relax.guide.player.body": "Controls stay at the bottom so you can pause or switch quickly.",
+  "relax.loopAmbient": "Loop ambient",
+  "relax.sleepTimer": "Sleep timer",
+  "relax.sleepTimer.active": "Timer set: {minutes} min",
+  "relax.favorites": "Favorites",
+  "relax.recents": "Recently played"
 }

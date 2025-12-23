@@ -720,5 +720,10 @@
   "relax.guide.guided.title": "Treks panduan",
   "relax.guide.guided.body": "Fokus atau meditasi dengan treks panduan. Anda boleh lapiskan dengan bunyi ambient.",
   "relax.guide.player.title": "Pemain terapung",
-  "relax.guide.player.body": "Kawalan di bawah supaya mudah jeda atau tukar."
+  "relax.guide.player.body": "Kawalan di bawah supaya mudah jeda atau tukar.",
+  "relax.loopAmbient": "Ulang ambient",
+  "relax.sleepTimer": "Pemasa tidur",
+  "relax.sleepTimer.active": "Pemasa ditetapkan: {minutes} min",
+  "relax.favorites": "Kegemaran",
+  "relax.recents": "Baru dimainkan"
 }

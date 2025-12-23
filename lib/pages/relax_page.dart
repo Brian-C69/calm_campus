@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../l10n/app_localizations.dart';
 import '../widgets/guide_overlay.dart';
@@ -27,6 +29,29 @@ class _RelaxPageState extends State<RelaxPage> {
   bool _isPlayerExpanded = false;
   double _ambientVolume = 0.8;
   double _guidedVolume = 0.8;
+  bool _loopAmbient = true;
+  int _sleepTimerMinutes = 0;
+  Set<String> _favoriteIds = <String>{};
+  List<String> _recentIds = <String>[];
+  Timer? _sleepTimer;
+  List<RelaxTrack> get _allTracks => [..._ambientTracks, ..._guidedTracks];
+
+  RelaxTrack? _findTrack(String assetPath) {
+    try {
+      return _allTracks.firstWhere((t) => t.assetPath == assetPath);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  bool _isAmbientTrack(RelaxTrack track) =>
+      _ambientTracks.any((t) => t.assetPath == track.assetPath);
+
+  List<RelaxTrack> get _favoriteTracks =>
+      _favoriteIds.map(_findTrack).whereType<RelaxTrack>().toList();
+
+  List<RelaxTrack> get _recentTracks =>
+      _recentIds.map(_findTrack).whereType<RelaxTrack>().toList();
 
   final List<RelaxTrack> _ambientTracks = const [
     RelaxTrack(
@@ -220,17 +245,88 @@ class _RelaxPageState extends State<RelaxPage> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _ambientPlayer.setVolume(_ambientVolume);
+    _guidedPlayer.setVolume(_guidedVolume);
+    _loadPrefs();
+  }
+
+  @override
   void dispose() {
+    _sleepTimer?.cancel();
     _ambientPlayer.dispose();
     _guidedPlayer.dispose();
     super.dispose();
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _ambientPlayer.setVolume(_ambientVolume);
-    _guidedPlayer.setVolume(_guidedVolume);
+  void _trackPlayed(RelaxTrack track, {required bool isAmbient}) {
+    // Update recents
+    _recentIds.remove(track.assetPath);
+    _recentIds.insert(0, track.assetPath);
+    if (_recentIds.length > 10) _recentIds = _recentIds.take(10).toList();
+    // Persist recents
+    SharedPreferences.getInstance().then(
+      (prefs) => prefs.setStringList('relax_recent', _recentIds),
+    );
+    setState(() {});
+  }
+
+  void _toggleFavorite(RelaxTrack track) async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      if (_favoriteIds.contains(track.assetPath)) {
+        _favoriteIds.remove(track.assetPath);
+      } else {
+        _favoriteIds.add(track.assetPath);
+      }
+      prefs.setStringList('relax_favorites', _favoriteIds.toList());
+    });
+  }
+
+  void _toggleLoopAmbient(bool value) async {
+    setState(() => _loopAmbient = value);
+    await _ambientPlayer.setLoopMode(value ? LoopMode.all : LoopMode.off);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('relax_loop_ambient', value);
+  }
+
+  void _startSleepTimer(int minutes) {
+    _sleepTimer?.cancel();
+    _sleepTimerMinutes = minutes;
+    if (minutes <= 0) {
+      SharedPreferences.getInstance().then(
+        (p) => p.setInt('relax_sleep_timer', 0),
+      );
+      setState(() {});
+      return;
+    }
+    _sleepTimer = Timer(Duration(minutes: minutes), () async {
+      await _ambientPlayer.pause();
+      await _guidedPlayer.pause();
+      setState(() => _sleepTimerMinutes = 0);
+      SharedPreferences.getInstance().then(
+        (p) => p.setInt('relax_sleep_timer', 0),
+      );
+    });
+    SharedPreferences.getInstance().then(
+      (p) => p.setInt('relax_sleep_timer', minutes),
+    );
+    setState(() {});
+  }
+
+  Future<void> _loadPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _loopAmbient = prefs.getBool('relax_loop_ambient') ?? true;
+      _sleepTimerMinutes = prefs.getInt('relax_sleep_timer') ?? 0;
+      _favoriteIds =
+          prefs.getStringList('relax_favorites')?.toSet() ?? <String>{};
+      _recentIds = prefs.getStringList('relax_recent') ?? <String>[];
+    });
+    await _ambientPlayer.setLoopMode(
+      _loopAmbient ? LoopMode.all : LoopMode.off,
+    );
   }
 
   Future<void> _toggleAmbient(RelaxTrack track) async {
@@ -244,9 +340,12 @@ class _RelaxPageState extends State<RelaxPage> {
       try {
         await _ambientPlayer.stop();
         await _ambientPlayer.setAudioSource(AudioSource.asset(track.assetPath));
-        await _ambientPlayer.setLoopMode(LoopMode.all);
+        await _ambientPlayer.setLoopMode(
+          _loopAmbient ? LoopMode.all : LoopMode.off,
+        );
         // Start playback but don't await the full track duration.
         _ambientPlayer.play();
+        _trackPlayed(track, isAmbient: true);
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -295,6 +394,7 @@ class _RelaxPageState extends State<RelaxPage> {
         await _guidedPlayer.setLoopMode(LoopMode.off);
         // Start playback but don't await the full track duration.
         _guidedPlayer.play();
+        _trackPlayed(track, isAmbient: false);
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -355,47 +455,153 @@ class _RelaxPageState extends State<RelaxPage> {
                 body: strings.t('relax.guide.player.body'),
               ),
             ],
-            child: ListView(
-              padding: EdgeInsets.fromLTRB(
-                16,
-                16,
-                16,
-                playerPadding + safeBottom,
-              ),
-              children: [
-                _buildBreathingCard(context),
-                const SizedBox(height: 12),
-                Text(strings.t('relax.intro')),
-                const SizedBox(height: 16),
-                StreamBuilder<PlayerState>(
-                  stream: _ambientPlayer.playerStateStream,
-                  builder: (context, snapshot) {
-                    final ambientState = snapshot.data;
-                    return _buildSection(
-                      title: strings.t('relax.section.ambient.title'),
-                      description: strings.t('relax.section.ambient.desc'),
-                      tracks: _ambientTracks,
-                      playerState: ambientState,
-                      isAmbient: true,
-                    );
-                  },
-                ),
-                const SizedBox(height: 12),
-                StreamBuilder<PlayerState>(
+            child: StreamBuilder<PlayerState>(
+              stream: _ambientPlayer.playerStateStream,
+              builder: (context, ambientSnapshot) {
+                return StreamBuilder<PlayerState>(
                   stream: _guidedPlayer.playerStateStream,
-                  builder: (context, snapshot) {
-                    final guidedState = snapshot.data;
-                    return _buildSection(
-                      title: strings.t('relax.section.guided.title'),
-                      description: strings.t('relax.section.guided.desc'),
-                      tracks: _guidedTracks,
-                      playerState: guidedState,
-                      isAmbient: false,
-                      groupByCategory: true,
+                  builder: (context, guidedSnapshot) {
+                    final ambientState = ambientSnapshot.data;
+                    final guidedState = guidedSnapshot.data;
+                    final favoriteTracks = _favoriteTracks;
+                    final recentTracks = _recentTracks;
+                    return ListView(
+                      padding: EdgeInsets.fromLTRB(
+                        16,
+                        16,
+                        16,
+                        playerPadding + safeBottom,
+                      ),
+                      children: [
+                        _buildBreathingCard(context),
+                        const SizedBox(height: 12),
+                        Text(strings.t('relax.intro')),
+                        const SizedBox(height: 16),
+                        if (favoriteTracks.isNotEmpty) ...[
+                          Text(
+                            strings.t('relax.favorites'),
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: 8),
+                          ...favoriteTracks.map(
+                            (track) => _buildTrackTile(
+                              track: track,
+                              isAmbient: _isAmbientTrack(track),
+                              playerState:
+                                  _isAmbientTrack(track)
+                                      ? ambientState
+                                      : guidedState,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+                        if (recentTracks.isNotEmpty) ...[
+                          Text(
+                            strings.t('relax.recents'),
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: 8),
+                          ...recentTracks.map(
+                            (track) => _buildTrackTile(
+                              track: track,
+                              isAmbient: _isAmbientTrack(track),
+                              playerState:
+                                  _isAmbientTrack(track)
+                                      ? ambientState
+                                      : guidedState,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+                        _buildSection(
+                          title: strings.t('relax.section.ambient.title'),
+                          description: strings.t('relax.section.ambient.desc'),
+                          tracks: _ambientTracks,
+                          playerState: ambientState,
+                          isAmbient: true,
+                        ),
+                        const SizedBox(height: 8),
+                        Card(
+                          elevation: 0,
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  strings.t('relax.loopAmbient'),
+                                  style:
+                                      Theme.of(context).textTheme.titleMedium,
+                                ),
+                                SwitchListTile(
+                                  contentPadding: EdgeInsets.zero,
+                                  title: Text(strings.t('relax.loopAmbient')),
+                                  value: _loopAmbient,
+                                  onChanged: _toggleLoopAmbient,
+                                ),
+                                Row(
+                                  children: [
+                                    Text(strings.t('relax.sleepTimer')),
+                                    const Spacer(),
+                                    DropdownButton<int>(
+                                      value: _sleepTimerMinutes,
+                                      items: const [
+                                        DropdownMenuItem(
+                                          value: 0,
+                                          child: Text('Off'),
+                                        ),
+                                        DropdownMenuItem(
+                                          value: 10,
+                                          child: Text('10 min'),
+                                        ),
+                                        DropdownMenuItem(
+                                          value: 20,
+                                          child: Text('20 min'),
+                                        ),
+                                        DropdownMenuItem(
+                                          value: 30,
+                                          child: Text('30 min'),
+                                        ),
+                                        DropdownMenuItem(
+                                          value: 45,
+                                          child: Text('45 min'),
+                                        ),
+                                      ],
+                                      onChanged: (v) {
+                                        if (v != null) _startSleepTimer(v);
+                                      },
+                                    ),
+                                  ],
+                                ),
+                                if (_sleepTimerMinutes > 0)
+                                  Text(
+                                    strings
+                                        .t('relax.sleepTimer.active')
+                                        .replaceFirst(
+                                          '{minutes}',
+                                          '$_sleepTimerMinutes',
+                                        ),
+                                    style:
+                                        Theme.of(context).textTheme.bodySmall,
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        _buildSection(
+                          title: strings.t('relax.section.guided.title'),
+                          description: strings.t('relax.section.guided.desc'),
+                          tracks: _guidedTracks,
+                          playerState: guidedState,
+                          isAmbient: false,
+                          groupByCategory: true,
+                        ),
+                      ],
                     );
                   },
-                ),
-              ],
+                );
+              },
             ),
           ),
           Positioned(
@@ -458,6 +664,33 @@ class _RelaxPageState extends State<RelaxPage> {
     );
   }
 
+  Widget _buildTrackTile({
+    required RelaxTrack track,
+    required bool isAmbient,
+    required PlayerState? playerState,
+  }) {
+    return Card(
+      elevation: 0,
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
+          child: Icon(
+            isAmbient ? Icons.spa_outlined : Icons.self_improvement,
+            color: Theme.of(context).colorScheme.onSecondaryContainer,
+          ),
+        ),
+        title: Text(track.title),
+        subtitle: Text(track.category),
+        trailing: _buildTrailingControl(
+          track: track,
+          playerState: playerState,
+          isAmbient: isAmbient,
+        ),
+        onTap: () => isAmbient ? _toggleAmbient(track) : _toggleGuided(track),
+      ),
+    );
+  }
+
   Widget _buildSection({
     required String title,
     required String description,
@@ -493,31 +726,10 @@ class _RelaxPageState extends State<RelaxPage> {
                   ),
                 ),
               ...categoryTracks.map(
-                (track) => Card(
-                  elevation: 0,
-                  child: ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor:
-                          Theme.of(context).colorScheme.secondaryContainer,
-                      child: Icon(
-                        isAmbient ? Icons.spa_outlined : Icons.self_improvement,
-                        color:
-                            Theme.of(context).colorScheme.onSecondaryContainer,
-                      ),
-                    ),
-                    title: Text(track.title),
-                    subtitle: Text(track.category),
-                    trailing: _buildTrailingControl(
-                      track: track,
-                      playerState: playerState,
-                      isAmbient: isAmbient,
-                    ),
-                    onTap:
-                        () =>
-                            isAmbient
-                                ? _toggleAmbient(track)
-                                : _toggleGuided(track),
-                  ),
+                (track) => _buildTrackTile(
+                  track: track,
+                  isAmbient: isAmbient,
+                  playerState: playerState,
                 ),
               ),
             ],
@@ -579,13 +791,26 @@ class _RelaxPageState extends State<RelaxPage> {
       );
     }
 
-    return IconButton(
-      icon: Icon(isPlayingCurrent ? Icons.pause : Icons.play_arrow),
-      onPressed: () => isAmbient ? _toggleAmbient(track) : _toggleGuided(track),
-      tooltip:
-          isPlayingCurrent
-              ? strings.t('relax.tooltip.pause')
-              : strings.t('relax.tooltip.play'),
+    final isFavorite = _favoriteIds.contains(track.assetPath);
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton(
+          icon: Icon(isFavorite ? Icons.favorite : Icons.favorite_border),
+          tooltip: strings.t('relax.favorites'),
+          onPressed: () => _toggleFavorite(track),
+        ),
+        IconButton(
+          icon: Icon(isPlayingCurrent ? Icons.pause : Icons.play_arrow),
+          onPressed:
+              () => isAmbient ? _toggleAmbient(track) : _toggleGuided(track),
+          tooltip:
+              isPlayingCurrent
+                  ? strings.t('relax.tooltip.pause')
+                  : strings.t('relax.tooltip.play'),
+        ),
+      ],
     );
   }
 
@@ -635,8 +860,10 @@ class _RelaxPageState extends State<RelaxPage> {
             final guidedState = guidedSnapshot.data;
 
             final collapsedTitle = [
-              if (showAmbient) '${strings.t('relax.category.ambient')}: ${_currentAmbientTrack!.title}',
-              if (showGuided) '${strings.t('relax.category.guided')}: ${_currentGuidedTrack!.title}',
+              if (showAmbient)
+                '${strings.t('relax.category.ambient')}: ${_currentAmbientTrack!.title}',
+              if (showGuided)
+                '${strings.t('relax.category.guided')}: ${_currentGuidedTrack!.title}',
             ].join(showAmbient && showGuided ? '  |  ' : '');
 
             return SafeArea(

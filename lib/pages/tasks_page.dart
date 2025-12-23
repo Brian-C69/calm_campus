@@ -351,7 +351,6 @@ class _TasksPageState extends State<TasksPage> {
   Future<void> _showTaskQuickActions(Task task) async {
     final strings = AppLocalizations.of(context);
     final bool isPending = task.status == TaskStatus.pending;
-    final TaskStatus toggledStatus = isPending ? TaskStatus.done : TaskStatus.pending;
     final TaskPriority nextPriority = switch (task.priority) {
       TaskPriority.low => TaskPriority.medium,
       TaskPriority.medium => TaskPriority.high,

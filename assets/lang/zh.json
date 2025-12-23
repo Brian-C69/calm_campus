@@ -492,5 +492,10 @@
   "relax.guide.guided.title": "引导练习",
   "relax.guide.guided.body": "专注或冥想的引导音轨，可与环境音同时播放。",
   "relax.guide.player.title": "浮动播放器",
-  "relax.guide.player.body": "底部控件方便随时暂停或切换。"
+  "relax.guide.player.body": "底部控件方便随时暂停或切换。",
+  "relax.loopAmbient": "循环播放环境音",
+  "relax.sleepTimer": "睡眠计时器",
+  "relax.sleepTimer.active": "已设置计时：{minutes} 分钟",
+  "relax.favorites": "收藏",
+  "relax.recents": "最近播放"
 }

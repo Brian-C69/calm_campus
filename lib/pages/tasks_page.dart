@@ -293,13 +293,27 @@ class _TasksPageState extends State<TasksPage> {
 
     final now = DateTime.now();
     final due = task.dueDate;
+    final today = DateTime(now.year, now.month, now.day);
+    final dueDay = DateTime(due.year, due.month, due.day);
     final bool hasTime = due.hour != 0 || due.minute != 0;
     final DateTime dueAt =
-        hasTime ? due : DateTime(due.year, due.month, due.day, 9);
+        hasTime
+            ? due
+            : DateTime(
+              due.year,
+              due.month,
+              due.day,
+              8, // morning nudge for date-only tasks
+            );
 
-    DateTime? scheduled = dueAt.subtract(const Duration(hours: 1));
-    if (scheduled.isBefore(now)) {
-      scheduled = dueAt.isAfter(now) ? dueAt : null;
+    DateTime? scheduled;
+    if (dueDay == today) {
+      // Only schedule if the morning reminder is still in the future.
+      if (dueAt.isAfter(now)) {
+        scheduled = dueAt;
+      }
+    } else if (dueDay.isAfter(today)) {
+      scheduled = dueAt;
     }
 
     if (scheduled == null) {
@@ -307,8 +321,6 @@ class _TasksPageState extends State<TasksPage> {
       return;
     }
 
-    final today = DateTime(now.year, now.month, now.day);
-    final dueDay = DateTime(due.year, due.month, due.day);
     String body;
     if (dueDay == today) {
       body = strings

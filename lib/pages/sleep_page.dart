@@ -5,6 +5,8 @@ import '../l10n/app_localizations.dart';
 import '../models/mood_entry.dart';
 import '../models/sleep_entry.dart';
 import '../services/db_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 
 class SleepPage extends StatefulWidget {
   const SleepPage({super.key});
@@ -409,6 +411,18 @@ class _SleepPageState extends State<SleepPage> {
 
   Future<void> _deleteEntry(int id) async {
     await DbService.instance.deleteSleepEntry(id);
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user != null) {
+      try {
+        await Supabase.instance.client
+            .from('sleep_entries')
+            .delete()
+            .eq('user_id', user.id)
+            .eq('local_id', id);
+      } catch (_) {
+        // best-effort; will sync on next upload
+      }
+    }
     if (!mounted) return;
     setState(() {
       _entriesFuture = _loadEntries();

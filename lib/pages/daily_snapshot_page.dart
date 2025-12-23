@@ -47,14 +47,8 @@ class _DailySnapshotPageState extends State<DailySnapshotPage> {
       return due.isBefore(today);
     }).toList();
 
-    // Sleep (yesterday)
-    final yesterday = today.subtract(const Duration(days: 1));
-    final List<SleepEntry> sleepEntries = await db.getSleepEntries(
-      from: yesterday,
-      to: yesterday,
-      limit: 1,
-    );
-    final SleepEntry? lastSleep = sleepEntries.isNotEmpty ? sleepEntries.first : null;
+    // Sleep (latest)
+    final SleepEntry? lastSleep = await db.getLatestSleepEntry();
 
     // Movement (today)
     final List<MovementEntry> movementToday = await db.getMovementEntries(
@@ -157,17 +151,26 @@ class _DailySnapshotPageState extends State<DailySnapshotPage> {
                   const SizedBox(height: 12),
                   _SnapshotCard(
                     title: strings.t('snapshot.mood.title'),
-                    child: _MoodSection(mood: data.moodToday),
+                    child: _MoodSection(
+                      mood: data.moodToday,
+                      onChanged: _refresh,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   _SnapshotCard(
                     title: strings.t('snapshot.health.sleepTitle'),
-                    child: _SleepSection(sleep: data.lastSleep),
+                    child: _SleepSection(
+                      sleep: data.lastSleep,
+                      onChanged: _refresh,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   _SnapshotCard(
                     title: strings.t('snapshot.health.movementTitle'),
-                    child: _MovementSection(movementToday: data.movementToday),
+                    child: _MovementSection(
+                      movementToday: data.movementToday,
+                      onChanged: _refresh,
+                    ),
                   ),
                 ],
               ),
@@ -350,9 +353,10 @@ class _TasksSection extends StatelessWidget {
 }
 
 class _MoodSection extends StatelessWidget {
-  const _MoodSection({required this.mood});
+  const _MoodSection({required this.mood, required this.onChanged});
 
   final MoodEntry? mood;
+  final Future<void> Function() onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -363,7 +367,7 @@ class _MoodSection extends StatelessWidget {
         children: [
           Expanded(child: Text(strings.t('snapshot.mood.prompt'), style: theme.textTheme.bodyMedium)),
           TextButton(
-            onPressed: () => Navigator.pushNamed(context, '/mood'),
+            onPressed: () => Navigator.pushNamed(context, '/mood').then((_) => onChanged()),
             child: Text(strings.t('snapshot.mood.checkIn')),
           ),
         ],
@@ -392,31 +396,43 @@ class _MoodSection extends StatelessWidget {
 }
 
 class _SleepSection extends StatelessWidget {
-  const _SleepSection({required this.sleep});
+  const _SleepSection({required this.sleep, required this.onChanged});
 
   final SleepEntry? sleep;
+  final Future<void> Function() onChanged;
 
   @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context);
     final theme = Theme.of(context);
 
-    return Text(
-      sleep != null
-          ? strings
-              .t('snapshot.health.sleep')
-              .replaceFirst('{hours}', sleep!.durationHours.toStringAsFixed(1))
-              .replaceFirst('{rest}', sleep!.restfulness.toString())
-          : strings.t('snapshot.health.sleepNone'),
-      style: theme.textTheme.bodyMedium,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          sleep != null
+              ? strings
+                  .t('snapshot.health.sleep')
+                  .replaceFirst('{hours}', sleep!.durationHours.toStringAsFixed(1))
+                  .replaceFirst('{rest}', sleep!.restfulness.toString())
+              : strings.t('snapshot.health.sleepNone'),
+          style: theme.textTheme.bodyMedium,
+        ),
+        if (sleep == null)
+          TextButton(
+            onPressed: () => Navigator.pushNamed(context, '/sleep').then((_) => onChanged()),
+            child: Text(strings.t('sleep.add')),
+          ),
+      ],
     );
   }
 }
 
 class _MovementSection extends StatelessWidget {
-  const _MovementSection({required this.movementToday});
+  const _MovementSection({required this.movementToday, required this.onChanged});
 
   final List<MovementEntry> movementToday;
+  final Future<void> Function() onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -424,11 +440,23 @@ class _MovementSection extends StatelessWidget {
     final theme = Theme.of(context);
     final totalMinutes = movementToday.fold<int>(0, (sum, entry) => sum + entry.minutes);
 
-    return Text(
-      totalMinutes > 0
-          ? strings.t('snapshot.health.movement').replaceFirst('{minutes}', totalMinutes.toString())
-          : strings.t('snapshot.health.movementNone'),
-      style: theme.textTheme.bodyMedium,
+    final hasMovement = totalMinutes > 0;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          hasMovement
+              ? strings.t('snapshot.health.movement').replaceFirst('{minutes}', totalMinutes.toString())
+              : strings.t('snapshot.health.movementNone'),
+          style: theme.textTheme.bodyMedium,
+        ),
+        if (!hasMovement)
+          TextButton(
+            onPressed: () => Navigator.pushNamed(context, '/movement').then((_) => onChanged()),
+            child: Text(strings.t('movement.add')),
+          ),
+      ],
     );
   }
 }

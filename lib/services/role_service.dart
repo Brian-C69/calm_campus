@@ -22,19 +22,27 @@ class RoleService {
     }
 
     try {
-      final Map<String, dynamic>? profile = await _client
-          .from('profiles')
-          .select('role,is_consultant,is_online,display_name')
-          .eq('id', user.id)
-          .maybeSingle();
+      final Map<String, dynamic>? profile =
+          await _client
+              .from('profiles')
+              .select('role,is_consultant,is_online,display_name,avatar_url')
+              .eq('id', user.id)
+              .maybeSingle();
 
       final UserRole role = UserRole.fromString(
-        profile != null ? profile['role'] as String? : user.userMetadata?['role'] as String?,
+        profile != null
+            ? profile['role'] as String?
+            : user.userMetadata?['role'] as String?,
       );
 
       await UserProfileService.instance.saveRole(role);
       await UserProfileService.instance.saveDisplayName(
-        profile?['display_name'] as String? ?? (user.userMetadata?['preferred_name'] as String?),
+        profile?['display_name'] as String? ??
+            (user.userMetadata?['preferred_name'] as String?),
+      );
+      await UserProfileService.instance.saveAvatarUrl(
+        profile?['avatar_url'] as String? ??
+            (user.userMetadata?['avatar_url'] as String?),
       );
       await UserProfileService.instance.saveConsultantFlag(
         profile?['is_consultant'] as bool? ?? role == UserRole.admin,
@@ -45,7 +53,9 @@ class RoleService {
 
       return role;
     } catch (_) {
-      final UserRole fallback = UserRole.fromString(user.userMetadata?['role'] as String?);
+      final UserRole fallback = UserRole.fromString(
+        user.userMetadata?['role'] as String?,
+      );
       await UserProfileService.instance.saveRole(fallback);
       return fallback;
     }

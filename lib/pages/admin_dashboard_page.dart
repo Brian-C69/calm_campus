@@ -29,7 +29,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   Future<void> _load() async {
     final name = await UserProfileService.instance.getDisplayName();
     final online = await UserProfileService.instance.isOnline();
-    final sessions = await ConsultationService.instance.fetchSessionsForCurrentUser();
+    final sessions =
+        await ConsultationService.instance.fetchSessionsForCurrentUser();
 
     if (!mounted) return;
     setState(() {
@@ -63,6 +64,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
 
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: Text(strings.t('admin.dashboard.title')),
         actions: [
           IconButton(
@@ -72,118 +74,142 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _load,
-              child: ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  Card(
-                    elevation: 0,
-                    color: color.surfaceContainerHigh,
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _name == null || _name!.isEmpty
-                                ? strings.t('admin.dashboard.greeting')
-                                : strings.t('admin.dashboard.named').replaceFirst('{name}', _name!),
-                            style: textTheme.titleLarge,
-                          ),
-                          const SizedBox(height: 4),
-                          Text(strings.t('admin.dashboard.subtitle')),
-                          const SizedBox(height: 12),
-                          SwitchListTile.adaptive(
-                            value: _isOnline,
-                            onChanged: _toggleAvailability,
-                            title: Text(strings.t('admin.dashboard.status')),
-                            subtitle: Text(
-                              _isOnline
-                                  ? strings.t('admin.dashboard.status.online')
-                                  : strings.t('admin.dashboard.status.offline'),
+      body:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : RefreshIndicator(
+                onRefresh: _load,
+                child: ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    Card(
+                      elevation: 0,
+                      color: color.surfaceContainerHigh,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _name == null || _name!.isEmpty
+                                  ? strings.t('admin.dashboard.greeting')
+                                  : strings
+                                      .t('admin.dashboard.named')
+                                      .replaceFirst('{name}', _name!),
+                              style: textTheme.titleLarge,
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: 4),
+                            Text(strings.t('admin.dashboard.subtitle')),
+                            const SizedBox(height: 12),
+                            SwitchListTile.adaptive(
+                              value: _isOnline,
+                              onChanged: _toggleAvailability,
+                              title: Text(strings.t('admin.dashboard.status')),
+                              subtitle: Text(
+                                _isOnline
+                                    ? strings.t('admin.dashboard.status.online')
+                                    : strings.t(
+                                      'admin.dashboard.status.offline',
+                                    ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  Card(
-                    elevation: 0,
-                    child: ListTile(
-                      leading: const Icon(Icons.inbox_outlined),
-                      title: Text(strings.t('admin.dashboard.sessions')),
-                      subtitle: Text(
-                        strings
-                            .t('admin.dashboard.sessions.count')
-                            .replaceFirst('{count}', '$_openSessions'),
-                      ),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () => Navigator.pushNamed(context, '/consultation/inbox'),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Card(
-                    elevation: 0,
-                    child: ListTile(
-                      leading: const Icon(Icons.pie_chart_outline),
-                      title: Text(strings.t('admin.dashboard.analytics')),
-                      subtitle: Text(strings.t('admin.dashboard.analytics.desc')),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () => Navigator.pushNamed(context, '/admin/mood-analytics'),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Card(
-                    elevation: 0,
-                    child: ListTile(
-                      leading: const Icon(Icons.person_outline),
-                      title: Text(strings.t('admin.profile.title')),
-                      subtitle: Text(strings.t('admin.profile.subtitle')),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () => Navigator.pushNamed(context, '/admin/profile'),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Card(
-                    elevation: 0,
-                    child: ListTile(
-                      leading: const Icon(Icons.campaign_outlined),
-                      title: Text(strings.t('admin.dashboard.announcements')),
-                      subtitle: Text(strings.t('admin.dashboard.announcements.desc')),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () => Navigator.pushNamed(context, '/announcements'),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Card(
-                    elevation: 0,
-                    child: ListTile(
-                      leading: const Icon(Icons.phone_in_talk_outlined),
-                      title: Text(strings.t('admin.dashboard.consultas')),
-                      subtitle: Text(strings.t('admin.dashboard.consultas.desc')),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () => Navigator.pushNamed(context, '/consultation'),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Card(
-                    elevation: 0,
-                    color: color.surfaceContainer,
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Text(
-                        strings.t('admin.dashboard.copy'),
-                        style: textTheme.bodyMedium,
+                    const SizedBox(height: 12),
+                    Card(
+                      elevation: 0,
+                      child: ListTile(
+                        leading: const Icon(Icons.inbox_outlined),
+                        title: Text(strings.t('admin.dashboard.sessions')),
+                        subtitle: Text(
+                          strings
+                              .t('admin.dashboard.sessions.count')
+                              .replaceFirst('{count}', '$_openSessions'),
+                        ),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap:
+                            () => Navigator.pushNamed(
+                              context,
+                              '/consultation/inbox',
+                            ),
                       ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 8),
+                    Card(
+                      elevation: 0,
+                      child: ListTile(
+                        leading: const Icon(Icons.pie_chart_outline),
+                        title: Text(strings.t('admin.dashboard.analytics')),
+                        subtitle: Text(
+                          strings.t('admin.dashboard.analytics.desc'),
+                        ),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap:
+                            () => Navigator.pushNamed(
+                              context,
+                              '/admin/mood-analytics',
+                            ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Card(
+                      elevation: 0,
+                      child: ListTile(
+                        leading: const Icon(Icons.person_outline),
+                        title: Text(strings.t('admin.profile.title')),
+                        subtitle: Text(strings.t('admin.profile.subtitle')),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap:
+                            () =>
+                                Navigator.pushNamed(context, '/admin/profile'),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Card(
+                      elevation: 0,
+                      child: ListTile(
+                        leading: const Icon(Icons.campaign_outlined),
+                        title: Text(strings.t('admin.dashboard.announcements')),
+                        subtitle: Text(
+                          strings.t('admin.dashboard.announcements.desc'),
+                        ),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap:
+                            () =>
+                                Navigator.pushNamed(context, '/announcements'),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Card(
+                      elevation: 0,
+                      child: ListTile(
+                        leading: const Icon(Icons.phone_in_talk_outlined),
+                        title: Text(strings.t('admin.dashboard.consultas')),
+                        subtitle: Text(
+                          strings.t('admin.dashboard.consultas.desc'),
+                        ),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap:
+                            () => Navigator.pushNamed(context, '/consultation'),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Card(
+                      elevation: 0,
+                      color: color.surfaceContainer,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Text(
+                          strings.t('admin.dashboard.copy'),
+                          style: textTheme.bodyMedium,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
     );
   }
 }

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
+import '../models/user_role.dart';
+import '../services/role_service.dart';
 import 'home_page.dart';
 import 'mood_page.dart';
 import 'tasks_page.dart';
@@ -31,13 +33,24 @@ class _MainNavigationState extends State<MainNavigation> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    _redirectAdmin();
+  }
+
+  Future<void> _redirectAdmin() async {
+    final role = await RoleService.instance.getCachedRole();
+    if (!mounted) return;
+    if (role == UserRole.admin) {
+      Navigator.of(context).pushReplacementNamed('/admin');
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context);
     return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _pages,
-      ),
+      body: IndexedStack(index: _currentIndex, children: _pages),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
         onDestinationSelected: _onItemTapped,

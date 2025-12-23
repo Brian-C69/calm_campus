@@ -7,13 +7,15 @@ import 'package:timezone/timezone.dart' as tz;
 
 import '../models/announcement.dart';
 import '../models/class_entry.dart';
+import '../models/task.dart';
 
 class NotificationService {
   NotificationService._();
 
   static final NotificationService instance = NotificationService._();
 
-  final FlutterLocalNotificationsPlugin _plugin = FlutterLocalNotificationsPlugin();
+  final FlutterLocalNotificationsPlugin _plugin =
+      FlutterLocalNotificationsPlugin();
 
   bool _initialised = false;
 
@@ -22,7 +24,8 @@ class NotificationService {
 
     const AndroidInitializationSettings androidSettings =
         AndroidInitializationSettings('@mipmap/ic_launcher');
-    const DarwinInitializationSettings iosSettings = DarwinInitializationSettings();
+    const DarwinInitializationSettings iosSettings =
+        DarwinInitializationSettings();
 
     const InitializationSettings settings = InitializationSettings(
       android: androidSettings,
@@ -39,14 +42,16 @@ class NotificationService {
 
   Future<void> _requestPermissions() async {
     await _plugin
-        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >()
         ?.requestNotificationsPermission();
 
-    await _plugin.resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>()?.requestPermissions(
-          alert: true,
-          badge: true,
-          sound: true,
-        );
+    await _plugin
+        .resolvePlatformSpecificImplementation<
+          IOSFlutterLocalNotificationsPlugin
+        >()
+        ?.requestPermissions(alert: true, badge: true, sound: true);
   }
 
   Future<void> _configureLocalTimeZone() async {
@@ -61,8 +66,11 @@ class NotificationService {
       return;
     }
 
-    final tz.TZDateTime targetTime =
-        _nextInstanceOfWeekday(entry.dayOfWeek, classTime, leadTime: const Duration(minutes: 30));
+    final tz.TZDateTime targetTime = _nextInstanceOfWeekday(
+      entry.dayOfWeek,
+      classTime,
+      leadTime: const Duration(minutes: 30),
+    );
 
     await _plugin.zonedSchedule(
       _notificationIdForEntry(entry),
@@ -80,7 +88,8 @@ class NotificationService {
         iOS: DarwinNotificationDetails(),
       ),
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.wallClockTime,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.wallClockTime,
       matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
     );
   }
@@ -103,13 +112,56 @@ class NotificationService {
         iOS: DarwinNotificationDetails(),
       ),
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.wallClockTime,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.wallClockTime,
       matchDateTimeComponents: DateTimeComponents.time,
     );
   }
 
-  Future<void> scheduleSleepPlanReminder(TimeOfDay bedtime, {String plannedBedtimeLabel = '12:00am'}) async {
-    final tz.TZDateTime scheduledTime = _nextInstance(bedtime, repeatDaily: true);
+  Future<void> scheduleTaskReminder({
+    required Task task,
+    required DateTime scheduledFor,
+    required String title,
+    required String body,
+  }) async {
+    if (task.id == null) return;
+    final tz.TZDateTime? target = _toFutureTime(scheduledFor);
+    if (target == null) return;
+
+    await _plugin.zonedSchedule(
+      _notificationIdForTask(task),
+      title,
+      body,
+      target,
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'task_deadlines',
+          'Task deadlines',
+          channelDescription: 'Reminders for upcoming tasks',
+          importance: Importance.high,
+          priority: Priority.high,
+        ),
+        iOS: DarwinNotificationDetails(),
+      ),
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+    );
+  }
+
+  Future<void> cancelTaskReminder(Task task) async {
+    if (task.id == null) return;
+    await _plugin.cancel(_notificationIdForTask(task));
+  }
+
+  Future<void> scheduleSleepPlanReminder(
+    TimeOfDay bedtime, {
+    String plannedBedtimeLabel = '12:00am',
+  }) async {
+    final tz.TZDateTime scheduledTime = _nextInstance(
+      bedtime,
+      repeatDaily: true,
+    );
     await _plugin.zonedSchedule(
       2002,
       'Wind-down plan',
@@ -126,7 +178,8 @@ class NotificationService {
         iOS: DarwinNotificationDetails(),
       ),
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.wallClockTime,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.wallClockTime,
       matchDateTimeComponents: DateTimeComponents.time,
     );
   }
@@ -139,7 +192,9 @@ class NotificationService {
 
   Future<void> showAnnouncementAlert(Announcement announcement) async {
     final String body =
-        announcement.summary.isNotEmpty ? announcement.summary : _truncateBody(announcement.body);
+        announcement.summary.isNotEmpty
+            ? announcement.summary
+            : _truncateBody(announcement.body);
 
     await _plugin.show(
       _notificationIdForAnnouncement(announcement),
@@ -173,10 +228,15 @@ class NotificationService {
     }
   }
 
-  tz.TZDateTime _nextInstanceOfWeekday(int weekday, TimeOfDay time, {Duration leadTime = Duration.zero}) {
+  tz.TZDateTime _nextInstanceOfWeekday(
+    int weekday,
+    TimeOfDay time, {
+    Duration leadTime = Duration.zero,
+  }) {
     tz.TZDateTime scheduledDate = _nextInstance(time, repeatDaily: false);
 
-    while (scheduledDate.weekday != weekday || scheduledDate.isBefore(tz.TZDateTime.now(tz.local))) {
+    while (scheduledDate.weekday != weekday ||
+        scheduledDate.isBefore(tz.TZDateTime.now(tz.local))) {
       scheduledDate = scheduledDate.add(const Duration(days: 1));
     }
 
@@ -187,7 +247,10 @@ class NotificationService {
     return reminderTime;
   }
 
-  tz.TZDateTime _nextInstance(TimeOfDay timeOfDay, {required bool repeatDaily}) {
+  tz.TZDateTime _nextInstance(
+    TimeOfDay timeOfDay, {
+    required bool repeatDaily,
+  }) {
     final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
     tz.TZDateTime scheduledDate = tz.TZDateTime(
       tz.local,
@@ -204,11 +267,24 @@ class NotificationService {
     return scheduledDate;
   }
 
-  int _notificationIdForEntry(ClassEntry entry) => 1000 + (entry.id ?? entry.subject.hashCode).abs();
+  int _notificationIdForEntry(ClassEntry entry) =>
+      1000 + (entry.id ?? entry.subject.hashCode).abs();
+
+  int _notificationIdForTask(Task task) =>
+      4000 + (task.id ?? task.title.hashCode).abs();
 
   int _notificationIdForAnnouncement(Announcement announcement) {
     final int base = announcement.id ?? announcement.title.hashCode;
     return 3000 + base.abs();
+  }
+
+  tz.TZDateTime? _toFutureTime(DateTime when) {
+    final tz.TZDateTime target = tz.TZDateTime.from(when, tz.local);
+    final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
+    if (target.isBefore(now)) {
+      return null;
+    }
+    return target;
   }
 
   String _truncateBody(String body, {int maxChars = 120}) {

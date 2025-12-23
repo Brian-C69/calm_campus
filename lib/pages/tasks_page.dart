@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/task.dart';
 import '../services/db_service.dart';
+import '../services/notification_service.dart';
 import '../l10n/app_localizations.dart';
 import '../widgets/guide_overlay.dart';
 
@@ -17,6 +18,7 @@ class TasksPage extends StatefulWidget {
 }
 
 enum _TaskFilter { all, today, week, completed }
+
 enum _TaskSort { custom, newestFirst, oldestFirst, urgency }
 
 class _TasksPageState extends State<TasksPage> {
@@ -48,7 +50,8 @@ class _TasksPageState extends State<TasksPage> {
   Widget build(BuildContext context) {
     final strings = AppLocalizations.of(context);
     final List<Task> filteredTasks = _filteredTasks();
-    final pendingCount = _tasks.where((task) => task.status == TaskStatus.pending).length;
+    final pendingCount =
+        _tasks.where((task) => task.status == TaskStatus.pending).length;
     final completedCount = _tasks.length - pendingCount;
 
     return GuideOverlay(
@@ -56,11 +59,13 @@ class _TasksPageState extends State<TasksPage> {
       steps: const [
         GuideStep(
           title: 'Add tasks quickly',
-          body: 'Tap the + button to add what you need to do and set a due date.',
+          body:
+              'Tap the + button to add what you need to do and set a due date.',
         ),
         GuideStep(
           title: 'Mark done or edit',
-          body: 'Use the checkbox to mark complete. Tap a task to edit or delete.',
+          body:
+              'Use the checkbox to mark complete. Tap a task to edit or delete.',
         ),
         GuideStep(
           title: 'Filter your list',
@@ -83,11 +88,15 @@ class _TasksPageState extends State<TasksPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _TaskSummary(pendingCount: pendingCount, completedCount: completedCount),
+              _TaskSummary(
+                pendingCount: pendingCount,
+                completedCount: completedCount,
+              ),
               const SizedBox(height: 12),
               _FilterRow(
                 selected: _selectedFilter,
-                onSelected: (filter) => setState(() => _selectedFilter = filter),
+                onSelected:
+                    (filter) => setState(() => _selectedFilter = filter),
               ),
               const SizedBox(height: 12),
               _SortRow(
@@ -96,47 +105,54 @@ class _TasksPageState extends State<TasksPage> {
               ),
               const SizedBox(height: 12),
               Expanded(
-                child: _isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : filteredTasks.isEmpty
+                child:
+                    _isLoading
+                        ? const Center(child: CircularProgressIndicator())
+                        : filteredTasks.isEmpty
                         ? _EmptyState(onAdd: _openTaskComposer)
                         : _selectedSort == _TaskSort.custom
-                            ? ReorderableListView.builder(
-                                buildDefaultDragHandles: false,
-                                itemCount: filteredTasks.length,
-                                onReorder: (oldIndex, newIndex) =>
-                                    _reorderTasks(filteredTasks, oldIndex, newIndex),
-                                itemBuilder: (context, index) {
-                                  final task = filteredTasks[index];
-                                  return ReorderableDelayedDragStartListener(
-                                    key: ValueKey(task),
-                                    index: index,
-                                    child: Padding(
-                                      padding: const EdgeInsets.only(bottom: 12),
-                                      child: _TaskCard(
-                                        task: task,
-                                        onToggle: () => _toggleTask(task),
-                                        onDelete: () => _deleteTaskWithUndo(task),
-                                        onLongPress: () => _showTaskQuickActions(task),
-                                        showDragHandle: true,
-                                      ),
-                                    ),
-                                  );
-                                },
-                              )
-                            : ListView.separated(
-                              itemCount: filteredTasks.length,
-                              separatorBuilder: (_, __) => const SizedBox(height: 12),
-                              itemBuilder: (context, index) {
-                                final task = filteredTasks[index];
-                                return _TaskCard(
+                        ? ReorderableListView.builder(
+                          buildDefaultDragHandles: false,
+                          itemCount: filteredTasks.length,
+                          onReorder:
+                              (oldIndex, newIndex) => _reorderTasks(
+                                filteredTasks,
+                                oldIndex,
+                                newIndex,
+                              ),
+                          itemBuilder: (context, index) {
+                            final task = filteredTasks[index];
+                            return ReorderableDelayedDragStartListener(
+                              key: ValueKey(task),
+                              index: index,
+                              child: Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: _TaskCard(
                                   task: task,
                                   onToggle: () => _toggleTask(task),
                                   onDelete: () => _deleteTaskWithUndo(task),
-                                  onLongPress: () => _showTaskQuickActions(task),
-                                );
-                              },
-                            ),
+                                  onLongPress:
+                                      () => _showTaskQuickActions(task),
+                                  showDragHandle: true,
+                                ),
+                              ),
+                            );
+                          },
+                        )
+                        : ListView.separated(
+                          itemCount: filteredTasks.length,
+                          separatorBuilder:
+                              (_, __) => const SizedBox(height: 12),
+                          itemBuilder: (context, index) {
+                            final task = filteredTasks[index];
+                            return _TaskCard(
+                              task: task,
+                              onToggle: () => _toggleTask(task),
+                              onDelete: () => _deleteTaskWithUndo(task),
+                              onLongPress: () => _showTaskQuickActions(task),
+                            );
+                          },
+                        ),
               ),
             ],
           ),
@@ -160,11 +176,16 @@ class _TasksPageState extends State<TasksPage> {
         ..addAll(tasks);
       _isLoading = false;
     });
+
+    await _refreshTaskReminders(tasks);
   }
 
   Future<void> _toggleTask(Task task) async {
     final toggled = task.copyWith(
-      status: task.status == TaskStatus.pending ? TaskStatus.done : TaskStatus.pending,
+      status:
+          task.status == TaskStatus.pending
+              ? TaskStatus.done
+              : TaskStatus.pending,
     );
 
     if (task.id != null) {
@@ -179,14 +200,20 @@ class _TasksPageState extends State<TasksPage> {
         _tasks[index] = toggled;
       }
     });
+
+    await _scheduleReminderForTask(toggled);
   }
 
   Future<void> _clearCompleted() async {
-    final completed = _tasks.where((task) => task.status == TaskStatus.done).toList();
+    final completed =
+        _tasks.where((task) => task.status == TaskStatus.done).toList();
 
     await Future.wait([
       for (final task in completed)
-        if (task.id != null) DbService.instance.deleteTask(task.id!) else Future.value(0)
+        if (task.id != null)
+          DbService.instance.deleteTask(task.id!)
+        else
+          Future.value(0),
     ]);
 
     if (!mounted) return;
@@ -194,6 +221,10 @@ class _TasksPageState extends State<TasksPage> {
     setState(() {
       _tasks.removeWhere((task) => task.status == TaskStatus.done);
     });
+
+    for (final task in completed) {
+      await NotificationService.instance.cancelTaskReminder(task);
+    }
   }
 
   Future<void> _deleteTaskWithUndo(Task task) async {
@@ -201,6 +232,7 @@ class _TasksPageState extends State<TasksPage> {
     final theme = Theme.of(context);
     final removed = _tasks.indexOf(task);
     final removedTask = task;
+    await NotificationService.instance.cancelTaskReminder(task);
     await DbService.instance.deleteTask(task.id!);
     final user = Supabase.instance.client.auth.currentUser;
     if (user != null) {
@@ -239,24 +271,95 @@ class _TasksPageState extends State<TasksPage> {
             setState(() {
               _tasks.insert(removed, removedTask.copyWith(id: newId));
             });
+            await _scheduleReminderForTask(removedTask.copyWith(id: newId));
           },
         ),
       ),
     );
   }
 
+  Future<void> _refreshTaskReminders(List<Task> tasks) async {
+    for (final task in tasks) {
+      await _scheduleReminderForTask(task);
+    }
+  }
+
+  Future<void> _scheduleReminderForTask(Task task) async {
+    final strings = AppLocalizations.of(context);
+    if (task.id == null || task.status != TaskStatus.pending) {
+      await NotificationService.instance.cancelTaskReminder(task);
+      return;
+    }
+
+    final now = DateTime.now();
+    final due = task.dueDate;
+    final bool hasTime = due.hour != 0 || due.minute != 0;
+    final DateTime dueAt =
+        hasTime ? due : DateTime(due.year, due.month, due.day, 9);
+
+    DateTime? scheduled = dueAt.subtract(const Duration(hours: 1));
+    if (scheduled.isBefore(now)) {
+      scheduled = dueAt.isAfter(now) ? dueAt : null;
+    }
+
+    if (scheduled == null) {
+      await NotificationService.instance.cancelTaskReminder(task);
+      return;
+    }
+
+    final today = DateTime(now.year, now.month, now.day);
+    final dueDay = DateTime(due.year, due.month, due.day);
+    String body;
+    if (dueDay == today) {
+      body = strings
+          .t('tasks.reminder.today')
+          .replaceFirst('{title}', task.title);
+    } else if (dueDay.difference(today).inDays == 1) {
+      body = strings
+          .t('tasks.reminder.tomorrow')
+          .replaceFirst('{title}', task.title);
+    } else {
+      body = strings
+          .t('tasks.reminder.onDate')
+          .replaceFirst('{title}', task.title)
+          .replaceFirst('{date}', DateFormat.MMMd().format(due));
+    }
+
+    await NotificationService.instance.scheduleTaskReminder(
+      task: task,
+      scheduledFor: scheduled,
+      title: strings.t('tasks.reminder.title'),
+      body: body,
+    );
+  }
+
   List<Task> _filteredTasks() {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final endOfWeek = today.add(Duration(days: DateTime.daysPerWeek - today.weekday));
+    final endOfWeek = today.add(
+      Duration(days: DateTime.daysPerWeek - today.weekday),
+    );
 
     final filtered = switch (_selectedFilter) {
-      _TaskFilter.today => _tasks
-          .where((task) => task.dueDate.year == today.year && task.dueDate.month == today.month && task.dueDate.day == today.day)
-          .toList(),
+      _TaskFilter.today =>
+        _tasks
+            .where(
+              (task) =>
+                  task.dueDate.year == today.year &&
+                  task.dueDate.month == today.month &&
+                  task.dueDate.day == today.day,
+            )
+            .toList(),
       _TaskFilter.week =>
-          _tasks.where((task) => !task.dueDate.isBefore(today) && !task.dueDate.isAfter(endOfWeek)).toList(),
-      _TaskFilter.completed => _tasks.where((task) => task.status == TaskStatus.done).toList(),
+        _tasks
+            .where(
+              (task) =>
+                  !task.dueDate.isBefore(today) &&
+                  !task.dueDate.isAfter(endOfWeek),
+            )
+            .toList(),
+      _TaskFilter.completed =>
+        _tasks.where((task) => task.status == TaskStatus.done).toList(),
       _TaskFilter.all => List.of(_tasks),
     };
 
@@ -296,12 +399,13 @@ class _TasksPageState extends State<TasksPage> {
       updatedVisible.insert(newIndex, movedTask);
 
       final queue = Queue<Task>.from(updatedVisible);
-      final reordered = _tasks.map((task) {
-        if (visibleTasks.contains(task)) {
-          return queue.removeFirst();
-        }
-        return task;
-      }).toList();
+      final reordered =
+          _tasks.map((task) {
+            if (visibleTasks.contains(task)) {
+              return queue.removeFirst();
+            }
+            return task;
+          }).toList();
 
       _tasks
         ..clear()
@@ -327,9 +431,11 @@ class _TasksPageState extends State<TasksPage> {
             ),
             child: _TaskComposer(
               onSubmit: (task) async {
+                final navigator = Navigator.of(context);
+                final canPop = navigator.canPop();
                 await _addTask(task);
-                if (Navigator.canPop(context)) {
-                  Navigator.of(context).pop();
+                if (canPop) {
+                  navigator.pop();
                 }
               },
             ),
@@ -343,9 +449,14 @@ class _TasksPageState extends State<TasksPage> {
     if (_isAddingTask) return;
     _isAddingTask = true;
     setState(() => _isLoading = true);
-    await DbService.instance.insertTask(task);
-    await _loadTasks();
-    _isAddingTask = false;
+    try {
+      final newId = await DbService.instance.insertTask(task);
+      final saved = task.copyWith(id: newId);
+      await _scheduleReminderForTask(saved);
+      await _loadTasks();
+    } finally {
+      _isAddingTask = false;
+    }
   }
 
   Future<void> _showTaskQuickActions(Task task) async {
@@ -356,7 +467,10 @@ class _TasksPageState extends State<TasksPage> {
       TaskPriority.medium => TaskPriority.high,
       TaskPriority.high => TaskPriority.low,
     };
-    final toggledLabel = isPending ? strings.t('tasks.markDone') : strings.t('tasks.markPending');
+    final toggledLabel =
+        isPending
+            ? strings.t('tasks.markDone')
+            : strings.t('tasks.markPending');
     final nextPriorityLabel = switch (nextPriority) {
       TaskPriority.low => strings.t('tasks.priority.low'),
       TaskPriority.medium => strings.t('tasks.priority.medium'),
@@ -366,32 +480,33 @@ class _TasksPageState extends State<TasksPage> {
     final action = await showModalBottomSheet<String>(
       context: context,
       showDragHandle: true,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: Icon(isPending ? Icons.check_circle : Icons.undo),
-              title: Text(toggledLabel),
-              onTap: () => Navigator.of(context).pop('toggle'),
+      builder:
+          (context) => SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: Icon(isPending ? Icons.check_circle : Icons.undo),
+                  title: Text(toggledLabel),
+                  onTap: () => Navigator.of(context).pop('toggle'),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.flag),
+                  title: Text(
+                    strings
+                        .t('tasks.priority.next')
+                        .replaceFirst('{priority}', nextPriorityLabel),
+                  ),
+                  onTap: () => Navigator.of(context).pop('priority'),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.delete_outline),
+                  title: Text(strings.t('common.delete')),
+                  onTap: () => Navigator.of(context).pop('delete'),
+                ),
+              ],
             ),
-            ListTile(
-              leading: const Icon(Icons.flag),
-              title: Text(
-                strings
-                    .t('tasks.priority.next')
-                    .replaceFirst('{priority}', nextPriorityLabel),
-              ),
-              onTap: () => Navigator.of(context).pop('priority'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.delete_outline),
-              title: Text(strings.t('common.delete')),
-              onTap: () => Navigator.of(context).pop('delete'),
-            ),
-          ],
-        ),
-      ),
+          ),
     );
 
     if (action == 'toggle') {
@@ -413,7 +528,10 @@ class _TasksPageState extends State<TasksPage> {
 }
 
 class _TaskSummary extends StatelessWidget {
-  const _TaskSummary({required this.pendingCount, required this.completedCount});
+  const _TaskSummary({
+    required this.pendingCount,
+    required this.completedCount,
+  });
 
   final int pendingCount;
   final int completedCount;
@@ -430,23 +548,30 @@ class _TaskSummary extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(strings.t('tasks.summary.title'),
-                style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              strings.t('tasks.summary.title'),
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: 4),
-            Text(strings.t('tasks.summary.subtitle'),
-                style: Theme.of(context).textTheme.bodyMedium),
+            Text(
+              strings.t('tasks.summary.subtitle'),
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
             const SizedBox(height: 12),
             Wrap(
               spacing: 12,
               runSpacing: 4,
               children: [
-                Text('${strings.t('tasks.pending')}: $pendingCount',
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleSmall
-                        ?.copyWith(color: colorScheme.primary)),
-                Text('${strings.t('tasks.done')}: $completedCount',
-                    style: Theme.of(context).textTheme.bodySmall),
+                Text(
+                  '${strings.t('tasks.pending')}: $pendingCount',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(color: colorScheme.primary),
+                ),
+                Text(
+                  '${strings.t('tasks.done')}: $completedCount',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
               ],
             ),
           ],
@@ -466,15 +591,16 @@ class _FilterRow extends StatelessWidget {
     final strings = AppLocalizations.of(context);
     return Wrap(
       spacing: 8,
-      children: _TaskFilter.values
-          .map(
-            (filter) => FilterChip(
-              label: Text(_labelForFilter(filter, strings)),
-              selected: selected == filter,
-              onSelected: (_) => onSelected(filter),
-            ),
-          )
-          .toList(),
+      children:
+          _TaskFilter.values
+              .map(
+                (filter) => FilterChip(
+                  label: Text(_labelForFilter(filter, strings)),
+                  selected: selected == filter,
+                  onSelected: (_) => onSelected(filter),
+                ),
+              )
+              .toList(),
     );
   }
 
@@ -508,7 +634,10 @@ class _SortRow extends StatelessWidget {
           children: [
             const Icon(Icons.sort, size: 18),
             const SizedBox(width: 6),
-            Text(strings.t('tasks.sort.title'), style: Theme.of(context).textTheme.labelLarge),
+            Text(
+              strings.t('tasks.sort.title'),
+              style: Theme.of(context).textTheme.labelLarge,
+            ),
           ],
         ),
         const SizedBox(height: 6),
@@ -554,7 +683,9 @@ class _TaskCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final dueText = _dueText(context, task.dueDate);
-    final isOverdue = task.dueDate.isBefore(DateTime.now()) && task.status == TaskStatus.pending;
+    final isOverdue =
+        task.dueDate.isBefore(DateTime.now()) &&
+        task.status == TaskStatus.pending;
 
     return Card(
       elevation: 0,
@@ -580,17 +711,22 @@ class _TaskCard extends StatelessWidget {
                         Expanded(
                           child: Text(
                             task.title,
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  decoration: task.status == TaskStatus.done
+                            style: Theme.of(
+                              context,
+                            ).textTheme.titleMedium?.copyWith(
+                              decoration:
+                                  task.status == TaskStatus.done
                                       ? TextDecoration.lineThrough
                                       : TextDecoration.none,
-                              ),
+                            ),
                           ),
                         ),
                         _PriorityBadge(priority: task.priority),
                         IconButton(
                           icon: const Icon(Icons.delete_outline),
-                          tooltip: AppLocalizations.of(context).t('common.delete'),
+                          tooltip: AppLocalizations.of(
+                            context,
+                          ).t('common.delete'),
                           onPressed: onDelete,
                         ),
                         if (showDragHandle) ...[
@@ -603,13 +739,19 @@ class _TaskCard extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 4),
-                    Text(task.subject, style: Theme.of(context).textTheme.bodyMedium),
+                    Text(
+                      task.subject,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
                     const SizedBox(height: 4),
                     Text(
                       dueText,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: isOverdue ? colorScheme.error : colorScheme.onSurfaceVariant,
-                          ),
+                        color:
+                            isOverdue
+                                ? colorScheme.error
+                                : colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ),
@@ -630,7 +772,9 @@ class _TaskCard extends StatelessWidget {
     if (dueDay.isBefore(today)) {
       return '${strings.t('tasks.due.overdue')} - ${_formatDate(dueDate)}';
     }
-    if (dueDay.difference(today).inDays == 1) return strings.t('tasks.due.tomorrow');
+    if (dueDay.difference(today).inDays == 1) {
+      return strings.t('tasks.due.tomorrow');
+    }
     return '${strings.t('tasks.due.on')} ${_formatDate(dueDate)}';
   }
 
@@ -660,7 +804,7 @@ class _PriorityBadge extends StatelessWidget {
         foreground = colorScheme.onTertiaryContainer;
         break;
       case TaskPriority.medium:
-      background = colorScheme.secondaryContainer;
+        background = colorScheme.secondaryContainer;
         foreground = colorScheme.onSecondaryContainer;
     }
 
@@ -672,7 +816,9 @@ class _PriorityBadge extends StatelessWidget {
       ),
       child: Text(
         '${priority.name[0].toUpperCase()}${priority.name.substring(1)}',
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(color: foreground),
+        style: Theme.of(
+          context,
+        ).textTheme.labelSmall?.copyWith(color: foreground),
       ),
     );
   }
@@ -692,7 +838,10 @@ class _EmptyState extends StatelessWidget {
         children: [
           const Icon(Icons.inbox, size: 48),
           const SizedBox(height: 8),
-          Text(strings.t('tasks.empty.title'), style: Theme.of(context).textTheme.titleMedium),
+          Text(
+            strings.t('tasks.empty.title'),
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
           const SizedBox(height: 4),
           Text(strings.t('tasks.empty.subtitle')),
           const SizedBox(height: 12),
@@ -743,22 +892,31 @@ class _TaskComposerState extends State<_TaskComposer> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(strings.t('tasks.new'), style: Theme.of(context).textTheme.titleLarge),
+        Text(
+          strings.t('tasks.new'),
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
         const SizedBox(height: 12),
         TextField(
           controller: _titleController,
-          decoration: InputDecoration(labelText: strings.t('tasks.field.title')),
+          decoration: InputDecoration(
+            labelText: strings.t('tasks.field.title'),
+          ),
         ),
         const SizedBox(height: 8),
         TextField(
           controller: _subjectController,
-          decoration: InputDecoration(labelText: strings.t('tasks.field.subject')),
+          decoration: InputDecoration(
+            labelText: strings.t('tasks.field.subject'),
+          ),
         ),
         const SizedBox(height: 12),
         Row(
           children: [
             Expanded(
-              child: Text('${strings.t('tasks.field.due')}: ${_formatDate(_selectedDate)}'),
+              child: Text(
+                '${strings.t('tasks.field.due')}: ${_formatDate(_selectedDate)}',
+              ),
             ),
             TextButton.icon(
               onPressed: _pickDate,
@@ -770,32 +928,33 @@ class _TaskComposerState extends State<_TaskComposer> {
         const SizedBox(height: 8),
         Wrap(
           spacing: 8,
-          children: TaskPriority.values
-              .map(
-                (priority) => ChoiceChip(
-                  label: Text(priority.name),
-                  selected: _priority == priority,
-                  onSelected: (_) => setState(() => _priority = priority),
-                ),
-              )
-              .toList(),
+          children:
+              TaskPriority.values
+                  .map(
+                    (priority) => ChoiceChip(
+                      label: Text(priority.name),
+                      selected: _priority == priority,
+                      onSelected: (_) => setState(() => _priority = priority),
+                    ),
+                  )
+                  .toList(),
         ),
         const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: Text(strings.t('common.cancel')),
-                ),
-                const SizedBox(width: 8),
-                FilledButton.icon(
-                  onPressed: _isValid ? _submit : null,
-                  icon: const Icon(Icons.check),
-                  label: Text(strings.t('common.save')),
-                ),
-              ],
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(strings.t('common.cancel')),
             ),
+            const SizedBox(width: 8),
+            FilledButton.icon(
+              onPressed: _isValid ? _submit : null,
+              icon: const Icon(Icons.check),
+              label: Text(strings.t('common.save')),
+            ),
+          ],
+        ),
         const SizedBox(height: 12),
       ],
     );
@@ -835,5 +994,6 @@ class _TaskComposerState extends State<_TaskComposer> {
   }
 
   bool get _isValid =>
-      _titleController.text.trim().isNotEmpty && _subjectController.text.trim().isNotEmpty;
+      _titleController.text.trim().isNotEmpty &&
+      _subjectController.text.trim().isNotEmpty;
 }

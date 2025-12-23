@@ -36,7 +36,6 @@ class _JournalPageState extends State<JournalPage> {
     final text = _controller.text.trim();
 
     if (text.isEmpty) {
-
       final strings = AppLocalizations.of(context);
       _showMessage(strings.t('journal.error.empty'));
       return;
@@ -51,10 +50,7 @@ class _JournalPageState extends State<JournalPage> {
 
     setState(() => _isSaving = true);
 
-    final entry = JournalEntry(
-      content: text,
-      createdAt: DateTime.now(),
-    );
+    final entry = JournalEntry(content: text, createdAt: DateTime.now());
 
     final id = await DbService.instance.insertJournalEntry(entry);
 
@@ -88,8 +84,10 @@ class _JournalPageState extends State<JournalPage> {
   Future<bool> _ensureLoggedInForSaving() async {
     if (_isLoggedIn) return true;
 
-    final action = await LoginNudgeService.instance
-        .maybePrompt(context, LoginNudgeTrigger.journalSave);
+    final action = await LoginNudgeService.instance.maybePrompt(
+      context,
+      LoginNudgeTrigger.journalSave,
+    );
 
     if (!mounted) return false;
 
@@ -118,7 +116,6 @@ class _JournalPageState extends State<JournalPage> {
 
     return _isLoggedIn;
   }
-
 
   void _showMessage(String message) {
     ScaffoldMessenger.of(
@@ -216,11 +213,23 @@ class _JournalPageState extends State<JournalPage> {
                                       _formatDate(entry.createdAt),
                                     ),
                               ),
-                              trailing: IconButton(
-                                icon: const Icon(Icons.delete_outline),
-                                tooltip: strings.t('common.delete'),
-                                onPressed: () => _deleteEntry(entry, index),
+                              trailing: Wrap(
+                                spacing: 4,
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.edit),
+                                    tooltip: strings.t('journal.edit'),
+                                    onPressed: () => _editEntry(entry, index),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.delete_outline),
+                                    tooltip: strings.t('common.delete'),
+                                    onPressed: () => _deleteEntry(entry, index),
+                                  ),
+                                ],
                               ),
+                              onLongPress:
+                                  () => _showEntryActions(entry, index),
                             ),
                           );
                         },
@@ -238,6 +247,106 @@ class _JournalPageState extends State<JournalPage> {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')} '
         '${displayHour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')} '
         '${time.period == DayPeriod.am ? 'AM' : 'PM'}';
+  }
+
+  Future<void> _editEntry(JournalEntry entry, int index) async {
+    final strings = AppLocalizations.of(context);
+    final controller = TextEditingController(text: entry.content);
+    final updatedText = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+            left: 16,
+            right: 16,
+            top: 16,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                strings.t('journal.edit'),
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: controller,
+                maxLines: 6,
+                minLines: 3,
+                decoration: InputDecoration(
+                  labelText: strings.t('journal.field.label'),
+                  hintText: strings.t('journal.field.hint'),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: Text(strings.t('common.cancel')),
+                  ),
+                  const SizedBox(width: 8),
+                  FilledButton(
+                    onPressed:
+                        () => Navigator.of(context).pop(controller.text.trim()),
+                    child: Text(strings.t('journal.update')),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (updatedText == null) return;
+    if (updatedText.isEmpty) {
+      _showMessage(strings.t('journal.error.empty'));
+      return;
+    }
+
+    final updatedEntry = entry.copyWith(content: updatedText);
+    await DbService.instance.updateJournalEntry(updatedEntry);
+    if (!mounted) return;
+    setState(() {
+      _entries[index] = updatedEntry;
+    });
+    _showMessage(strings.t('journal.updated'));
+  }
+
+  Future<void> _showEntryActions(JournalEntry entry, int index) async {
+    final strings = AppLocalizations.of(context);
+    await showModalBottomSheet<void>(
+      context: context,
+      builder: (context) {
+        return SafeArea(
+          child: Wrap(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.edit),
+                title: Text(strings.t('journal.edit')),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _editEntry(entry, index);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.delete_outline),
+                title: Text(strings.t('common.delete')),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _deleteEntry(entry, index);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _deleteEntry(JournalEntry entry, int index) async {
@@ -265,11 +374,17 @@ class _JournalPageState extends State<JournalPage> {
           label: strings.t('common.undo'),
           textColor: Theme.of(context).colorScheme.primary,
           onPressed: () async {
-            final restored = entry.copyWith(id: null, createdAt: DateTime.now());
+            final restored = entry.copyWith(
+              id: null,
+              createdAt: DateTime.now(),
+            );
             final newId = await DbService.instance.insertJournalEntry(restored);
             if (!mounted) return;
             setState(() {
-              _entries.insert(index.clamp(0, _entries.length), restored.copyWith(id: newId));
+              _entries.insert(
+                index.clamp(0, _entries.length),
+                restored.copyWith(id: newId),
+              );
             });
           },
         ),

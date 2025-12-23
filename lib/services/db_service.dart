@@ -528,6 +528,19 @@ class DbService {
     return deleted;
   }
 
+  Future<int> updateJournalEntry(JournalEntry entry) async {
+    if (entry.id == null) return 0;
+    final Database db = await database;
+    final int updated = await db.update(
+      _journalTable,
+      entry.toMap(),
+      where: 'id = ?',
+      whereArgs: [entry.id],
+    );
+    await _notifyChange();
+    return updated;
+  }
+
   Future<List<JournalEntry>> getJournalEntries() async {
     final Database db = await database;
     final List<Map<String, dynamic>> maps = await db.query(
